@@ -109,26 +109,26 @@ int main( void )
       // Red LED on
       else if(input == 'r') {
         io->gpio.GPFSEL1.field.FSEL2 = GPFSEL_OUTPUT;
-        GPIO_SET( &(io->gpio), 12);
+        GPIO_CLR( &(io->gpio), 12);
         io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_INPUT;
       }
       // Green LED on 
       else if(input == 'g') {
         io->gpio.GPFSEL1.field.FSEL2 = GPFSEL_OUTPUT;
-        GPIO_CLR( &(io->gpio), 12);
+        GPIO_SET( &(io->gpio), 12);
         io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_INPUT;
       }
       // Blue LED on
       else if(input == 'b') {
         io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_OUTPUT;
         GPIO_CLR( &(io->gpio), 22);
-        io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_INPUT;
+        io->gpio.GPFSEL1.field.FSEL2 = GPFSEL_INPUT;
       }
       // Yellow LED on
       else if(input == 'y') {
         io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_OUTPUT;
         GPIO_SET( &(io->gpio), 22);
-        io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_INPUT;
+        io->gpio.GPFSEL1.field.FSEL2 = GPFSEL_INPUT;
       }
       // Quit program
       else if(input == 'q') {

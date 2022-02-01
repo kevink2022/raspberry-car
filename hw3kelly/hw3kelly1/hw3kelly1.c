@@ -27,6 +27,9 @@
 #include <stdbool.h>
 #include <termios.h>
 #include <fcntl.h>
+#include <stdlib.h>     // Inlcuded for multithreading
+#include <sys/wait.h>   // Inlcuded for multithreading
+#include <signal.h>     // Inlcuded for multithreading
 #include "import_registers.h"
 #include "gpio.h"
 #include "cm.h"
@@ -71,54 +74,64 @@ int main( void )
     attr.c_lflag &= ~ICANON;
     tcsetattr(0, TCSANOW, &attr);
 
-    // initial state
-
-    while (running)
-    {
-      // Check for quit
-      //input = get_pressed_key();
-      //if (input == 'q') { break; } 
-
-      // Make 12 an output to control RED and GREEN LED
-      // Make 22 an input to clear BLUE and ORANGE LED
-      io->gpio.GPFSEL1.field.FSEL2 = GPFSEL_OUTPUT;  //GPIO12
-      io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_INPUT;  //GPIO22
+    // create child pid
+    
+    pid_t child_pid = fork();
+    if (child_pid == -1) { printf("fork error"); return 1; }
+    
+    // child process
+    if (child_pid == 0) {    
+      // loop LEDs
+      while (1)
+      {
+        // Make 12 an output to control RED and GREEN LED
+        // Make 22 an input to clear BLUE and ORANGE LED
+        io->gpio.GPFSEL1.field.FSEL2 = GPFSEL_OUTPUT;  //GPIO12
+        io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_INPUT;  //GPIO22
       
-      // Clear 12, turning on RED LED
-      GPIO_CLR( &(io->gpio), 12);
+        // Clear 12, turning on RED LED
+        GPIO_CLR( &(io->gpio), 12);
 
-      usleep(500*1000);
-      // Check for quit
-      //input = get_pressed_key();
-      //if (input == 'q') { break; } 
+        usleep(500*1000);
 
-      // Set 12, turning on GREEN LED
-      GPIO_SET( &(io->gpio), 12);
+        // Set 12, turning on GREEN LED
+        GPIO_SET( &(io->gpio), 12);
 
-      usleep(500*1000);
-      // Check for quit
-      //input = get_pressed_key();
-      //if (input == 'q') { break; } 
-      
-      // Make 12 an input to clear RED and GREEN LED
-      // Make 22 an output to contorl BLUE and ORANGE LED
-      io->gpio.GPFSEL1.field.FSEL2 = GPFSEL_INPUT;  //GPIO12
-      io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_OUTPUT;  //GPIO22
+        usleep(500*1000);
 
-      // Clear 22, turning on BLUE LED
-      GPIO_CLR( &(io->gpio), 22);
+        
+        // Make 12 an input to clear RED and GREEN LED
+        // Make 22 an output to contorl BLUE and ORANGE LED
+        io->gpio.GPFSEL1.field.FSEL2 = GPFSEL_INPUT;  //GPIO12
+        io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_OUTPUT;  //GPIO22
 
-      usleep(500*1000);
-      // Check for quit
-      //input = get_pressed_key();
-      //if (input == 'q') { break; } 
-      
-      // Set 22, turning on ORANGE LED
-      GPIO_SET( &(io->gpio), 22);
+        // Clear 22, turning on BLUE LED
+        GPIO_CLR( &(io->gpio), 22);
 
-      usleep(500*1000);
+        usleep(500*1000);
+        
+        // Set 22, turning on ORANGE LED
+        GPIO_SET( &(io->gpio), 22);
 
+        usleep(500*1000);
+      }
     }
+    
+    // parent process
+    else{
+    
+      // loop, wait for 'q'
+      while(running) {
+        input = get_pressed_key();
+        if(input == 'q') {
+          running = false;
+        }
+      }
+      
+      // kill child process
+      kill(child_pid, SIGKILL);
+      
+  }
 
   }
   else

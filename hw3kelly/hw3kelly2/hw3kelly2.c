@@ -68,18 +68,16 @@ int main( void )
     /* set the pin function to OUTPUT for GPIO12 - red LED light   */
     /* set the pin function to OUTPUT for GPIO13 - green LED light */
     io->gpio.GPFSEL1.field.FSEL2 = GPFSEL_OUTPUT;
-    io->gpio.GPFSEL1.field.FSEL3 = GPFSEL_OUTPUT;
-    io->gpio.GPFSEL2.field.FSEL3 = GPFSEL_OUTPUT;
-    io->gpio.GPFSEL2.field.FSEL4 = GPFSEL_OUTPUT;
+    io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_OUTPUT;
+    
 
     /* set the pin function to INPUT for GPIO27 - just for an example   */
     // io->gpio.GPFSEL2.field.FSEL6 = GPFSEL_INPUT; <-- unused
 
     /* set initial output state - off */
     GPIO_CLR(&(io->gpio), 12);
-    GPIO_CLR(&(io->gpio), 13);
-    GPIO_CLR(&(io->gpio), 23);
-    GPIO_CLR(&(io->gpio), 24);
+    GPIO_CLR(&(io->gpio), 22);
+    
 
     
     // print directions
@@ -88,7 +86,6 @@ int main( void )
     printf( " press 'b' to toggle the blue LED\n");
     printf( " press 'y' to toggle the yellow LED\n");
     printf( " press 'c' to turn off all LED\n");
-    printf( " press 'a' to turn on all LED\n");
     printf( " press 'q' to quit the program\n\n");
 
     
@@ -104,47 +101,39 @@ int main( void )
     while(running)
     {
       input = get_pressed_key();
+      // All LED off
       if (input == 'c') {
-        GPIO_CLR( &(io->gpio), 12);
-        GPIO_CLR( &(io->gpio), 13);
-        GPIO_CLR( &(io->gpio), 23);
-        GPIO_CLR( &(io->gpio), 24);
+        io->gpio.GPFSEL1.field.FSEL2 = GPFSEL_INPUT;
+        io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_INPUT;
       }
-      else if(input == 'a') {
-        GPIO_SET( &(io->gpio), 12);
-        GPIO_SET( &(io->gpio), 13);
-        GPIO_SET( &(io->gpio), 23);
-        GPIO_SET( &(io->gpio), 24);
-      } 
+      // Red LED on
       else if(input == 'r') {
+        io->gpio.GPFSEL1.field.FSEL2 = GPFSEL_OUTPUT;
         GPIO_SET( &(io->gpio), 12);
-        GPIO_CLR( &(io->gpio), 13);
-        GPIO_CLR( &(io->gpio), 23);
-        GPIO_CLR( &(io->gpio), 24);
-      } 
+        io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_INPUT;
+      }
+      // Green LED on 
       else if(input == 'g') {
+        io->gpio.GPFSEL1.field.FSEL2 = GPFSEL_OUTPUT;
         GPIO_CLR( &(io->gpio), 12);
-        GPIO_SET( &(io->gpio), 13);
-        GPIO_CLR( &(io->gpio), 23);
-        GPIO_CLR( &(io->gpio), 24);
+        io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_INPUT;
       }
+      // Blue LED on
       else if(input == 'b') {
-        GPIO_CLR( &(io->gpio), 12);
-        GPIO_CLR( &(io->gpio), 13);
-        GPIO_SET( &(io->gpio), 23);
-        GPIO_CLR( &(io->gpio), 24);
+        io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_OUTPUT;
+        GPIO_CLR( &(io->gpio), 22);
+        io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_INPUT;
       }
+      // Yellow LED on
       else if(input == 'y') {
-        GPIO_CLR( &(io->gpio), 12);
-        GPIO_CLR( &(io->gpio), 13);
-        GPIO_CLR( &(io->gpio), 23);
-        GPIO_SET( &(io->gpio), 24);
+        io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_OUTPUT;
+        GPIO_SET( &(io->gpio), 22);
+        io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_INPUT;
       }
+      // Quit program
       else if(input == 'q') {
-        GPIO_CLR( &(io->gpio), 12);
-        GPIO_CLR( &(io->gpio), 13);
-        GPIO_CLR( &(io->gpio), 23);
-        GPIO_CLR( &(io->gpio), 24);
+        io->gpio.GPFSEL1.field.FSEL2 = GPFSEL_INPUT;
+        io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_INPUT;
         running = false;
       }
     } 

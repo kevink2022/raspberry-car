@@ -117,13 +117,6 @@ int main( void )
     ; /* warning message already issued */
   }
   
-  io->gpio.GPFSEL1.field.FSEL2 = GPFSEL_OUTPUT;  //GPIO12
-  io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_OUTPUT;  //GPIO22
-  
-  // "get those lights off!"
-  GPIO_CLR( &(io->gpio), 12);
-  GPIO_CLR( &(io->gpio), 22);
-  
   /* clean the GPIO pins */
   io->gpio.GPFSEL1.field.FSEL2 = GPFSEL_INPUT;
   io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_INPUT;

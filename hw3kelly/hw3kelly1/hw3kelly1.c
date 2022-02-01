@@ -76,8 +76,8 @@ int main( void )
     while (running)
     {
       // Check for quit
-      input = get_pressed_key();
-      if (input == "q") { running = false; }
+      //input = get_pressed_key();
+      //if (input == 'q') { break; } 
 
       // Make 12 an output to control RED and GREEN LED
       // Make 22 an input to clear BLUE and ORANGE LED
@@ -89,31 +89,31 @@ int main( void )
 
       usleep(500*1000);
       // Check for quit
-      input = get_pressed_key();
-      if (input == "q") { running = false; }
+      //input = get_pressed_key();
+      //if (input == 'q') { break; } 
 
       // Set 12, turning on GREEN LED
       GPIO_SET( &(io->gpio), 12);
 
       usleep(500*1000);
       // Check for quit
-      input = get_pressed_key();
-      if (input == "q") { running = false; }
+      //input = get_pressed_key();
+      //if (input == 'q') { break; } 
       
       // Make 12 an input to clear RED and GREEN LED
       // Make 22 an output to contorl BLUE and ORANGE LED
       io->gpio.GPFSEL1.field.FSEL2 = GPFSEL_INPUT;  //GPIO12
       io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_OUTPUT;  //GPIO22
 
-      // Clear 12, turning on BLUE LED
+      // Clear 22, turning on BLUE LED
       GPIO_CLR( &(io->gpio), 22);
 
       usleep(500*1000);
       // Check for quit
-      input = get_pressed_key();
-      if (input == "q") { running = false; }
+      //input = get_pressed_key();
+      //if (input == 'q') { break; } 
       
-      // Set 12, turning on ORANGE LED
+      // Set 22, turning on ORANGE LED
       GPIO_SET( &(io->gpio), 22);
 
       usleep(500*1000);

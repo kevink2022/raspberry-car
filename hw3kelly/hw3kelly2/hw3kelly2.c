@@ -1,8 +1,8 @@
 /**************************************************
 * CMPEN 473, Spring 2022, Penn State University
 * 
-* Homework 1 Sample Program 3
-* 1/19/2021
+* Homework 3 Program 2
+* 2/2/2022
 * 
 * By Kevin Kelly
 * 
@@ -16,14 +16,12 @@
  * blue   LED on GPIO23 (with 470 ohm resistor in series)
  * yellow LED on GPIO24 (with 470 ohm resistor in series)
  * 
- * 'r' => red    LED on, all other LED off
- * 'g' => green  LED on, all other LED off
- * 'b' => blue   LED on, all other LED off
- * 'y' => yellow LED on, all other LED off
- * 'a' => all    LED on
- * 'c' => all    LED off
- * 'q' => quit program
- * hit any other key to quit
+ * 'r' =>     red LED on, all other LED off
+ * 'g' =>   green LED on, all other LED off
+ * 'b' =>    blue LED on, all other LED off
+ * 'y' =>  yellow LED on, all other LED off
+ * 'c' =>     all LED off
+ * 'q' =>    quit program
  * 
  */
 
@@ -69,16 +67,10 @@ int main( void )
     /* set the pin function to OUTPUT for GPIO13 - green LED light */
     io->gpio.GPFSEL1.field.FSEL2 = GPFSEL_OUTPUT;
     io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_OUTPUT;
-    
-
-    /* set the pin function to INPUT for GPIO27 - just for an example   */
-    // io->gpio.GPFSEL2.field.FSEL6 = GPFSEL_INPUT; <-- unused
 
     /* set initial output state - off */
     GPIO_CLR(&(io->gpio), 12);
     GPIO_CLR(&(io->gpio), 22);
-    
-
     
     // print directions
     printf( "\n press 'r' to toggle the red LED\n");
@@ -87,7 +79,6 @@ int main( void )
     printf( " press 'y' to toggle the yellow LED\n");
     printf( " press 'c' to turn off all LED\n");
     printf( " press 'q' to quit the program\n\n");
-
     
     bool running = true;
     int input;

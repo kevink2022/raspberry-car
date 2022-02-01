@@ -11,11 +11,12 @@
 /* Homework 2 Sample Program 1
  * Slow LED blinking program example in C for 
  * Raspberry Pi 4 computer with 
- * red    LED on GPIO12 (with 430 ohm resistor in series)
- * green  LED on GPIO13 (with 470 ohm resistor in series)
- * blue   LED on GPIO23 (with 470 ohm resistor in series)
- * yellow LED on GPIO24 (with 470 ohm resistor in series)
- * 
+ * Red LED and Blue LED: 
+ *    --- connected in series with a 430 ohm and 470 ohm resistor
+ *    --- connected in series with GPIO 12
+ * Green LED and Yellow LED: 
+ *    --- connected in series with a 430 ohm and 470 ohm resistor
+ *    --- connected in series with GPIO 22
  * Turn on each LED in sequence, switching every 0.25 seconds
  * 
  */
@@ -63,7 +64,7 @@ int main( void )
     io->gpio.GPFSEL1.field.FSEL2 = GPFSEL_OUTPUT;  //GPIO12
     io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_OUTPUT;  //GPIO22
     
-    printf( "\nhit 'q' to quit\n");
+    printf( "\nPress 'q' to quit\n");
 
     bool running = true;
     int input;
@@ -75,7 +76,6 @@ int main( void )
     tcsetattr(0, TCSANOW, &attr);
 
     // create child pid
-    
     pid_t child_pid = fork();
     if (child_pid == -1) { printf("fork error"); return 1; }
     
@@ -139,6 +139,8 @@ int main( void )
     ; /* warning message already issued */
   }
   
+  printf("\n Quitting... \n\n");
+
   /* clean the GPIO pins */
   io->gpio.GPFSEL1.field.FSEL2 = GPFSEL_INPUT;
   io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_INPUT;

@@ -1,10 +1,10 @@
 /**************************************************
 * CMPEN 473, Spring 2022, Penn State University
 * 
-* Homework 1 Sample Program 1
-* 1/19/2021 
+* Homework 3 Program 1
+* 2/2/2022 
 * 
-* By Kevin Kelly
+* By Kevin Kelly and Kyusun Choi
 * 
 ***************************************************/
 
@@ -47,52 +47,67 @@ int main( void )
     printf( "mem at 0x%8.8X\n", (unsigned int)io );
 
     /* set the pin function to OUTPUT for GPIO12 - red    LED light */
-    /* set the pin function to OUTPUT for GPIO12 - green  LED light */
-    /* set the pin function to OUTPUT for GPIO12 - blue   LED light */
-    /* set the pin function to OUTPUT for GPIO12 - yellow LED light */
+    /* set the pin function to OUTPUT for GPIO22 - green  LED light */
     io->gpio.GPFSEL1.field.FSEL2 = GPFSEL_OUTPUT;  //GPIO12
-    io->gpio.GPFSEL1.field.FSEL3 = GPFSEL_OUTPUT;  //GPIO13
-    io->gpio.GPFSEL2.field.FSEL3 = GPFSEL_OUTPUT;  //GPIO23
-    io->gpio.GPFSEL2.field.FSEL4 = GPFSEL_OUTPUT;  //GPIO24
+    io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_OUTPUT;  //GPIO22
     
-    printf( "hit 'ctl c' to quit\n");
+    printf( "\nhit 'q' to quit\n");
+
+    bool running = true;
+    int input;
+    
+    // initialize live input mode
+    struct termios attr;
+    tcgetattr(0, &attr);
+    attr.c_lflag &= ~ICANON;
+    tcsetattr(0, TCSANOW, &attr);
 
     // initial state
-    GPIO_CLR( &(io->gpio), 12);
-    GPIO_CLR( &(io->gpio), 13);
-    GPIO_CLR( &(io->gpio), 23);
-    GPIO_CLR( &(io->gpio), 24);
 
-
-    while (1)
+    while (running)
     {
+      // Check for quit
+      input = get_pressed_key();
+      if (input == "q") { running = false; }
+
+      // Make 12 an output to control RED and GREEN LED
+      // Make 22 an input to clear BLUE and ORANGE LED
+      io->gpio.GPFSEL1.field.FSEL2 = GPFSEL_OUTPUT;  //GPIO12
+      io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_INPUT;  //GPIO22
+      
+      // Clear 12, turning on RED LED
+      GPIO_CLR( &(io->gpio), 12);
+
+      usleep(500*1000);
+      // Check for quit
+      input = get_pressed_key();
+      if (input == "q") { running = false; }
+
+      // Set 12, turning on GREEN LED
       GPIO_SET( &(io->gpio), 12);
-      GPIO_CLR( &(io->gpio), 13);
-      GPIO_CLR( &(io->gpio), 23);
-      GPIO_CLR( &(io->gpio), 24);
 
-      usleep(250*1000);
-
-      GPIO_CLR( &(io->gpio), 12);
-      GPIO_SET( &(io->gpio), 13);
-      GPIO_CLR( &(io->gpio), 23);
-      GPIO_CLR( &(io->gpio), 24);
-
-      usleep(250*1000);
+      usleep(500*1000);
+      // Check for quit
+      input = get_pressed_key();
+      if (input == "q") { running = false; }
       
-      GPIO_CLR( &(io->gpio), 12);
-      GPIO_CLR( &(io->gpio), 13);
-      GPIO_SET( &(io->gpio), 23);
-      GPIO_CLR( &(io->gpio), 24);
+      // Make 12 an input to clear RED and GREEN LED
+      // Make 22 an output to contorl BLUE and ORANGE LED
+      io->gpio.GPFSEL1.field.FSEL2 = GPFSEL_INPUT;  //GPIO12
+      io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_OUTPUT;  //GPIO22
 
-      usleep(250*1000);
+      // Clear 12, turning on BLUE LED
+      GPIO_CLR( &(io->gpio), 22);
+
+      usleep(500*1000);
+      // Check for quit
+      input = get_pressed_key();
+      if (input == "q") { running = false; }
       
-      GPIO_CLR( &(io->gpio), 12);
-      GPIO_CLR( &(io->gpio), 13);
-      GPIO_CLR( &(io->gpio), 23);
-      GPIO_SET( &(io->gpio), 24);
+      // Set 12, turning on ORANGE LED
+      GPIO_SET( &(io->gpio), 22);
 
-      usleep(250*1000);
+      usleep(500*1000);
 
     }
 
@@ -102,15 +117,16 @@ int main( void )
     ; /* warning message already issued */
   }
   
+  io->gpio.GPFSEL1.field.FSEL2 = GPFSEL_OUTPUT;  //GPIO12
+  io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_OUTPUT;  //GPIO22
+  
   // "get those lights off!"
   GPIO_CLR( &(io->gpio), 12);
-  GPIO_CLR( &(io->gpio), 13);
-  GPIO_CLR( &(io->gpio), 23);
-  GPIO_CLR( &(io->gpio), 24);
+  GPIO_CLR( &(io->gpio), 22);
   
   /* clean the GPIO pins */
   io->gpio.GPFSEL1.field.FSEL2 = GPFSEL_INPUT;
-  io->gpio.GPFSEL1.field.FSEL3 = GPFSEL_INPUT;
+  io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_INPUT;
 
   return 0;
 }

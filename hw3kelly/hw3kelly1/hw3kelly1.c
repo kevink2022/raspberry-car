@@ -36,6 +36,15 @@
 #include "enable_pwm_clock.h"
 
 
+int get_pressed_key(void)
+{
+  int ch;
+
+  ch = getchar();
+
+  return ch;
+}
+
 int main( void )
 {
   volatile struct io_peripherals *io;

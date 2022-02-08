@@ -49,7 +49,8 @@
 
 typedef struct 
 {
-  volatile struct gpio_register * gpio;
+  volatile struct io_peripherals *io;
+  volatile struct gpio_register  *gpio;
   int                             pin;
   int                             base;
   int                             set;
@@ -63,6 +64,9 @@ void* phase_pwm(void * arg){
   pwm_thread_param * param = (pwm_thread_param *)arg;
   int i, cycle_count, old_base;
   int phase_cycle, phase_cycle_count, phase_step, phase_step_count; 
+  
+  // Function got too bloated, had to fine tune with these
+  int u_sleep = 10, cycle_mult = 125;
 
   while(param->running) {
     //If base == set, 
@@ -72,7 +76,6 @@ void* phase_pwm(void * arg){
         param->set = old_base;     // and the percentage to set it to
       } 
       else {
-        printf("\nentering loop\n");
         while((param->base == param->set) && param->running) {
           // PWM CYCLE
           cycle_count = 0;
@@ -80,53 +83,47 @@ void* phase_pwm(void * arg){
 
           while(cycle_count < param->base) {
             cycle_count++;
-            usleep(10);
+            usleep(u_sleep);
           }
           GPIO_CLR(param->gpio,param->pin);
           while (cycle_count < 100){
             cycle_count++;
-            usleep(10);
+            usleep(u_sleep);
           }
           // PWM CYCLE
         }
       }
     } else if (param->time == 0) {
-      printf("\ntime is 0\n");
       param->base = param->set;
     } else {
-      printf("\nphasing\n");
       old_base = param->base;                                     // Remember base for cycling
       phase_cycle = 0;                                            // Initial cycle
-      phase_cycle_count = ((int)(param->time*1000));              // Number of cycles
+      phase_cycle_count = ((int)(param->time*cycle_mult));        // Number of cycles
       phase_step = (param->set > param->base) ? 1 : -1;           // Getting brighter or dimmmer
       phase_step_count = (phase_step)*(param->set - param->base); // Number of steps (change percent by 1) in phase
-      printf("phase_cycel_count: %i", phase_cycle_count);
     
-      while(phase_cycle < phase_cycle_count) {
+      while(param->running && (phase_cycle < phase_cycle_count)) {
           // PWM CYCLE
           cycle_count = 0;
           GPIO_SET(param->gpio,param->pin);
 
           while(cycle_count < param->base) {
             cycle_count++;
-            usleep(10);
+            usleep(u_sleep);
           }
           GPIO_CLR(param->gpio,param->pin);
           while (cycle_count < 100){
             cycle_count++;
-            usleep(10);
+            usleep(u_sleep);
           }
           // PWM CYCLE
 
           // This has the potential to arrive at set 1/10th of a second early
           phase_cycle++;
-          //printf("\n%i", phase_cycle);
           if(param->smooth && param->base != param->set && (phase_cycle % (phase_cycle_count/phase_step_count) == 0)) {
             param->base += phase_step;
           }
-          //printf("setting after phase");
-          
-      }
+        }
       param->base = param->set;
     }
   }
@@ -134,6 +131,36 @@ void* phase_pwm(void * arg){
   // Cleanup
   GPIO_CLR(param->gpio,param->pin);
   return NULL;
+}
+
+void* led_sleep_22(void * arg){
+  pwm_thread_param * param = (pwm_thread_param *)arg;
+  
+  param->io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_OUTPUT;
+  int time = (int)(param->time*125), cycle_count;
+  
+  while(param->running && time) {
+    // PWM CYCLE
+    cycle_count = 0;
+    GPIO_SET(param->gpio,22);
+
+    while(cycle_count < param->base) {
+      cycle_count++;
+      usleep(10);
+    }
+    GPIO_CLR(param->gpio,22);
+    while (cycle_count < 100){
+      cycle_count++;
+      usleep(10);
+    //PWM CYCLE
+    }
+    time--;
+  }
+  
+  GPIO_CLR(param->gpio,22);
+  param->io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_INPUT;
+  return NULL;
+  
 }
 
 int get_pressed_key(void)
@@ -159,7 +186,7 @@ int main( void )
     /* set the pin function to OUTPUT for GPIO12 - red LED light   */
     /* set the pin function to OUTPUT for GPIO13 - green LED light */
     io->gpio.GPFSEL1.field.FSEL2 = GPFSEL_OUTPUT;
-    io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_OUTPUT;
+    io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_INPUT;
 
     /* set initial output state - off */
     GPIO_CLR(&(io->gpio), 12);
@@ -192,15 +219,17 @@ int main( void )
     red_green_param = malloc(sizeof(pwm_thread_param));
     blue_orange_param = malloc(sizeof(pwm_thread_param));
 
+    red_green_param->io = io;
     red_green_param->gpio = &(io->gpio);
     red_green_param->pin = 12;
     red_green_param->base = 0;
     red_green_param->set = 0;
     red_green_param->time = 0;
     red_green_param->cycle = false;
-    red_green_param->smooth = true;
+    red_green_param->smooth = false;
     red_green_param->running = true;
     
+    blue_orange_param->io = io;
     blue_orange_param->gpio = &(io->gpio);
     blue_orange_param->pin = 22;
     blue_orange_param->base = 0;
@@ -225,7 +254,6 @@ int main( void )
     printf("live input done");
     
     pthread_create(&red_green_thread, NULL, phase_pwm, (void *)red_green_param);
-    pthread_create(&blue_orange_thread, NULL, phase_pwm, (void *)blue_orange_param);
 
     printf("tred crated");
 
@@ -254,31 +282,32 @@ int main( void )
       }
       //
       else if(input == 'w') {
-        blue_orange_param->set = 100;
-        //blue_orange_param->time = 2;
-        //blue_orange_param->set = 0;
-        //blue_orange_param->time = 0;
+        blue_orange_param->time = 2;
+        blue_orange_param->base = 0;
+        pthread_create(&blue_orange_thread, NULL, led_sleep_22, (void *)blue_orange_param);
+        pthread_detach(blue_orange_thread);
       }
       //
       else if(input == 'x') {
-        blue_orange_param->set = 0;
-        //blue_orange_param->time = 2;
-        //blue_orange_param->set = 100;
-        //blue_orange_param->time = 0;
+        blue_orange_param->time = 2;
+        blue_orange_param->base = 100;
+        pthread_create(&blue_orange_thread, NULL, led_sleep_22, (void *)blue_orange_param);
+        pthread_detach(blue_orange_thread);
       }
       //
       else if(input == 's') {
-        blue_orange_param->set = 50;
-        //blue_orange_param->time = 3;
-        //blue_orange_param->set = 100;
-        //blue_orange_param->time = 0;
+        blue_orange_param->time = 3;
+        blue_orange_param->base = 50;
+        pthread_create(&blue_orange_thread, NULL, led_sleep_22, (void *)blue_orange_param);
+        pthread_detach(blue_orange_thread);
       }
       //
       else if(input == 'q') {
         red_green_param->running = false;
         blue_orange_param->running = false;
         pthread_join(red_green_thread, NULL);
-        pthread_join(blue_orange_thread, NULL);
+        //pthread_join(blue_orange_thread, NULL);
+        usleep(10); //Allow time for potential blue_orange thread to cleanup
         io->gpio.GPFSEL1.field.FSEL2 = GPFSEL_INPUT;
         io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_INPUT;
         running = false;

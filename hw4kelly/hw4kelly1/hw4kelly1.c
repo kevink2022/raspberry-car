@@ -57,6 +57,9 @@ void* phase_pwm(void * arg){
   pwm_thread_param * param = (pwm_thread_param *)arg;
   int i, cycle_count, old_base;
   int phase_cycle, phase_cycle_count, phase_step, phase_step_count; 
+  
+  // Function got too bloated, had to fine tune with these
+  int u_sleep = 10, cycle_mult = 125;
 
   while(param->running) {
     //If base == set, 
@@ -73,12 +76,12 @@ void* phase_pwm(void * arg){
 
           while(cycle_count < param->base) {
             cycle_count++;
-            usleep(10);
+            usleep(u_sleep);
           }
           GPIO_CLR(param->gpio,param->pin);
           while (cycle_count < 100){
             cycle_count++;
-            usleep(10);
+            usleep(u_sleep);
           }
           // PWM CYCLE
         }
@@ -88,23 +91,23 @@ void* phase_pwm(void * arg){
     } else {
       old_base = param->base;                                     // Remember base for cycling
       phase_cycle = 0;                                            // Initial cycle
-      phase_cycle_count = ((int)(param->time*1000));              // Number of cycles
+      phase_cycle_count = ((int)(param->time*cycle_mult));               // Number of cycles
       phase_step = (param->set > param->base) ? 1 : -1;           // Getting brighter or dimmmer
       phase_step_count = (phase_step)*(param->set - param->base); // Number of steps (change percent by 1) in phase
     
-      while(phase_cycle < phase_cycle_count) {
+      while(param->running && (phase_cycle < phase_cycle_count)) {
           // PWM CYCLE
           cycle_count = 0;
           GPIO_SET(param->gpio,param->pin);
 
           while(cycle_count < param->base) {
             cycle_count++;
-            usleep(10);
+            usleep(u_sleep);
           }
           GPIO_CLR(param->gpio,param->pin);
           while (cycle_count < 100){
             cycle_count++;
-            usleep(10);
+            usleep(u_sleep);
           }
           // PWM CYCLE
 
@@ -158,18 +161,18 @@ int main( void )
 
     red_green_param->gpio = &(io->gpio);
     red_green_param->pin = 12;
-    red_green_param->base = 0;
-    red_green_param->set = 25;
+    red_green_param->base = 100;
+    red_green_param->set = 75;
     red_green_param->time = 2;
     red_green_param->cycle = true;
-    red_green_param->smooth = true;
+    red_green_param->smooth = true;;
     red_green_param->running = true;
     
     blue_orange_param->gpio = &(io->gpio);
     blue_orange_param->pin = 22;
-    blue_orange_param->base = 3;
-    blue_orange_param->set = 13;
-    blue_orange_param->time = 2;
+    blue_orange_param->base = 97;
+    blue_orange_param->set = 87;
+    blue_orange_param->time = 1.5;
     blue_orange_param->cycle = true;
     blue_orange_param->smooth = true;
     blue_orange_param->running = true;

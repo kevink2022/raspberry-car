@@ -31,6 +31,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdbool.h>
@@ -71,7 +72,8 @@ void* phase_pwm(void * arg){
         param->set = old_base;     // and the percentage to set it to
       } 
       else {
-        while(param->base == param->set) {
+        printf("\nentering loop\n");
+        while((param->base == param->set) && param->running) {
           // PWM CYCLE
           cycle_count = 0;
           GPIO_SET(param->gpio,param->pin);
@@ -89,13 +91,16 @@ void* phase_pwm(void * arg){
         }
       }
     } else if (param->time == 0) {
+      printf("\ntime is 0\n");
       param->base = param->set;
     } else {
+      printf("\nphasing\n");
       old_base = param->base;                                     // Remember base for cycling
       phase_cycle = 0;                                            // Initial cycle
       phase_cycle_count = ((int)(param->time*1000));              // Number of cycles
       phase_step = (param->set > param->base) ? 1 : -1;           // Getting brighter or dimmmer
       phase_step_count = (phase_step)*(param->set - param->base); // Number of steps (change percent by 1) in phase
+      printf("phase_cycel_count: %i", phase_cycle_count);
     
       while(phase_cycle < phase_cycle_count) {
           // PWM CYCLE
@@ -115,9 +120,12 @@ void* phase_pwm(void * arg){
 
           // This has the potential to arrive at set 1/10th of a second early
           phase_cycle++;
+          //printf("\n%i", phase_cycle);
           if(param->smooth && param->base != param->set && (phase_cycle % (phase_cycle_count/phase_step_count) == 0)) {
             param->base += phase_step;
           }
+          //printf("setting after phase");
+          
       }
       param->base = param->set;
     }
@@ -136,7 +144,6 @@ int get_pressed_key(void)
 
   return ch;
 }
-
 
 int main( void )
 {
@@ -158,16 +165,32 @@ int main( void )
     GPIO_CLR(&(io->gpio), 12);
     GPIO_CLR(&(io->gpio), 22);
     
+    printf("b4 prints");
+    
     // print directions
     printf( "\n press 'r' to toggle the red LED\n");
     printf( " press 'g' to toggle the green LED\n");
     printf( " press 'b' to toggle the blue LED\n");
     printf( " press 'y' to toggle the yellow LED\n");
     printf( " press 'c' to turn off all LED\n");
-    printf( " press 'q' to quit the program\n\n");
+    printf( " press 'q' to fak off\n\n");
+    
+    printf("after prints");
 
-    pthread_t red_green_thread;
-    pwm_thread_param *red_green_param, blue_orange_param;
+
+    //sleep(2);
+    printf("trying tred");
+    //sleep(2);
+    pthread_t red_green_thread, blue_orange_thread;
+    printf("made tred");
+    //sleep(2);
+    pwm_thread_param *red_green_param;
+    pwm_thread_param *blue_orange_param;
+    printf("made param");
+    //sleep(2);
+    
+    red_green_param = malloc(sizeof(pwm_thread_param));
+    blue_orange_param = malloc(sizeof(pwm_thread_param));
 
     red_green_param->gpio = &(io->gpio);
     red_green_param->pin = 12;
@@ -175,8 +198,20 @@ int main( void )
     red_green_param->set = 0;
     red_green_param->time = 0;
     red_green_param->cycle = false;
-    red_green_param->smooth = false;
+    red_green_param->smooth = true;
     red_green_param->running = true;
+    
+    blue_orange_param->gpio = &(io->gpio);
+    blue_orange_param->pin = 22;
+    blue_orange_param->base = 0;
+    blue_orange_param->set = 0;
+    blue_orange_param->time = 2;
+    blue_orange_param->cycle = false;
+    blue_orange_param->smooth = false;
+    blue_orange_param->running = true;
+    
+    printf("set params");
+
     
     bool running = true;
     int input;
@@ -187,22 +222,27 @@ int main( void )
     attr.c_lflag &= ~ICANON;
     tcsetattr(0, TCSANOW, &attr);
     
+    printf("live input done");
+    
     pthread_create(&red_green_thread, NULL, phase_pwm, (void *)red_green_param);
+    pthread_create(&blue_orange_thread, NULL, phase_pwm, (void *)blue_orange_param);
+
+    printf("tred crated");
 
     while(running)
     {
       input = get_pressed_key();
       // increase Red LED light level by 5%,
       if (input == 'i') {
-        red_green_param->set = (red_green_param->set + 5 > 100) ? 100 : red_green_param->set + 5;
+        red_green_param->set = (red_green_param->set - 5 < 0) ? 0 : red_green_param->set - 5;
       }
       //
       else if(input == 'j') {
-        red_green_param->set = (red_green_param->set + 5 > 100) ? 100 : red_green_param->set - 5;
+        red_green_param->set = (red_green_param->set + 5 > 100) ? 100 : red_green_param->set + 5;
       }
       //
       else if(input == 'r') {
-        red_green_param->set = 0;
+        red_green_param->set = 100;
       }
       //
       else if(input == 'h') {
@@ -210,19 +250,28 @@ int main( void )
       }
       //
       else if(input == 'm') {
-        red_green_param->set = 100;
+        red_green_param->set = 0;
       }
       //
       else if(input == 'w') {
-        
+        blue_orange_param->set = 100;
+        //blue_orange_param->time = 2;
+        //blue_orange_param->set = 0;
+        //blue_orange_param->time = 0;
       }
       //
       else if(input == 'x') {
-        
+        blue_orange_param->set = 0;
+        //blue_orange_param->time = 2;
+        //blue_orange_param->set = 100;
+        //blue_orange_param->time = 0;
       }
       //
       else if(input == 's') {
-        
+        blue_orange_param->set = 50;
+        //blue_orange_param->time = 3;
+        //blue_orange_param->set = 100;
+        //blue_orange_param->time = 0;
       }
       //
       else if(input == 'q') {

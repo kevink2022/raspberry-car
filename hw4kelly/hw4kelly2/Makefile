@@ -7,7 +7,7 @@ SOURCES=import_registers.c \
 OBJECTS=$(patsubst %.c,%.o,$(SOURCES))
 
 all: $(OBJECTS)
-	gcc $(OBJECTS) -o $(TARGET)
+	gcc $(OBJECTS) -lpthread -o $(TARGET)
 
 clean:
 	rm -f $(OBJECTS) $(TARGET)

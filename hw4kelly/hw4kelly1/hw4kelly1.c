@@ -23,14 +23,16 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdbool.h>
 #include <termios.h>
 #include <fcntl.h>
-#include <stdlib.h>     // Inlcuded for multithreading
-#include <sys/wait.h>   // Inlcuded for multithreading
-#include <signal.h>     // Inlcuded for multithreading
+#include <stdlib.h>     
+#include <sys/wait.h>   
+#include <signal.h>     
+#include <pthread.h>
 #include "import_registers.h"
 #include "gpio.h"
 #include "cm.h"
@@ -39,6 +41,87 @@
 #include "io_peripherals.h"
 #include "enable_pwm_clock.h"
 
+typedef struct 
+{
+  volatile struct gpio_register * gpio;
+  int                             pin;
+  int                             base;
+  int                             set;
+  double                          time;
+  bool                            cycle;
+  bool                            smooth;
+  bool                            running;
+} pwm_thread_param;
+
+void* phase_pwm(void * arg){
+  pwm_thread_param * param = (pwm_thread_param *)arg;
+  int i, cycle_count, old_base;
+  int phase_cycle, phase_cycle_count, phase_step, phase_step_count; 
+
+  while(param->running) {
+    //If base == set, 
+    if(param->base == param->set) {
+      if(param->cycle) {
+        param->base = param->set;  // If cycling, just switch the base percentage
+        param->set = old_base;     // and the percentage to set it to
+      } 
+      else {
+        while((param->base == param->set) && param->running) {
+          // PWM CYCLE
+          cycle_count = 0;
+          GPIO_SET(param->gpio,param->pin);
+
+          while(cycle_count < param->base) {
+            cycle_count++;
+            usleep(10);
+          }
+          GPIO_CLR(param->gpio,param->pin);
+          while (cycle_count < 100){
+            cycle_count++;
+            usleep(10);
+          }
+          // PWM CYCLE
+        }
+      }
+    } else if (param->time == 0) {
+      param->base = param->set;
+    } else {
+      old_base = param->base;                                     // Remember base for cycling
+      phase_cycle = 0;                                            // Initial cycle
+      phase_cycle_count = ((int)(param->time*1000));              // Number of cycles
+      phase_step = (param->set > param->base) ? 1 : -1;           // Getting brighter or dimmmer
+      phase_step_count = (phase_step)*(param->set - param->base); // Number of steps (change percent by 1) in phase
+    
+      while(phase_cycle < phase_cycle_count) {
+          // PWM CYCLE
+          cycle_count = 0;
+          GPIO_SET(param->gpio,param->pin);
+
+          while(cycle_count < param->base) {
+            cycle_count++;
+            usleep(10);
+          }
+          GPIO_CLR(param->gpio,param->pin);
+          while (cycle_count < 100){
+            cycle_count++;
+            usleep(10);
+          }
+          // PWM CYCLE
+
+          // This has the potential to arrive at set 1/10th of a second early
+          phase_cycle++;
+          if(param->smooth && param->base != param->set && (phase_cycle % (phase_cycle_count/phase_step_count) == 0)) {
+            param->base += phase_step;
+          }
+        }
+      param->base = param->set;
+    }
+  }
+
+  // Cleanup
+  GPIO_CLR(param->gpio,param->pin);
+  return NULL;
+}
 
 int get_pressed_key(void)
 {
@@ -66,6 +149,31 @@ int main( void )
     
     printf( "\nPress 'q' to quit\n");
 
+    pthread_t red_green_thread, blue_orange_thread;
+    pwm_thread_param *red_green_param;
+    pwm_thread_param *blue_orange_param;
+    
+    red_green_param = malloc(sizeof(pwm_thread_param));
+    blue_orange_param = malloc(sizeof(pwm_thread_param));
+
+    red_green_param->gpio = &(io->gpio);
+    red_green_param->pin = 12;
+    red_green_param->base = 0;
+    red_green_param->set = 25;
+    red_green_param->time = 2;
+    red_green_param->cycle = true;
+    red_green_param->smooth = true;
+    red_green_param->running = true;
+    
+    blue_orange_param->gpio = &(io->gpio);
+    blue_orange_param->pin = 22;
+    blue_orange_param->base = 3;
+    blue_orange_param->set = 13;
+    blue_orange_param->time = 2;
+    blue_orange_param->cycle = true;
+    blue_orange_param->smooth = true;
+    blue_orange_param->running = true;
+
     bool running = true;
     int input;
     
@@ -75,63 +183,22 @@ int main( void )
     attr.c_lflag &= ~ICANON;
     tcsetattr(0, TCSANOW, &attr);
 
-    // create child pid
-    pid_t child_pid = fork();
-    if (child_pid == -1) { printf("fork error"); return 1; }
+    pthread_create(&red_green_thread, NULL, phase_pwm, (void *)red_green_param);
+    pthread_create(&blue_orange_thread, NULL, phase_pwm, (void *)blue_orange_param);
     
-    // child process
-    if (child_pid == 0) {    
-      // loop LEDs
-      while (1)
-      {
-        // Make 12 an output to control RED and GREEN LED
-        // Make 22 an input to clear BLUE and ORANGE LED
-        io->gpio.GPFSEL1.field.FSEL2 = GPFSEL_OUTPUT;  //GPIO12
-        io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_INPUT;  //GPIO22
-      
-        // Clear 12, turning on RED LED
-        GPIO_CLR( &(io->gpio), 12);
-
-        usleep(500*1000);
-
-        // Set 12, turning on GREEN LED
-        GPIO_SET( &(io->gpio), 12);
-
-        usleep(500*1000);
-
-        
-        // Make 12 an input to clear RED and GREEN LED
-        // Make 22 an output to contorl BLUE and ORANGE LED
-        io->gpio.GPFSEL1.field.FSEL2 = GPFSEL_INPUT;  //GPIO12
-        io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_OUTPUT;  //GPIO22
-
-        // Clear 22, turning on BLUE LED
-        GPIO_CLR( &(io->gpio), 22);
-
-        usleep(500*1000);
-        
-        // Set 22, turning on ORANGE LED
-        GPIO_SET( &(io->gpio), 22);
-
-        usleep(500*1000);
+    // loop, wait for 'q'
+    while(running) {
+      input = get_pressed_key();
+      if(input == 'q') {
+        red_green_param->running = false;
+        blue_orange_param->running = false;
+        pthread_join(red_green_thread, NULL);
+        pthread_join(blue_orange_thread, NULL);
+        io->gpio.GPFSEL1.field.FSEL2 = GPFSEL_INPUT;
+        io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_INPUT;
+        running = false;
       }
     }
-    
-    // parent process
-    else{
-    
-      // loop, wait for 'q'
-      while(running) {
-        input = get_pressed_key();
-        if(input == 'q') {
-          running = false;
-        }
-      }
-      
-      // kill child process
-      kill(child_pid, SIGKILL);
-      
-  }
 
   }
   else

@@ -276,7 +276,9 @@ int main( void )
       //
       else if(input == 'q') {
         red_green_param->running = false;
+        blue_orange_param->running = false;
         pthread_join(red_green_thread, NULL);
+        pthread_join(blue_orange_thread, NULL);
         io->gpio.GPFSEL1.field.FSEL2 = GPFSEL_INPUT;
         io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_INPUT;
         running = false;

@@ -58,12 +58,14 @@ typedef struct
   bool                            cycle;
   bool                            smooth;
   bool                            running;
+  bool                            busy;
 } pwm_thread_param;
 
 void* phase_pwm(void * arg){
   pwm_thread_param * param = (pwm_thread_param *)arg;
   int i, cycle_count, old_base;
   int phase_cycle, phase_cycle_count, phase_step, phase_step_count; 
+  param->busy = false;
   
   // Function got too bloated, had to fine tune with these
   int u_sleep = 10, cycle_mult = 125;
@@ -76,6 +78,7 @@ void* phase_pwm(void * arg){
         param->set = old_base;     // and the percentage to set it to
       } 
       else {
+        //param->busy = true;
         while((param->base == param->set) && param->running) {
           // PWM CYCLE
           cycle_count = 0;
@@ -92,6 +95,7 @@ void* phase_pwm(void * arg){
           }
           // PWM CYCLE
         }
+        //param->busy = false;
       }
     } else if (param->time == 0) {
       param->base = param->set;
@@ -139,6 +143,8 @@ void* led_sleep_22(void * arg){
   param->io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_OUTPUT;
   int time = (int)(param->time*125), cycle_count;
   
+  param->busy = true;
+
   while(param->running && time) {
     // PWM CYCLE
     cycle_count = 0;
@@ -156,11 +162,10 @@ void* led_sleep_22(void * arg){
     }
     time--;
   }
-  
+  param->busy = false;
   GPIO_CLR(param->gpio,22);
   param->io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_INPUT;
   return NULL;
-  
 }
 
 int get_pressed_key(void)
@@ -214,6 +219,9 @@ int main( void )
     pwm_thread_param *red_green_param;
     pwm_thread_param *blue_orange_param;
     printf("made param");
+
+    pwm_thread_param buffer[10];
+    int index = 0;
     //sleep(2);
     
     red_green_param = malloc(sizeof(pwm_thread_param));
@@ -238,6 +246,8 @@ int main( void )
     blue_orange_param->cycle = false;
     blue_orange_param->smooth = false;
     blue_orange_param->running = true;
+
+
     
     printf("set params");
 
@@ -282,24 +292,24 @@ int main( void )
       }
       //
       else if(input == 'w') {
+        pthread_join(blue_orange_thread, NULL); // consecutive button press will have to wait for first one
         blue_orange_param->time = 2;
         blue_orange_param->base = 0;
         pthread_create(&blue_orange_thread, NULL, led_sleep_22, (void *)blue_orange_param);
-        pthread_detach(blue_orange_thread);
       }
       //
       else if(input == 'x') {
+        pthread_join(blue_orange_thread, NULL);
         blue_orange_param->time = 2;
         blue_orange_param->base = 100;
         pthread_create(&blue_orange_thread, NULL, led_sleep_22, (void *)blue_orange_param);
-        pthread_detach(blue_orange_thread);
       }
       //
       else if(input == 's') {
+        pthread_join(blue_orange_thread, NULL);
         blue_orange_param->time = 3;
         blue_orange_param->base = 50;
         pthread_create(&blue_orange_thread, NULL, led_sleep_22, (void *)blue_orange_param);
-        pthread_detach(blue_orange_thread);
       }
       //
       else if(input == 'q') {

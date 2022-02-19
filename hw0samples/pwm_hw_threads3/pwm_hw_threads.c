@@ -1,25 +1,3 @@
-/**************************************************
-* CMPEN 473, Spring 2022, Penn State University
-* 
-* Homework 3 Program 1
-* 2/2/2022 
-* 
-* By Kevin Kelly and Kyusun Choi
-* 
-***************************************************/
-
-/* Homework 2 Sample Program 1
- * Slow LED blinking program example in C for 
- * Raspberry Pi 4 computer with 
- * Red LED and Blue LED: 
- *    --- connected in series with a 430 ohm and 470 ohm resistor
- *    --- connected in series with GPIO 12
- * Green LED and Yellow LED: 
- *    --- connected in series with a 430 ohm and 470 ohm resistor
- *    --- connected in series with GPIO 22
- * Turn on each LED in sequence, switching every 0.25 seconds
- * 
- */
 #include <stdio.h>
 #include <stdint.h>
 #include <unistd.h>
@@ -337,12 +315,12 @@ int main( void )
     io->pwm.CTL.field.PWEN1 = 1;  /* enable the PWM channel */
     io->pwm.CTL.field.PWEN2 = 1;  /* enable the PWM channel */
 
-    thread12_parameter.pin = 20;
+    thread12_parameter.pin = 12;
     thread12_parameter.gpio = &(io->gpio);
     thread12_parameter.pwm = &(io->pwm);
     thread12_parameter.done = &done;
     thread12_parameter.pause = &pause1;
-    thread13_parameter.pin = 21;
+    thread13_parameter.pin = 13;
     thread13_parameter.pwm = &(io->pwm);
     thread13_parameter.gpio = &(io->gpio);
     thread13_parameter.done = &done;
@@ -380,3 +358,4 @@ int main( void )
 
   return 0;
 }
+

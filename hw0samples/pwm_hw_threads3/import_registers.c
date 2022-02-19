@@ -1,17 +1,15 @@
 #include <stdio.h>
-#include <unistd.h>
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <unistd.h>
 #include "import_registers.h"
 
 #if 0
 #define PHYSICAL_ADDRESS 0x20000000 /* base for BCM2708 */
-#elseif 0
-#define PHYSICAL_ADDRESS 0x3F000000 /* base for BCM2709 */
 #else
-#define PHYSICAL_ADDRESS 0xFE000000 /* base for BCM2711 */
+#define PHYSICAL_ADDRESS 0x3F000000 /* base for BCM2709 */
 #endif
 #define ADDRESS_LENGTH   0x02000000
 

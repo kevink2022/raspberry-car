@@ -1,9 +1,8 @@
-TARGET=hw0a4pwm1p5
+TARGET=pwm_hw_threads
 
 SOURCES=import_registers.c \
         enable_pwm_clock.c \
-        wait_period.c \
-        hw0a4pwm1p5.c
+        pwm_hw_threads.c
 
 OBJECTS=$(patsubst %.c,%.o,$(SOURCES))
 

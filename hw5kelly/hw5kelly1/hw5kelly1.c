@@ -313,9 +313,9 @@ int main( void )
 
     /* set the pin function to alternate function 0 for GPIO12 */
     /* set the pin function to alternate function 0 for GPIO13 */
-    io->gpio.GPFSEL1.field.FSEL2 = GPFSEL_ALTERNATE_FUNCTION0;
-    io->gpio.GPFSEL1.field.FSEL3 = GPFSEL_ALTERNATE_FUNCTION0;
-    io->gpio.GPFSEL1.field.FSEL8 = GPFSEL_OUTPUT;
+    io->gpio.GPFSEL2.field.FSEL0 = GPFSEL_ALTERNATE_FUNCTION0;
+    io->gpio.GPFSEL2.field.FSEL6 = GPFSEL_ALTERNATE_FUNCTION0;
+    io->gpio.GPFSEL1.field.FSEL6 = GPFSEL_OUTPUT;
     io->gpio.GPFSEL1.field.FSEL9 = GPFSEL_OUTPUT;
 
     /* configure the PWM channels */
@@ -342,12 +342,12 @@ int main( void )
     thread12_parameter.pwm = &(io->pwm);
     thread12_parameter.done = &done;
     thread12_parameter.pause = &pause1;
-    thread13_parameter.pin = 21;
+    thread13_parameter.pin = 26;
     thread13_parameter.pwm = &(io->pwm);
     thread13_parameter.gpio = &(io->gpio);
     thread13_parameter.done = &done;
     thread13_parameter.pause = &pause2;
-    thread18_parameter.pin = 18;
+    thread18_parameter.pin = 16;
     thread18_parameter.pwm = &(io->pwm);
     thread18_parameter.gpio = &(io->gpio);
     thread18_parameter.done = &done;
@@ -380,3 +380,4 @@ int main( void )
 
   return 0;
 }
+

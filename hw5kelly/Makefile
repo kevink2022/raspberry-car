@@ -2,7 +2,7 @@ TARGET=hw5kelly
 
 SOURCES=import_registers.c \
         enable_pwm_clock.c \
-        hw5kelly1.c
+        hw5kelly.c
 
 OBJECTS=$(patsubst %.c,%.o,$(SOURCES))
 

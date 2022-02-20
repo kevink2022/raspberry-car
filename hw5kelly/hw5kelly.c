@@ -197,7 +197,7 @@ void *ThreadClock( void * arg  )
 void *ThreadMotor( void * arg  )
 {
   struct motor_thread_parameter * parameter = (struct motor_thread_parameter *)arg;
-  int PWM = 0;
+  int PWM = 40;
   bool I1 = 0, I2 = 0;
   char current_command = '\0';
 
@@ -242,26 +242,27 @@ void *ThreadMotor( void * arg  )
           break;
         case 'i':
           printf("\nMOTOR: Recieved Command: FASTER\n");
-          PWM += 5;
+          if (PWM < 100) {PWM += 5;}
           break;
         case 'j':
           printf("\nMOTOR: Recieved Command: SLOWER\n");
-          PWM -= 5;
+          if(PWM > 40){PWM -= 5;}
+          
           break;
         case 'a':
           printf("\nMOTOR: Recieved Command: LEFT\n");
           if(parameter->left_motor){
-            PWM -= 5;
+            if(PWM > 40){PWM -= 5;}
           } else {
-            PWM += 5;
+            if (PWM < 100) {PWM += 5;}
           }
           break;
         case 'd':
           printf("\nMOTOR: Recieved Command: RIGHT\n");
           if(parameter->left_motor){
-            PWM += 5;
+            if (PWM < 100) {PWM += 5;}
           } else {
-            PWM -= 5;
+            if(PWM > 40){PWM -= 5;}
           }
           break;
         default:

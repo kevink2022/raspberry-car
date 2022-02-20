@@ -134,6 +134,7 @@ void *ThreadClock( void * arg  )
   struct clock_thread_parameter * parameter = (struct clock_thread_parameter *)arg;
   printf("CLOCK: cc thread param\n");
   printf("CLOCK: queue_len %i\n", *(unsigned int*)parameter->control_queue_length);
+  *(char*)parameter->current_command = '\0';
 
   pthread_mutex_lock( &(parameter->done->lock) );
   while (!(parameter->done->done))
@@ -150,7 +151,7 @@ void *ThreadClock( void * arg  )
     if (*(int*)parameter->control_queue_length > 0){
       pthread_mutex_lock( &(parameter->control_queue_lock) );
       printf("CLOCK: in lock, curr_cmd: %c\n", *(char*)parameter->control_queue);
-      parameter->current_command = *(char*)parameter->control_queue;
+      *(char*)parameter->current_command = *(char*)parameter->control_queue;
       printf("CLOCK: in lock, new curr_cmd: %c\n", *(char*)parameter->control_queue);
 
       *(unsigned int*)parameter->control_queue_length -= 1;
@@ -159,7 +160,7 @@ void *ThreadClock( void * arg  )
       pthread_mutex_unlock( &(parameter->control_queue_lock) );
 
 
-      printf("\nCLOCK CYCLE\n  Current Command: %s\n  Queue Length: %i\n", parameter->current_command, parameter->control_queue_length);
+      printf("\nCLOCK CYCLE\nCLOCK: Current Command: %s\nCLOCK: Queue Length: %i\n", *(char*)parameter->current_command, parameter->control_queue_length);
     }
   }
 }
@@ -265,7 +266,7 @@ void *ThreadKey( void * arg )
         if (*(int*)thread_key_parameter->control_queue_length < QUEUE_SIZE) {
           *(char*)(thread_key_parameter->control_queue + *(int*)thread_key_parameter->control_queue_length) = 's';
           *(unsigned int*)thread_key_parameter->control_queue_length += 1;
-          printf("KEY_THREAD: Added to Queue: STOP\nQueue Length: %i\n", *(unsigned int*)thread_key_parameter->control_queue_length);
+          printf("KEY_THREAD: Added to Queue: STOP\nKEY_THREAD: Queue Length: %i\n", *(unsigned int*)thread_key_parameter->control_queue_length);
         }
         pthread_mutex_unlock( &(thread_key_parameter->control_queue_lock) );
         break;
@@ -387,7 +388,6 @@ int main( void )
     thread_clock_parameter.period = 1;
     thread_clock_parameter.pause = &pause_clock;
     thread_clock_parameter.done = &done;
-    thread_clock_parameter.current_command = '\0';
     thread_clock_parameter.control_queue_lock = queue_lock;
     thread_clock_parameter.control_queue_length = queue_len;
     

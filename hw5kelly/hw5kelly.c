@@ -151,9 +151,10 @@ void *ThreadClock( void * arg  )
       pthread_mutex_lock( &(parameter->control_queue_lock) );
       printf("CLOCK: in lock, curr_cmd: %c\n", *(char*)parameter->control_queue);
       parameter->current_command = *(char*)parameter->control_queue;
+      printf("CLOCK: in lock, new curr_cmd: %c\n", *(char*)parameter->control_queue);
 
-      printf("CLOCK: editing cc\n");
-      *(int*)parameter->control_queue_length--;
+      *(unsigned int*)parameter->control_queue_length -= 1;
+      printf("CLOCK: in lock, new queue_len: %i\n", *(unsigned int*)parameter->control_queue_length);
       memmove(parameter->control_queue, parameter->control_queue + 1, *(unsigned int*)parameter->control_queue_length);
       pthread_mutex_unlock( &(parameter->control_queue_lock) );
 
@@ -264,7 +265,7 @@ void *ThreadKey( void * arg )
         if (*(int*)thread_key_parameter->control_queue_length < QUEUE_SIZE) {
           thread_key_parameter->control_queue[*(int*)thread_key_parameter->control_queue_length] = 's';
           *(unsigned int*)thread_key_parameter->control_queue_length += 1;
-          printf("KEY_THREAD: Added to Queue: STOP\nQueue Length: %i\n", thread_key_parameter->control_queue_length);
+          printf("KEY_THREAD: Added to Queue: STOP\nQueue Length: %i\n", *(unsigned int*)thread_key_parameter->control_queue_length);
         }
         pthread_mutex_unlock( &(thread_key_parameter->control_queue_lock) );
         break;

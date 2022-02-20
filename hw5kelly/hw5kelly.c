@@ -38,6 +38,7 @@
 #include "enable_pwm_clock.h"
 
 #define PWM_RANGE 100
+#define PWM_MOTOR_MIN 40
 #define QUEUE_SIZE 100
 #define STOP 0
 #define FORWARD 2
@@ -200,7 +201,7 @@ void *ThreadClock( void * arg  )
 void *ThreadMotor( void * arg  )
 {
   struct motor_thread_parameter * parameter = (struct motor_thread_parameter *)arg;
-  int PWM = 40;
+  int PWM = PWM_MOTOR_MIN;
   bool I1 = 0, I2 = 0;
   char current_command = '\0';
   int current_mode = STOP, next_mode = STOP;
@@ -211,28 +212,33 @@ void *ThreadMotor( void * arg  )
     pthread_mutex_unlock( &(parameter->done->lock) );
 
     // If changing modes (STOP, FORWARD, BACKWARD), need to fade pwm to 0
-    // if (current_mode != next_mode){
-    //   while (PWM > 0){
-    //     PWM--;
-    //     parameter->pwm->DAT1 = PWM;
-    //     parameter->pwm->DAT2 = PWM_RANGE - PWM;
-    //   }
-    //   current_mode = next_mode;
-    // }
+    if (current_mode != next_mode){
+      printf("\n%s MOTOR: Smooth mode change\n", parameter->left_motor ? "LEFT" : "RIGHT");
+      while (PWM > PWM_MOTOR_MIN){
+        PWM--;
+        parameter->pwm->DAT1 = PWM;
+        parameter->pwm->DAT2 = PWM_RANGE - PWM;
+      }
+      current_mode = next_mode;
+    }
 
     // Execute params
     parameter->pwm->DAT1 = PWM;
     parameter->pwm->DAT2 = PWM_RANGE - PWM;
     
     if (I1){
+      printf("\n%s MOTOR: Setting I1\n", parameter->left_motor ? "LEFT" : "RIGHT");  
       GPIO_SET( parameter->gpio, parameter->I1_pin );
     } else {
+      printf("\n%s MOTOR: Clearing I1\n", parameter->left_motor ? "LEFT" : "RIGHT");  
       GPIO_CLR( parameter->gpio, parameter->I1_pin );
     }
 
     if (I2){
+      printf("\n%s MOTOR: Setting I2\n", parameter->left_motor ? "LEFT" : "RIGHT");  
       GPIO_SET( parameter->gpio, parameter->I2_pin );
     } else {
+      printf("\n%s MOTOR: Clearing I2\n", parameter->left_motor ? "LEFT" : "RIGHT");  
       GPIO_CLR( parameter->gpio, parameter->I2_pin );
     }
     
@@ -264,30 +270,30 @@ void *ThreadMotor( void * arg  )
         case 'i':
           printf("\n%s MOTOR: Recieved Command: FASTER\n", parameter->left_motor ? "LEFT" : "RIGHT");
           if (PWM < 100) {PWM += 5;}
-          printf("\n%s MOTOR: PWM = %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM);
+          printf("%s MOTOR: PWM = %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM);
           break;
         case 'j':
           printf("\n%s MOTOR: Recieved Command: SLOWER\n", parameter->left_motor ? "LEFT" : "RIGHT");
-          if(PWM > 40){PWM -= 5;}
-          printf("\n%s MOTOR: PWM = %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM);
+          if(PWM > PWM_MOTOR_MIN){PWM -= 5;}
+          printf("%s MOTOR: PWM = %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM);
           break;
         case 'a':
           printf("\n%s MOTOR: Recieved Command: LEFT\n", parameter->left_motor ? "LEFT" : "RIGHT");
           if(parameter->left_motor){
-            if(PWM > 40){PWM -= 5;}
+            if(PWM > PWM_MOTOR_MIN){PWM -= 5;}
           } else {
             if (PWM < 100) {PWM += 5;}
           }
-          printf("\n%s MOTOR: PWM = %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM);
+          printf("%s MOTOR: PWM = %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM);
           break;
         case 'd':
           printf("\nMOTOR: Recieved Command: RIGHT\n");
           if(parameter->left_motor){
             if (PWM < 100) {PWM += 5;}
           } else {
-            if(PWM > 40){PWM -= 5;}
+            if(PWM > PWM_MOTOR_MIN){PWM -= 5;}
           }
-          printf("\n%s MOTOR: PWM = %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM);
+          printf("%s MOTOR: PWM = %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM);
           break;
         default:
           break;

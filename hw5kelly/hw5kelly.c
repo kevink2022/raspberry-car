@@ -134,7 +134,7 @@ void *ThreadClock( void * arg  )
   struct clock_thread_parameter * parameter = (struct clock_thread_parameter *)arg;
   printf("CLOCK INIT: cc thread param\n");
   printf("CLOCK INIT: control queue addr: %lx\n", (unsigned long)parameter->control_queue);
-  char current_command = '\0';
+  *(char*)parameter->current_command = '\0';
 
   pthread_mutex_lock( &(parameter->done->lock) );
   while (!(parameter->done->done))
@@ -152,8 +152,8 @@ void *ThreadClock( void * arg  )
     if (*(unsigned int*)parameter->control_queue_length > 0){
       printf("CLOCK: control queue addr: %lu\n", (unsigned long)parameter->control_queue);
       printf("CLOCK: in lock, curr_cmd: %c\n", *(char*)parameter->control_queue);
-      current_command = *(char*)parameter->control_queue;
-      printf("CLOCK: in lock, new curr_cmd: %c\n", current_command);
+      *(char*)parameter->current_command = *(char*)parameter->control_queue;
+      printf("CLOCK: in lock, new curr_cmd: %c\n", *(char*)parameter->current_command);
 
       *(unsigned int*)parameter->control_queue_length -= 1;
       printf("CLOCK: in lock, new queue_len: %i\n", *(unsigned int*)parameter->control_queue_length);
@@ -179,7 +179,10 @@ void *ThreadMotor( void * arg  )
     pthread_mutex_unlock( &(parameter->done->lock) );
 
     // Execute params
-  
+    printf("MOTOR: Executing command\n");
+    usleep(2*1000000);
+
+
     pthread_mutex_lock( &(parameter->pause->lock) );
     if (parameter->pause->pause)
     {
@@ -342,6 +345,10 @@ int main( void )
   queue_len = calloc(1, sizeof(unsigned int));
   printf("MAIN: queue_len addr: %lx", (unsigned long)queue_len);
 
+  char *curr_cmd;
+  curr_cmd = calloc(1, sizeof(char));
+  printf("MAIN: queue_len addr: %lx", (unsigned long)curr_cmd);
+
   io = import_registers();
   if (io != NULL)
   {
@@ -394,6 +401,7 @@ int main( void )
     thread_clock_parameter.control_queue_lock = &queue_lock;
     thread_clock_parameter.control_queue_length = queue_len;
     thread_clock_parameter.control_queue = queue;
+    thread_clock_parameter.current_command = curr_cmd;
     
     // KEY
     thread_key_parameter.done = &done;
@@ -415,6 +423,7 @@ int main( void )
     thread_left_motor_parameter.pwm = &(io->pwm);
     thread_left_motor_parameter.current_command = thread_clock_parameter.current_command;
     thread_left_motor_parameter.left_motor = true;
+    thread_left_motor_parameter.current_command = curr_cmd;
 
     // RIGHT
     thread_right_motor_parameter.pause = &set_motors;
@@ -426,6 +435,8 @@ int main( void )
     thread_right_motor_parameter.pwm = &(io->pwm);
     thread_right_motor_parameter.current_command = thread_clock_parameter.current_command;
     thread_right_motor_parameter.left_motor = false;
+    thread_right_motor_parameter.current_command = curr_cmd;
+
 
     printf( "thread param\n" );
 

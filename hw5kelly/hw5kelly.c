@@ -67,7 +67,7 @@ struct key_thread_parameter
   struct pause_flag * pause_clock;
   char              * control_queue;
   unsigned int      * control_queue_length;
-  pthread_mutex_t     control_queue_lock;
+  pthread_mutex_t   * control_queue_lock;
 };
 
 struct control_thread_parameter
@@ -99,7 +99,7 @@ struct clock_thread_parameter
   unsigned int      * control_queue_length;
   struct pause_flag * pause;
   struct done_flag  * done;
-  pthread_mutex_t     control_queue_lock;
+  pthread_mutex_t   * control_queue_lock;
 };
 
 
@@ -149,7 +149,7 @@ void *ThreadClock( void * arg  )
 
     // Get commands out of queue
     pthread_mutex_lock( &(parameter->control_queue_lock) );
-    printf("CLOCK: Post if\n");
+    printf("CLOCK: in lock\n");
     if (*(unsigned int*)parameter->control_queue_length > 0){
       printf("CLOCK: in lock, curr_cmd: %c\n", *(char*)parameter->control_queue);
       *(char*)parameter->current_command = *(char*)parameter->control_queue;
@@ -390,7 +390,7 @@ int main( void )
     thread_clock_parameter.pause = &pause_clock;
     thread_clock_parameter.done = &done;
     thread_clock_parameter.control_queue_lock = queue_lock;
-    thread_clock_parameter.control_queue_length = queue_len;
+    thread_clock_parameter.control_queue_length = &queue_len;
     
     // KEY
     thread_key_parameter.done = &done;
@@ -400,7 +400,7 @@ int main( void )
     thread_key_parameter.pause_clock = &pause_clock;
     thread_key_parameter.control_queue = queue;
     thread_key_parameter.control_queue_length = queue_len;
-    thread_key_parameter.control_queue_lock = queue_lock;
+    thread_key_parameter.control_queue_lock = &queue_lock;
 
     // LEFT
     thread_left_motor_parameter.pause = &set_motors;

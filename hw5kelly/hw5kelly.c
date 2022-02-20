@@ -199,10 +199,10 @@ void *ThreadMotor( void * arg  )
       switch (*(char*)parameter->current_command)
       {
         case 's':
-          printf("\nMOTOR: Recieved Command: STOP\n");
+          printf("\n!!!! MOTOR: Recieved Command: STOP !!!!\n");
           break;
         case 'w':
-          printf("\nMOTOR: Recieved Command: FORWARD\n");
+          printf("\n!!!! MOTOR: Recieved Command: FORWARD !!!!\n");
           break;
         case 'x':
           printf("\nMOTOR: Recieved Command: BACKWARD\n");

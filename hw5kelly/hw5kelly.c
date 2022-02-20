@@ -130,29 +130,35 @@ void DimLevUnit(int Level, int pin, volatile struct gpio_register *gpio)
 
 void *ThreadClock( void * arg  )
 {
-  printf("cc thread\n");
+  printf("CLOCK: cc thread\n");
   struct clock_thread_parameter * parameter = (struct clock_thread_parameter *)arg;
-  printf("cc thread param\n");
+  printf("CLOCK: cc thread param\n");
 
   pthread_mutex_lock( &(parameter->done->lock) );
   while (!(parameter->done->done))
   {
     pthread_mutex_unlock( &(parameter->done->lock) );
 
-    printf("starting cc\n");
+    printf("CLOCK: starting cc\n");
 
     usleep(parameter->period * 1000000);
 
+    printf("CLOCK: queue_len %i\n", *(int*)parameter->control_queue_length);
+
     // Get commands out of queue
-    pthread_mutex_lock( &(parameter->control_queue_lock) );
-    parameter->current_command = parameter->control_queue[0];
+    if (*(int*)parameter->control_queue_length > 0){
+      pthread_mutex_lock( &(parameter->control_queue_lock) );
+      printf("CLOCK: in lock, curr_cmd: %c\n", *(char*)parameter->control_queue[0]);
+      parameter->current_command = *(char*)parameter->control_queue[0];
 
-    parameter->control_queue_length--;
-    memmove(parameter->control_queue, parameter->control_queue + 1, *(unsigned int*)parameter->control_queue_length);
-    pthread_mutex_unlock( &(parameter->control_queue_lock) );
+      printf("CLOCK: editing cc\n");
+      *(int*)parameter->control_queue_length--;
+      memmove(parameter->control_queue, parameter->control_queue + 1, *(unsigned int*)parameter->control_queue_length);
+      pthread_mutex_unlock( &(parameter->control_queue_lock) );
 
 
-    printf("\nCLOCK CYCLE\n  Current Command: %s\n  Queue Length: %i\n", parameter->current_command, parameter->control_queue_length);
+      printf("\nCLOCK CYCLE\n  Current Command: %s\n  Queue Length: %i\n", parameter->current_command, parameter->control_queue_length);
+    }
   }
 }
 

@@ -133,6 +133,7 @@ void *ThreadClock( void * arg  )
   printf("CLOCK: cc thread\n");
   struct clock_thread_parameter * parameter = (struct clock_thread_parameter *)arg;
   printf("CLOCK: cc thread param\n");
+  printf("CLOCK: queue_len %i\n", *(unsigned int*)parameter->control_queue_length);
 
   pthread_mutex_lock( &(parameter->done->lock) );
   while (!(parameter->done->done))
@@ -331,6 +332,9 @@ int main( void )
   char *queue;
   queue = calloc(QUEUE_SIZE, sizeof(char));
 
+  unsigned int * queue_len;
+  *queue_len = 0;
+
   io = import_registers();
   if (io != NULL)
   {
@@ -382,6 +386,7 @@ int main( void )
     thread_clock_parameter.done = &done;
     thread_clock_parameter.current_command = '\0';
     thread_clock_parameter.control_queue_lock = queue_lock;
+    thread_clock_parameter.control_queue_length = queue_len;
     
     // KEY
     thread_key_parameter.done = &done;
@@ -390,7 +395,7 @@ int main( void )
     thread_key_parameter.pause_right_motor = &pause_right_motor;
     thread_key_parameter.pause_clock = &pause_clock;
     thread_key_parameter.control_queue = queue;
-    thread_key_parameter.control_queue_length = 0;
+    thread_key_parameter.control_queue_length = queue_len;
     thread_key_parameter.control_queue_lock = queue_lock;
 
     // LEFT

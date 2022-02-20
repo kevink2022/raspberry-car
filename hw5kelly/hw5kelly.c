@@ -263,7 +263,7 @@ void *ThreadKey( void * arg )
         pthread_mutex_lock( &(thread_key_parameter->control_queue_lock) );
         thread_key_parameter->pause_control->pause = !(thread_key_parameter->pause_control->pause);
         if (*(int*)thread_key_parameter->control_queue_length < QUEUE_SIZE) {
-          thread_key_parameter->control_queue[*(int*)thread_key_parameter->control_queue_length] = 's';
+          *(char*)(thread_key_parameter->control_queue + *(int*)thread_key_parameter->control_queue_length) = 's';
           *(unsigned int*)thread_key_parameter->control_queue_length += 1;
           printf("KEY_THREAD: Added to Queue: STOP\nQueue Length: %i\n", *(unsigned int*)thread_key_parameter->control_queue_length);
         }
@@ -276,9 +276,9 @@ void *ThreadKey( void * arg )
         pthread_mutex_lock( &(thread_key_parameter->control_queue_lock) );
         thread_key_parameter->pause_control->pause = !(thread_key_parameter->pause_control->pause);
         if (*(int*)thread_key_parameter->control_queue_length < QUEUE_SIZE) {
-          thread_key_parameter->control_queue[*(int*)thread_key_parameter->control_queue_length] = 'w';
+          *(char*)(thread_key_parameter->control_queue + *(int*)thread_key_parameter->control_queue_length) = 'w';
           *(unsigned int*)thread_key_parameter->control_queue_length += 1;
-          printf("KEY_THREAD: Added to Queue: FORWARD\nQueue Lengh: %i\n", thread_key_parameter->control_queue_length);
+          printf("KEY_THREAD: Added to Queue: FORWARD\nQueue Lengh: %i\n", *(unsigned int*)thread_key_parameter->control_queue_length);
         }
         pthread_mutex_unlock( &(thread_key_parameter->control_queue_lock) );
         break;

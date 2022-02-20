@@ -159,8 +159,13 @@ void *ThreadClock( void * arg  )
       printf("CLOCK: in lock, new queue_len: %i\n", *(unsigned int*)parameter->control_queue_length);
       memmove(parameter->control_queue, parameter->control_queue + 1, *(unsigned int*)parameter->control_queue_length);
 
+      // Pause motor queues so they update commands
+      // pthread_mutex_lock( &(thread_key_parameter->pause1->lock) );
+      // thread_key_parameter->pause1->pause = !(thread_key_parameter->pause1->pause);
+      // printf( "thread 1 is %s\n", thread_key_parameter->pause1->pause ? "paused" : "unpaused" );
+      // pthread_mutex_unlock( &(thread_key_parameter->pause1->lock) );
 
-      printf("\nCLOCK CYCLE\nCLOCK: Current Command: %s\nCLOCK: Queue Length: %i\n", *(char*)parameter->current_command, parameter->control_queue_length);
+      printf("\nCLOCK: exit update");
     }
     pthread_mutex_unlock( parameter->control_queue_lock );
   }

@@ -188,9 +188,21 @@ void *ThreadMotor( void * arg  )
     pthread_mutex_unlock( &(parameter->done->lock) );
 
     // Execute params
-    printf(".");
-    usleep(1*10000);
+    parameter->pwm->DAT1 = PWM;
+    parameter->pwm->DAT2 = PWM_RANGE - PWM;
+    
+    if (I1){
+      GPIO_SET( parameter->gpio, parameter->I1_pin );
+    } else {
+      GPIO_CLR( parameter->gpio, parameter->I1_pin );
+    }
 
+    if (I2){
+      GPIO_SET( parameter->gpio, parameter->I2_pin );
+    } else {
+      GPIO_CLR( parameter->gpio, parameter->I2_pin );
+    }
+    
 
     pthread_mutex_lock( &(parameter->pause->lock) );
     if (parameter->pause->pause)
@@ -203,15 +215,19 @@ void *ThreadMotor( void * arg  )
           break;
         case 'w':
           printf("\n!!!! MOTOR: Recieved Command: FORWARD !!!!\n");
+          I1 = 1;
+          I2 = 0;
           break;
         case 'x':
           printf("\nMOTOR: Recieved Command: BACKWARD\n");
           break;
         case 'i':
           printf("\nMOTOR: Recieved Command: FASTER\n");
+          PWM += 5;
           break;
         case 'j':
           printf("\nMOTOR: Recieved Command: SLOWER\n");
+          PWM -= 5;
           break;
         case 'a':
           printf("\nMOTOR: Recieved Command: LEFT\n");
@@ -297,18 +313,73 @@ void *ThreadKey( void * arg )
         break;
       case 'x':
         printf("KEY_THREAD: Recieved Command: BACKWARD\n");
+
+        // Lock Control Thread
+        pthread_mutex_lock( thread_key_parameter->control_queue_lock );
+        thread_key_parameter->pause_control->pause = !(thread_key_parameter->pause_control->pause);
+        if (*(int*)thread_key_parameter->control_queue_length < QUEUE_SIZE) {
+          *(char*)(thread_key_parameter->control_queue + *(int*)thread_key_parameter->control_queue_length) = 'x';
+          *(unsigned int*)thread_key_parameter->control_queue_length += 1;
+          printf("KEY_THREAD: Added to Queue: STOP\nKEY_THREAD: Queue Length: %i\n", *(unsigned int*)thread_key_parameter->control_queue_length);
+        }
+        pthread_mutex_unlock( thread_key_parameter->control_queue_lock );
+        break;
         break;
       case 'i':
         printf("KEY_THREAD: Recieved Command: FASTER\n");
+
+        // Lock Control Thread
+        pthread_mutex_lock( thread_key_parameter->control_queue_lock );
+        thread_key_parameter->pause_control->pause = !(thread_key_parameter->pause_control->pause);
+        if (*(int*)thread_key_parameter->control_queue_length < QUEUE_SIZE) {
+          *(char*)(thread_key_parameter->control_queue + *(int*)thread_key_parameter->control_queue_length) = 'i';
+          *(unsigned int*)thread_key_parameter->control_queue_length += 1;
+          printf("KEY_THREAD: Added to Queue: STOP\nKEY_THREAD: Queue Length: %i\n", *(unsigned int*)thread_key_parameter->control_queue_length);
+        }
+        pthread_mutex_unlock( thread_key_parameter->control_queue_lock );
+        break;
         break;
       case 'j':
         printf("KEY_THREAD: Recieved Command: SLOWER\n");
+
+        // Lock Control Thread
+        pthread_mutex_lock( thread_key_parameter->control_queue_lock );
+        thread_key_parameter->pause_control->pause = !(thread_key_parameter->pause_control->pause);
+        if (*(int*)thread_key_parameter->control_queue_length < QUEUE_SIZE) {
+          *(char*)(thread_key_parameter->control_queue + *(int*)thread_key_parameter->control_queue_length) = 'j';
+          *(unsigned int*)thread_key_parameter->control_queue_length += 1;
+          printf("KEY_THREAD: Added to Queue: STOP\nKEY_THREAD: Queue Length: %i\n", *(unsigned int*)thread_key_parameter->control_queue_length);
+        }
+        pthread_mutex_unlock( thread_key_parameter->control_queue_lock );
+        break;
         break;
       case 'a':
         printf("KEY_THREAD: Recieved Command: LEFT\n");
+
+        // Lock Control Thread
+        pthread_mutex_lock( thread_key_parameter->control_queue_lock );
+        thread_key_parameter->pause_control->pause = !(thread_key_parameter->pause_control->pause);
+        if (*(int*)thread_key_parameter->control_queue_length < QUEUE_SIZE) {
+          *(char*)(thread_key_parameter->control_queue + *(int*)thread_key_parameter->control_queue_length) = 'a';
+          *(unsigned int*)thread_key_parameter->control_queue_length += 1;
+          printf("KEY_THREAD: Added to Queue: STOP\nKEY_THREAD: Queue Length: %i\n", *(unsigned int*)thread_key_parameter->control_queue_length);
+        }
+        pthread_mutex_unlock( thread_key_parameter->control_queue_lock );
+        break;
         break;
       case 'd':
         printf("KEY_THREAD: Recieved Command: RIGHT\n");
+
+        // Lock Control Thread
+        pthread_mutex_lock( thread_key_parameter->control_queue_lock );
+        thread_key_parameter->pause_control->pause = !(thread_key_parameter->pause_control->pause);
+        if (*(int*)thread_key_parameter->control_queue_length < QUEUE_SIZE) {
+          *(char*)(thread_key_parameter->control_queue + *(int*)thread_key_parameter->control_queue_length) = 'd';
+          *(unsigned int*)thread_key_parameter->control_queue_length += 1;
+          printf("KEY_THREAD: Added to Queue: STOP\nKEY_THREAD: Queue Length: %i\n", *(unsigned int*)thread_key_parameter->control_queue_length);
+        }
+        pthread_mutex_unlock( thread_key_parameter->control_queue_lock );
+        break;
         break;
       default:
         break;
@@ -370,10 +441,12 @@ int main( void )
 
     /* set the pin function to alternate function 0 for GPIO12 */
     /* set the pin function to alternate function 0 for GPIO13 */
-    io->gpio.GPFSEL2.field.FSEL0 = GPFSEL_ALTERNATE_FUNCTION0;
-    io->gpio.GPFSEL2.field.FSEL6 = GPFSEL_ALTERNATE_FUNCTION0;
-    io->gpio.GPFSEL1.field.FSEL6 = GPFSEL_OUTPUT;
-    io->gpio.GPFSEL1.field.FSEL9 = GPFSEL_OUTPUT;
+    io->gpio.GPFSEL1.field.FSEL2 = GPFSEL_ALTERNATE_FUNCTION0;
+    io->gpio.GPFSEL1.field.FSEL3 = GPFSEL_ALTERNATE_FUNCTION0;
+    io->gpio.GPFSEL0.field.FSEL5 = GPFSEL_OUTPUT;
+    io->gpio.GPFSEL0.field.FSEL6 = GPFSEL_OUTPUT;
+    io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_OUTPUT;
+    io->gpio.GPFSEL2.field.FSEL3 = GPFSEL_OUTPUT;
 
     /* configure the PWM channels */
     io->pwm.RNG1 = PWM_RANGE;     /* the default value */

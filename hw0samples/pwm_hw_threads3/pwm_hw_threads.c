@@ -145,7 +145,7 @@ void *ThreadHW( void * arg )
     DLevel = 0;  /* dim up, sweep the light level from 0 to 100 */
     while(DLevel<PWM_RANGE)
     {
-      if (parameter->pin == 12)
+      if (parameter->pin == 16)
       {
         parameter->pwm->DAT1 = DLevel;
       }
@@ -160,7 +160,7 @@ void *ThreadHW( void * arg )
     DLevel = PWM_RANGE;  /* dim down, sweep the light level from 100 to 0 */
     while(DLevel>0)
     {
-      if (parameter->pin == 12)
+      if (parameter->pin == 16)
       {
         parameter->pwm->DAT1 = DLevel;
       }
@@ -291,10 +291,10 @@ int main( void )
 
     /* set the pin function to alternate function 0 for GPIO12 */
     /* set the pin function to alternate function 0 for GPIO13 */
-    io->gpio.GPFSEL1.field.FSEL2 = GPFSEL_ALTERNATE_FUNCTION0;
+    io->gpio.GPFSEL1.field.FSEL6 = GPFSEL_ALTERNATE_FUNCTION0;
     io->gpio.GPFSEL1.field.FSEL3 = GPFSEL_ALTERNATE_FUNCTION0;
-    io->gpio.GPFSEL1.field.FSEL8 = GPFSEL_OUTPUT;
-    io->gpio.GPFSEL1.field.FSEL9 = GPFSEL_OUTPUT;
+    io->gpio.GPFSEL2.field.FSEL6 = GPFSEL_OUTPUT;
+    io->gpio.GPFSEL2.field.FSEL0 = GPFSEL_OUTPUT;
 
     /* configure the PWM channels */
     io->pwm.RNG1 = PWM_RANGE;     /* the default value */
@@ -315,22 +315,22 @@ int main( void )
     io->pwm.CTL.field.PWEN1 = 1;  /* enable the PWM channel */
     io->pwm.CTL.field.PWEN2 = 1;  /* enable the PWM channel */
 
-    thread12_parameter.pin = 12;
+    thread12_parameter.pin = 16;
     thread12_parameter.gpio = &(io->gpio);
     thread12_parameter.pwm = &(io->pwm);
     thread12_parameter.done = &done;
     thread12_parameter.pause = &pause1;
-    thread13_parameter.pin = 13;
+    thread13_parameter.pin = 19;
     thread13_parameter.pwm = &(io->pwm);
     thread13_parameter.gpio = &(io->gpio);
     thread13_parameter.done = &done;
     thread13_parameter.pause = &pause2;
-    thread18_parameter.pin = 18;
+    thread18_parameter.pin = 26;
     thread18_parameter.pwm = &(io->pwm);
     thread18_parameter.gpio = &(io->gpio);
     thread18_parameter.done = &done;
     thread18_parameter.pause = &pause3;
-    thread19_parameter.pin = 19;
+    thread19_parameter.pin = 20;
     thread19_parameter.pwm = &(io->pwm);
     thread19_parameter.gpio = &(io->gpio);
     thread19_parameter.done = &done;

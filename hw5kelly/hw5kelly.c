@@ -65,7 +65,7 @@ struct key_thread_parameter
   struct pause_flag * pause_right_motor;
   struct pause_flag * pause_clock;
   char              * control_queue;
-  int               * control_queue_length;
+  unsigned int      * control_queue_length;
   pthread_mutex_t     control_queue_lock;
 };
 
@@ -95,7 +95,7 @@ struct clock_thread_parameter
   int                 period;
   char                current_command;
   char              * control_queue;
-  int               * control_queue_length;
+  unsigned int      * control_queue_length;
   struct pause_flag * pause;
   struct done_flag  * done;
   pthread_mutex_t     control_queue_lock;
@@ -256,7 +256,7 @@ void *ThreadKey( void * arg )
         // Lock Control Thread
         pthread_mutex_lock( &(thread_key_parameter->control_queue_lock) );
         thread_key_parameter->pause_control->pause = !(thread_key_parameter->pause_control->pause);
-        if (thread_key_parameter->control_queue_length < QUEUE_SIZE) {
+        if (*(int*)thread_key_parameter->control_queue_length < QUEUE_SIZE) {
           thread_key_parameter->control_queue[*(int*)thread_key_parameter->control_queue_length] = 's';
           thread_key_parameter->control_queue_length++;
           printf("KEY_THREAD: Added to Queue: STOP\nQueue Lengh: %i\n", thread_key_parameter->control_queue_length);
@@ -269,7 +269,7 @@ void *ThreadKey( void * arg )
         // Lock Control Thread
         pthread_mutex_lock( &(thread_key_parameter->control_queue_lock) );
         thread_key_parameter->pause_control->pause = !(thread_key_parameter->pause_control->pause);
-        if (thread_key_parameter->control_queue_length < QUEUE_SIZE) {
+        if (*(int*)thread_key_parameter->control_queue_length < QUEUE_SIZE) {
           thread_key_parameter->control_queue[*(int*)thread_key_parameter->control_queue_length] = 'w';
           thread_key_parameter->control_queue_length++;
           printf("KEY_THREAD: Added to Queue: FORWARD\nQueue Lengh: %i\n", thread_key_parameter->control_queue_length);
@@ -321,8 +321,6 @@ int main( void )
   struct pause_flag               pause_control = {PTHREAD_MUTEX_INITIALIZER, false};
   struct pause_flag               pause_clock = {PTHREAD_MUTEX_INITIALIZER, false};
   struct done_flag                done   = {PTHREAD_MUTEX_INITIALIZER, false};
-
-  struct queue_flag               pause_clock = {PTHREAD_MUTEX_INITIALIZER, false};
 
   pthread_mutex_t                 queue_lock = PTHREAD_MUTEX_INITIALIZER;
 

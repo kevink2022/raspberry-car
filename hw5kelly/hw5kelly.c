@@ -99,6 +99,7 @@ struct clock_thread_parameter
   unsigned int      * control_queue_length;
   struct pause_flag * pause;
   struct done_flag  * done;
+  struct pause_flag * motor_pause;
   pthread_mutex_t   * control_queue_lock;
 };
 
@@ -160,10 +161,9 @@ void *ThreadClock( void * arg  )
       memmove(parameter->control_queue, parameter->control_queue + 1, *(unsigned int*)parameter->control_queue_length);
 
       // Pause motor queues so they update commands
-      // pthread_mutex_lock( &(thread_key_parameter->pause1->lock) );
-      // thread_key_parameter->pause1->pause = !(thread_key_parameter->pause1->pause);
-      // printf( "thread 1 is %s\n", thread_key_parameter->pause1->pause ? "paused" : "unpaused" );
-      // pthread_mutex_unlock( &(thread_key_parameter->pause1->lock) );
+      pthread_mutex_lock( &(parameter->motor_pause->lock) );
+      parameter->motor_pause->pause = true;
+      pthread_mutex_unlock( &(parameter->motor_pause->lock) );
 
       printf("\nCLOCK: exit update");
     }
@@ -195,30 +195,29 @@ void *ThreadMotor( void * arg  )
       switch (*(char*)parameter->current_command)
       {
         case 's':
-          printf("\nMOTOR_THREAD: Recieved Command: STOP\n");
+          printf("\nMOTOR: Recieved Command: STOP\n");
           break;
         case 'w':
-          printf("\nMOTOR_THREAD: Recieved Command: FORWARD\n");
+          printf("\nMOTOR: Recieved Command: FORWARD\n");
           break;
         case 'x':
-          printf("\nMOTOR_THREAD: Recieved Command: BACKWARD\n");
+          printf("\nMOTOR: Recieved Command: BACKWARD\n");
           break;
         case 'i':
-          printf("\nMOTOR_THREAD: Recieved Command: FASTER\n");
+          printf("\nMOTOR: Recieved Command: FASTER\n");
           break;
         case 'j':
-          printf("\nMOTOR_THREAD: Recieved Command: SLOWER\n");
+          printf("\nMOTOR: Recieved Command: SLOWER\n");
           break;
         case 'a':
-          printf("\nMOTOR_THREAD: Recieved Command: LEFT\n");
+          printf("\nMOTOR: Recieved Command: LEFT\n");
           break;
         case 'd':
-          printf("\nMOTOR_THREAD: Recieved Command: RIGHT\n");
+          printf("\nMOTOR: Recieved Command: RIGHT\n");
           break;
         default:
           break;
       }
-
       parameter->pause->pause = false;
     }
     pthread_mutex_unlock( &(parameter->pause->lock) );
@@ -407,7 +406,8 @@ int main( void )
     thread_clock_parameter.control_queue_length = queue_len;
     thread_clock_parameter.control_queue = queue;
     thread_clock_parameter.current_command = curr_cmd;
-    
+    thread_clock_parameter.motor_pause = &set_motors;
+
     // KEY
     thread_key_parameter.done = &done;
     thread_key_parameter.pause_control = &pause_control;

@@ -99,7 +99,8 @@ struct clock_thread_parameter
   unsigned int      * control_queue_length;
   struct pause_flag * pause;
   struct done_flag  * done;
-  struct pause_flag * motor_pause;
+  struct pause_flag * motor_pause_left;
+  struct pause_flag * motor_pause_right;
   pthread_mutex_t   * control_queue_lock;
 };
 
@@ -161,9 +162,12 @@ void *ThreadClock( void * arg  )
       memmove(parameter->control_queue, parameter->control_queue + 1, *(unsigned int*)parameter->control_queue_length);
 
       // Pause motor queues so they update commands
-      pthread_mutex_lock( &(parameter->motor_pause->lock) );
-      parameter->motor_pause->pause = true;
-      pthread_mutex_unlock( &(parameter->motor_pause->lock) );
+      pthread_mutex_lock( &(parameter->motor_pause_left->lock) );
+      parameter->motor_pause_left->pause = true;
+      pthread_mutex_unlock( &(parameter->motor_pause_left->lock) );
+      pthread_mutex_lock( &(parameter->motor_pause_right->lock) );
+      parameter->motor_pause_right->pause = true;
+      pthread_mutex_unlock( &(parameter->motor_pause_right->lock) );
 
       printf("\nCLOCK: exit update");
     }
@@ -406,7 +410,9 @@ int main( void )
     thread_clock_parameter.control_queue_length = queue_len;
     thread_clock_parameter.control_queue = queue;
     thread_clock_parameter.current_command = curr_cmd;
-    thread_clock_parameter.motor_pause = &set_motors;
+    thread_clock_parameter.motor_pause_left = &pause_left_motor;
+    thread_clock_parameter.motor_pause_right = &pause_right_motor;
+
 
     // KEY
     thread_key_parameter.done = &done;
@@ -419,7 +425,7 @@ int main( void )
     thread_key_parameter.control_queue_lock = &queue_lock;
 
     // LEFT
-    thread_left_motor_parameter.pause = &set_motors;
+    thread_left_motor_parameter.pause = &pause_left_motor;
     thread_left_motor_parameter.done = &done;
     thread_left_motor_parameter.PWM_pin = 12;
     thread_left_motor_parameter.I1_pin = 5;
@@ -431,7 +437,7 @@ int main( void )
     thread_left_motor_parameter.current_command = curr_cmd;
 
     // RIGHT
-    thread_right_motor_parameter.pause = &set_motors;
+    thread_right_motor_parameter.pause = &pause_right_motor;
     thread_right_motor_parameter.done = &done;
     thread_right_motor_parameter.PWM_pin = 13;
     thread_right_motor_parameter.I1_pin = 22;

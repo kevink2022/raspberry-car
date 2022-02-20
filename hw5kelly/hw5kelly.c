@@ -38,7 +38,7 @@
 #include "enable_pwm_clock.h"
 
 #define PWM_RANGE 100
-#define PWM_MOTOR_MIN 20
+#define PWM_MOTOR_MIN 40
 #define QUEUE_SIZE 100
 #define STOP 0
 #define FORWARD 2
@@ -225,8 +225,14 @@ void *ThreadMotor( void * arg  )
     }
  
     // Execute params
-    parameter->pwm->DAT1 = PWM_RANGE - PWM;
-    parameter->pwm->DAT2 = PWM;
+    if(parameter->left_motor){
+      parameter->pwm->DAT1 = PWM;
+      parameter->pwm->DAT2 = PWM_RANGE - PWM;
+    } else {
+      parameter->pwm->DAT1 = PWM_RANGE - PWM;
+      parameter->pwm->DAT2 = PWM;
+    }
+    
     
     if (I1){
       //printf("\n%s MOTOR: Setting I1\n", parameter->left_motor ? "LEFT" : "RIGHT");  
@@ -599,6 +605,12 @@ int main( void )
     pthread_join( thread_left_motor_handle, 0 );
     pthread_join( thread_right_motor_handle, 0 );
     pthread_join( thread_clock_handle, 0 );
+    io->gpio.GPFSEL1.field.FSEL2 = GPFSEL_INPUT;
+    io->gpio.GPFSEL1.field.FSEL3 = GPFSEL_INPUT;
+    io->gpio.GPFSEL0.field.FSEL5 = GPFSEL_INPUT;
+    io->gpio.GPFSEL0.field.FSEL6 = GPFSEL_INPUT;
+    io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_INPUT;
+    io->gpio.GPFSEL2.field.FSEL3 = GPFSEL_INPUT;
   }
   else
   {

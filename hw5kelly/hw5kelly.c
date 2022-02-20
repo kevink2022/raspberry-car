@@ -38,7 +38,7 @@
 #include "enable_pwm_clock.h"
 
 #define PWM_RANGE 100
-#define PWM_MOTOR_MIN 40
+#define PWM_MOTOR_MIN 0
 #define QUEUE_SIZE 100
 #define STOP 0
 #define FORWARD 2

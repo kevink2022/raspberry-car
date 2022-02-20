@@ -132,10 +132,14 @@ void DimLevUnit(int Level, int pin, volatile struct gpio_register *gpio)
 
 void *ThreadClock( void * arg  )
 {
-  printf("CLOCK INIT: cc thread\n");
+  #ifdef DEBUG
+  printf("CLOCK INIT: cc thread\n"); 
+  #endif
   struct clock_thread_parameter * parameter = (struct clock_thread_parameter *)arg;
+  #ifdef DEBUG
   printf("CLOCK INIT: cc thread param\n");
   printf("CLOCK INIT: control queue addr: %lx\n", (unsigned long)parameter->control_queue);
+  #endif
   *(char*)parameter->current_command = '\0';
 
   pthread_mutex_lock( &(parameter->done->lock) );
@@ -143,22 +147,35 @@ void *ThreadClock( void * arg  )
   {
     pthread_mutex_unlock( &(parameter->done->lock) );
 
+    #ifdef DEBUG
     printf("CLOCK: starting cc\n");
+    #endif
 
     usleep(parameter->period * 1000000);
 
+    #ifdef DEBUG
     printf("CLOCK: queue_len %i\n", *(unsigned int*)parameter->control_queue_length);
+    #endif
 
     // Get commands out of queue
     pthread_mutex_lock( parameter->control_queue_lock );
     if (*(unsigned int*)parameter->control_queue_length > 0){
+      #ifdef DEBUG
       printf("CLOCK: control queue addr: %lu\n", (unsigned long)parameter->control_queue);
       printf("CLOCK: in lock, curr_cmd: %c\n", *(char*)parameter->control_queue);
+      #endif
       *(char*)parameter->current_command = *(char*)parameter->control_queue;
+      
+      #ifdef DEBUG
       printf("CLOCK: in lock, new curr_cmd: %c\n", *(char*)parameter->current_command);
+      #endif
 
       *(unsigned int*)parameter->control_queue_length -= 1;
+      
+      #ifdef DEBUG
       printf("CLOCK: in lock, new queue_len: %i\n", *(unsigned int*)parameter->control_queue_length);
+      #endif
+
       memmove(parameter->control_queue, parameter->control_queue + 1, *(unsigned int*)parameter->control_queue_length);
 
       // Pause motor queues so they update commands
@@ -169,7 +186,9 @@ void *ThreadClock( void * arg  )
       parameter->motor_pause_right->pause = true;
       pthread_mutex_unlock( &(parameter->motor_pause_right->lock) );
 
+      #ifdef DEBUG
       printf("\nCLOCK: exit update");
+      #endif
     }
     pthread_mutex_unlock( parameter->control_queue_lock );
   }
@@ -211,10 +230,10 @@ void *ThreadMotor( void * arg  )
       switch (*(char*)parameter->current_command)
       {
         case 's':
-          printf("\n!!!! MOTOR: Recieved Command: STOP !!!!\n");
+          printf("\nMOTOR: Recieved Command: STOP\n");
           break;
         case 'w':
-          printf("\n!!!! MOTOR: Recieved Command: FORWARD !!!!\n");
+          printf("\nMOTOR: Recieved Command: FORWARD\n");
           I1 = 1;
           I2 = 0;
           break;
@@ -486,7 +505,7 @@ int main( void )
     printf( "config pwm\n" );
     
     // CLOCK
-    thread_clock_parameter.period = 1;
+    thread_clock_parameter.period = .01;
     thread_clock_parameter.pause = &pause_clock;
     thread_clock_parameter.done = &done;
     thread_clock_parameter.control_queue_lock = &queue_lock;

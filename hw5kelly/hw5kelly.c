@@ -420,7 +420,7 @@ int main( void )
     pthread_create( &thread_control_handle, 0, ThreadControl, (void *)&thread_control_parameter );
     pthread_create( &thread_left_motor_handle, 0, ThreadMotor, (void *)&thread_left_motor_parameter );
     pthread_create( &thread_right_motor_handle, 0, ThreadMotor, (void *)&thread_right_motor_parameter );
-    pthread_create( &thread_clock_handle, 0, ThreadClock, NULL);
+    pthread_create( &thread_clock_handle, 0, ThreadClock, (void *)&thread_clock_parameter);
     printf( "thread create\n" );
     pthread_join( thread_key_handle, 0 );
     pthread_join( thread_control_handle, 0 );

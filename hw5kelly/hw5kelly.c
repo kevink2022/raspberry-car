@@ -389,8 +389,8 @@ int main( void )
     thread_clock_parameter.period = 1;
     thread_clock_parameter.pause = &pause_clock;
     thread_clock_parameter.done = &done;
-    thread_clock_parameter.control_queue_lock = queue_lock;
-    thread_clock_parameter.control_queue_length = &queue_len;
+    thread_clock_parameter.control_queue_lock = &queue_lock;
+    thread_clock_parameter.control_queue_length = queue_len;
     
     // KEY
     thread_key_parameter.done = &done;

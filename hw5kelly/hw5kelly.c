@@ -133,7 +133,7 @@ void *ThreadClock( void * arg  )
   printf("CLOCK INIT: cc thread\n");
   struct clock_thread_parameter * parameter = (struct clock_thread_parameter *)arg;
   printf("CLOCK INIT: cc thread param\n");
-  printf("CLOCK INIT: control queue addr: %lu\n", (unsigned long)parameter->control_queue);
+  printf("CLOCK INIT: control queue addr: %lx\n", (unsigned long)parameter->control_queue);
   char current_command = '\0';
 
   pthread_mutex_lock( &(parameter->done->lock) );
@@ -334,13 +334,13 @@ int main( void )
 
   char *queue;
   queue = calloc(QUEUE_SIZE, sizeof(char));
-  printf("MAIN: queue addr: %lu", (unsigned long)queue);
+  printf("MAIN: queue addr: %lx", (unsigned long)queue);
   
   printf( "what\n" );
 
   unsigned int *queue_len;
   queue_len = calloc(1, sizeof(unsigned int));
-  printf("MAIN: queue_len addr: %lu", (unsigned long)queue_len);
+  printf("MAIN: queue_len addr: %lx", (unsigned long)queue_len);
 
   io = import_registers();
   if (io != NULL)
@@ -393,6 +393,7 @@ int main( void )
     thread_clock_parameter.done = &done;
     thread_clock_parameter.control_queue_lock = &queue_lock;
     thread_clock_parameter.control_queue_length = queue_len;
+    thread_clock_parameter.control_queue = queue;
     
     // KEY
     thread_key_parameter.done = &done;

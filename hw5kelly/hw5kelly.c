@@ -331,6 +331,8 @@ int main( void )
 
   char *queue;
   queue = calloc(QUEUE_SIZE, sizeof(char));
+  
+  printf( "what\n" );
 
   unsigned int * queue_len;
   *queue_len = 0;

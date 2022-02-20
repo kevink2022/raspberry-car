@@ -148,7 +148,7 @@ void *ThreadClock( void * arg  )
     printf("CLOCK: queue_len %i\n", *(unsigned int*)parameter->control_queue_length);
 
     // Get commands out of queue
-    pthread_mutex_lock( &(parameter->control_queue_lock) );
+    pthread_mutex_lock( parameter->control_queue_lock );
     printf("CLOCK: in lock\n");
     if (*(unsigned int*)parameter->control_queue_length > 0){
       printf("CLOCK: in lock, curr_cmd: %c\n", *(char*)parameter->control_queue);
@@ -162,7 +162,7 @@ void *ThreadClock( void * arg  )
 
       printf("\nCLOCK CYCLE\nCLOCK: Current Command: %s\nCLOCK: Queue Length: %i\n", *(char*)parameter->current_command, parameter->control_queue_length);
     }
-    pthread_mutex_unlock( &(parameter->control_queue_lock) );
+    pthread_mutex_unlock( parameter->control_queue_lock );
   }
 }
 
@@ -262,27 +262,27 @@ void *ThreadKey( void * arg )
         printf("\nKEY_THREAD: Recieved Command: STOP\n");
 
         // Lock Control Thread
-        pthread_mutex_lock( &(thread_key_parameter->control_queue_lock) );
+        pthread_mutex_lock( thread_key_parameter->control_queue_lock );
         thread_key_parameter->pause_control->pause = !(thread_key_parameter->pause_control->pause);
         if (*(int*)thread_key_parameter->control_queue_length < QUEUE_SIZE) {
           *(char*)(thread_key_parameter->control_queue + *(int*)thread_key_parameter->control_queue_length) = 's';
           *(unsigned int*)thread_key_parameter->control_queue_length += 1;
           printf("KEY_THREAD: Added to Queue: STOP\nKEY_THREAD: Queue Length: %i\n", *(unsigned int*)thread_key_parameter->control_queue_length);
         }
-        pthread_mutex_unlock( &(thread_key_parameter->control_queue_lock) );
+        pthread_mutex_unlock( thread_key_parameter->control_queue_lock );
         break;
       case 'w':
         printf("KEY_THREAD: Recieved Command: FORWARD\n");
 
         // Lock Control Thread
-        pthread_mutex_lock( &(thread_key_parameter->control_queue_lock) );
+        pthread_mutex_lock( thread_key_parameter->control_queue_lock );
         thread_key_parameter->pause_control->pause = !(thread_key_parameter->pause_control->pause);
         if (*(int*)thread_key_parameter->control_queue_length < QUEUE_SIZE) {
           *(char*)(thread_key_parameter->control_queue + *(int*)thread_key_parameter->control_queue_length) = 'w';
           *(unsigned int*)thread_key_parameter->control_queue_length += 1;
           printf("KEY_THREAD: Added to Queue: FORWARD\nQueue Lengh: %i\n", *(unsigned int*)thread_key_parameter->control_queue_length);
         }
-        pthread_mutex_unlock( &(thread_key_parameter->control_queue_lock) );
+        pthread_mutex_unlock( thread_key_parameter->control_queue_lock );
         break;
       case 'x':
         printf("KEY_THREAD: Recieved Command: BACKWARD\n");

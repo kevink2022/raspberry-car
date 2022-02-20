@@ -148,9 +148,9 @@ void *ThreadClock( void * arg  )
     printf("CLOCK: queue_len %i\n", *(unsigned int*)parameter->control_queue_length);
 
     // Get commands out of queue
+    pthread_mutex_lock( &(parameter->control_queue_lock) );
+    printf("CLOCK: Post if\n");
     if (*(unsigned int*)parameter->control_queue_length > 0){
-      printf("CLOCK: Post if\n");
-      pthread_mutex_lock( &(parameter->control_queue_lock) );
       printf("CLOCK: in lock, curr_cmd: %c\n", *(char*)parameter->control_queue);
       *(char*)parameter->current_command = *(char*)parameter->control_queue;
       printf("CLOCK: in lock, new curr_cmd: %c\n", *(char*)parameter->control_queue);
@@ -158,11 +158,11 @@ void *ThreadClock( void * arg  )
       *(unsigned int*)parameter->control_queue_length -= 1;
       printf("CLOCK: in lock, new queue_len: %i\n", *(unsigned int*)parameter->control_queue_length);
       memmove(parameter->control_queue, parameter->control_queue + 1, *(unsigned int*)parameter->control_queue_length);
-      pthread_mutex_unlock( &(parameter->control_queue_lock) );
 
 
       printf("\nCLOCK CYCLE\nCLOCK: Current Command: %s\nCLOCK: Queue Length: %i\n", *(char*)parameter->current_command, parameter->control_queue_length);
     }
+    pthread_mutex_unlock( &(parameter->control_queue_lock) );
   }
 }
 

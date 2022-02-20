@@ -27,6 +27,7 @@
 #include <stdbool.h>
 #include <termios.h>
 #include <fcntl.h>
+#include <string.h>
 #include "import_registers.h"
 #include "cm.h"
 #include "gpio.h"
@@ -36,8 +37,15 @@
 #include "enable_pwm_clock.h"
 
 #define PWM_RANGE 100
+#define QUEUE_SIZE 100
 
 struct pause_flag
+{
+  pthread_mutex_t lock;
+  bool            pause;
+};
+
+struct queue_flag
 {
   pthread_mutex_t lock;
   bool            pause;
@@ -49,23 +57,50 @@ struct done_flag
   bool            done;
 };
 
-struct thread_parameter
-{
-  volatile struct gpio_register * gpio;
-  volatile struct pwm_register  * pwm;
-  int                             pin;
-  struct pause_flag *             pause;
-  struct done_flag *              done;
-};
-
 struct key_thread_parameter
 {
   struct done_flag *  done;
-  struct pause_flag * pause1;
-  struct pause_flag * pause2;
-  struct pause_flag * pause3;
-  struct pause_flag * pause4;
+  struct pause_flag * pause_control;
+  struct pause_flag * pause_left_motor;
+  struct pause_flag * pause_right_motor;
+  struct pause_flag * pause_clock;
+  char              * control_queue;
+  int               * control_queue_length;
+  pthread_mutex_t     control_queue_lock;
 };
+
+struct control_thread_parameter
+{
+  char                queue[QUEUE_SIZE];
+  int                 queue_length;
+  struct pause_flag * pause;
+  struct done_flag  * done;
+};
+
+struct motor_thread_parameter
+{
+  char                          * current_command;
+  volatile struct gpio_register * gpio;
+  volatile struct pwm_register  * pwm;
+  int                             PWM_pin;
+  int                             I1_pin;
+  int                             I2_pin;
+  struct pause_flag *             pause;
+  struct done_flag *              done;
+  bool                            left_motor;
+};
+
+struct clock_thread_parameter
+{
+  int                 period;
+  char                current_command;
+  char              * control_queue;
+  int               * control_queue_length;
+  struct pause_flag * pause;
+  struct done_flag  * done;
+  pthread_mutex_t     control_queue_lock;
+};
+
 
 int  Tstep = 50;  /* PWM time resolution, number used for usleep(Tstep) */
 int  Tlevel = 5;  /* repetition count of each light level, eg. repeat 12% light level for 5 times. */
@@ -92,113 +127,88 @@ void DimLevUnit(int Level, int pin, volatile struct gpio_register *gpio)
   }
 }
 
-void *ThreadSW( void * arg )
+void *ThreadClock( void * arg  )
 {
-  int                       iterations; /* used to limit the number of dimming iterations */
-  int                       Timeu;      /* dimming repetition of each level */
-  int                       DLevel;     /* dimming level as duty cycle, 0 to 100 percent */
-  struct thread_parameter * parameter = (struct thread_parameter *)arg;
+  struct clock_thread_parameter * parameter = (struct clock_thread_parameter *)arg;
 
   pthread_mutex_lock( &(parameter->done->lock) );
   while (!(parameter->done->done))
   {
     pthread_mutex_unlock( &(parameter->done->lock) );
 
-    pthread_mutex_lock( &(parameter->pause->lock) );
-    while (parameter->pause->pause)
-    {
-      pthread_mutex_unlock( &(parameter->pause->lock) );
-      usleep( 10000 ); /* 10ms */
-      pthread_mutex_lock( &(parameter->pause->lock) );
-    }
-    pthread_mutex_unlock( &(parameter->pause->lock) );
+    usleep(parameter->period * 1000000);
 
-    DLevel = 0;  /* dim up, sweep the light level from 0 to 100 */
-    while(DLevel<100) /* 2.5s */
-    {
-      Timeu = Tlevel;   /* repeat the dimming level for 5 times if Tlevel = 5 */
-      while(Timeu>0)  /* 25ms */
-      {
-        DimLevUnit(DLevel, parameter->pin, parameter->gpio);  /* 5ms */
-        Timeu = Timeu - 1;
-      }
-      DLevel = DLevel + 1;
-    }
+    // Get commands out of queue
+    pthread_mutex_lock( &(parameter->control_queue_lock) );
+    parameter->current_command = parameter->control_queue[0];
 
-    DLevel = 100;  /* dim down, sweep the light level from 100 to 0 */
-    while(DLevel>0)
-    {
-      Timeu = Tlevel;   /* repeat the dimming level for 5 times if Tlevel = 5 */
-      while(Timeu>0)
-      {
-        DimLevUnit(DLevel, parameter->pin, parameter->gpio);
-        Timeu = Timeu - 1;
-      }
-      DLevel = DLevel - 1;
-    }
-    pthread_mutex_lock( &(parameter->done->lock) );
+    parameter->control_queue_length--;
+    memmove(parameter->control_queue, parameter->control_queue + 1, parameter->control_queue_length);
+    pthread_mutex_unlock( &(parameter->control_queue_lock) );
+
+
+    printf("\nCLOCK CYCLE\n  Current Command: %s\n  Queue Length: %i\n", parameter->current_command, parameter->control_queue_length);
   }
-  pthread_mutex_unlock( &(parameter->done->lock) );
-
-  return 0;
 }
 
-void *ThreadHW( void * arg )
+void *ThreadMotor( void * arg  )
 {
-  int                       iterations; /* used to limit the number of dimming iterations */
-  int                       Timeu;      /* dimming repetition of each level */
-  int                       DLevel;     /* dimming level as duty cycle, 0 to 100 percent */
-  struct thread_parameter * parameter = (struct thread_parameter *)arg;
+  struct motor_thread_parameter * parameter = (struct motor_thread_parameter *)arg;
+  int PWM = 0;
+  bool I1 = 0, I2 = 0;
+  char current_command = '\0';
 
   pthread_mutex_lock( &(parameter->done->lock) );
   while (!(parameter->done->done))
   {
     pthread_mutex_unlock( &(parameter->done->lock) );
 
+    // Execute params
+  
     pthread_mutex_lock( &(parameter->pause->lock) );
-    while (parameter->pause->pause)
+    if (parameter->pause->pause)
     {
-      pthread_mutex_unlock( &(parameter->pause->lock) );
-      usleep( 10000 ); /* 10ms */
-      pthread_mutex_lock( &(parameter->pause->lock) );
+      // Update params
+      switch (*(char*)parameter->current_command)
+      {
+        case 's':
+          printf("\nMOTOR_THREAD: Recieved Command: STOP\n");
+          break;
+        case 'w':
+          printf("\nMOTOR_THREAD: Recieved Command: FORWARD\n");
+          break;
+        case 'x':
+          printf("\nMOTOR_THREAD: Recieved Command: BACKWARD\n");
+          break;
+        case 'i':
+          printf("\nMOTOR_THREAD: Recieved Command: FASTER\n");
+          break;
+        case 'j':
+          printf("\nMOTOR_THREAD: Recieved Command: SLOWER\n");
+          break;
+        case 'a':
+          printf("\nMOTOR_THREAD: Recieved Command: LEFT\n");
+          break;
+        case 'd':
+          printf("\nMOTOR_THREAD: Recieved Command: RIGHT\n");
+          break;
+        default:
+          break;
+      }
+
+      parameter->pause->pause = false;
     }
     pthread_mutex_unlock( &(parameter->pause->lock) );
-
-    DLevel = 0;  /* dim up, sweep the light level from 0 to 100 */
-    while(DLevel<PWM_RANGE)
-    {
-      if (parameter->pin == 12)
-      {
-        parameter->pwm->DAT1 = DLevel;
-      }
-      else
-      {
-        parameter->pwm->DAT2 = DLevel;
-      }
-      usleep( Tlevel * Tstep * 100 );
-      DLevel = DLevel + 1;
-    }
-
-    DLevel = PWM_RANGE;  /* dim down, sweep the light level from 100 to 0 */
-    while(DLevel>0)
-    {
-      if (parameter->pin == 12)
-      {
-        parameter->pwm->DAT1 = DLevel;
-      }
-      else
-      {
-        parameter->pwm->DAT2 = DLevel;
-      }
-      usleep( Tlevel * Tstep * 100 );
-      DLevel = DLevel - 1;
-    }
-    pthread_mutex_lock( &(parameter->done->lock) );
   }
-  pthread_mutex_unlock( &(parameter->done->lock) );
-
-  return 0;
 }
+
+
+
+void *ThreadControl( void * arg  )
+{
+
+}
+
 
 int get_pressed_key(void)
 {
@@ -232,49 +242,55 @@ void *ThreadKey( void * arg )
       case 'q':
         done = true;
         /* unpause everything */
-        pthread_mutex_lock( &(thread_key_parameter->pause1->lock) );
-        thread_key_parameter->pause1->pause = false;
-        pthread_mutex_unlock( &(thread_key_parameter->pause1->lock) );
-        pthread_mutex_lock( &(thread_key_parameter->pause2->lock) );
-        thread_key_parameter->pause2->pause = false;
-        pthread_mutex_unlock( &(thread_key_parameter->pause2->lock) );
-        pthread_mutex_lock( &(thread_key_parameter->pause3->lock) );
-        thread_key_parameter->pause3->pause = false;
-        pthread_mutex_unlock( &(thread_key_parameter->pause3->lock) );
-        pthread_mutex_lock( &(thread_key_parameter->pause4->lock) );
-        thread_key_parameter->pause4->pause = false;
-        pthread_mutex_unlock( &(thread_key_parameter->pause4->lock) );
+        printf("KEY_THREAD: Recieved Command: QUIT\n");
 
         /* indicate that it is time to shut down */
         pthread_mutex_lock( &(thread_key_parameter->done->lock) );
         thread_key_parameter->done->done = true;
         pthread_mutex_unlock( &(thread_key_parameter->done->lock) );
         break;
-      case '1':
-        pthread_mutex_lock( &(thread_key_parameter->pause1->lock) );
-        thread_key_parameter->pause1->pause = !(thread_key_parameter->pause1->pause);
-        printf( "thread 1 is %s\n", thread_key_parameter->pause1->pause ? "paused" : "unpaused" );
-        pthread_mutex_unlock( &(thread_key_parameter->pause1->lock) );
         break;
-      case '2':
-        pthread_mutex_lock( &(thread_key_parameter->pause2->lock) );
-        thread_key_parameter->pause2->pause = !(thread_key_parameter->pause2->pause);
-        printf( "thread 2 is %s\n", thread_key_parameter->pause2->pause ? "paused" : "unpaused" );
-        pthread_mutex_unlock( &(thread_key_parameter->pause2->lock) );
-        break;
-      case '3':
-        pthread_mutex_lock( &(thread_key_parameter->pause3->lock) );
-        thread_key_parameter->pause3->pause = !(thread_key_parameter->pause3->pause);
-        printf( "thread 3 is %s\n", thread_key_parameter->pause3->pause ? "paused" : "unpaused" );
-        pthread_mutex_unlock( &(thread_key_parameter->pause3->lock) );
-        break;
-      case '4':
-        pthread_mutex_lock( &(thread_key_parameter->pause4->lock) );
-        thread_key_parameter->pause4->pause = !(thread_key_parameter->pause4->pause);
-        printf( "thread 4 is %s\n", thread_key_parameter->pause4->pause ? "paused" : "unpaused" );
-        pthread_mutex_unlock( &(thread_key_parameter->pause4->lock) );
-        break;
+      case 's':
+        printf("\nKEY_THREAD: Recieved Command: STOP\n");
 
+        // Lock Control Thread
+        pthread_mutex_lock( &(thread_key_parameter->control_queue_lock) );
+        thread_key_parameter->pause_control->pause = !(thread_key_parameter->pause_control->pause);
+        if (thread_key_parameter->control_queue_length < QUEUE_SIZE) {
+          thread_key_parameter->control_queue[*(int*)thread_key_parameter->control_queue_length] = 's';
+          thread_key_parameter->control_queue_length++;
+          printf("KEY_THREAD: Added to Queue: STOP\nQueue Lengh: %i\n", thread_key_parameter->control_queue_length);
+        }
+        pthread_mutex_unlock( &(thread_key_parameter->control_queue_lock) );
+        break;
+      case 'w':
+        printf("KEY_THREAD: Recieved Command: FORWARD\n");
+
+        // Lock Control Thread
+        pthread_mutex_lock( &(thread_key_parameter->control_queue_lock) );
+        thread_key_parameter->pause_control->pause = !(thread_key_parameter->pause_control->pause);
+        if (thread_key_parameter->control_queue_length < QUEUE_SIZE) {
+          thread_key_parameter->control_queue[*(int*)thread_key_parameter->control_queue_length] = 'w';
+          thread_key_parameter->control_queue_length++;
+          printf("KEY_THREAD: Added to Queue: FORWARD\nQueue Lengh: %i\n", thread_key_parameter->control_queue_length);
+        }
+        pthread_mutex_unlock( &(thread_key_parameter->control_queue_lock) );
+        break;
+      case 'x':
+        printf("KEY_THREAD: Recieved Command: BACKWARD\n");
+        break;
+      case 'i':
+        printf("KEY_THREAD: Recieved Command: FASTER\n");
+        break;
+      case 'j':
+        printf("KEY_THREAD: Recieved Command: SLOWER\n");
+        break;
+      case 'a':
+        printf("KEY_THREAD: Recieved Command: LEFT\n");
+        break;
+      case 'd':
+        printf("KEY_THREAD: Recieved Command: RIGHT\n");
+        break;
       default:
         break;
     }
@@ -287,21 +303,30 @@ void *ThreadKey( void * arg )
 int main( void )
 {
   volatile struct io_peripherals *io;
-  pthread_t                       thread12_handle;
-  pthread_t                       thread13_handle;
-  pthread_t                       thread18_handle;
-  pthread_t                       thread19_handle;
   pthread_t                       thread_key_handle;
-  struct done_flag                done   = {PTHREAD_MUTEX_INITIALIZER, false};
-  struct pause_flag               pause1 = {PTHREAD_MUTEX_INITIALIZER, false};
-  struct pause_flag               pause2 = {PTHREAD_MUTEX_INITIALIZER, false};
-  struct pause_flag               pause3 = {PTHREAD_MUTEX_INITIALIZER, false};
-  struct pause_flag               pause4 = {PTHREAD_MUTEX_INITIALIZER, false};
-  struct thread_parameter         thread12_parameter;
-  struct thread_parameter         thread13_parameter;
-  struct thread_parameter         thread18_parameter;
-  struct thread_parameter         thread19_parameter;
   struct key_thread_parameter     thread_key_parameter;
+
+  pthread_t                       thread_control_handle;
+  pthread_t                       thread_left_motor_handle;
+  pthread_t                       thread_right_motor_handle;
+  pthread_t                       thread_clock_handle;
+  struct control_thread_parameter thread_control_parameter;
+  struct motor_thread_parameter   thread_left_motor_parameter;
+  struct motor_thread_parameter   thread_right_motor_parameter;
+  struct clock_thread_parameter   thread_clock_parameter;
+
+  struct pause_flag               pause_left_motor = {PTHREAD_MUTEX_INITIALIZER, false};
+  struct pause_flag               pause_right_motor = {PTHREAD_MUTEX_INITIALIZER, false};
+  struct pause_flag               set_motors = {PTHREAD_MUTEX_INITIALIZER, false};
+  struct pause_flag               pause_control = {PTHREAD_MUTEX_INITIALIZER, false};
+  struct pause_flag               pause_clock = {PTHREAD_MUTEX_INITIALIZER, false};
+  struct done_flag                done   = {PTHREAD_MUTEX_INITIALIZER, false};
+
+  struct queue_flag               pause_clock = {PTHREAD_MUTEX_INITIALIZER, false};
+
+  pthread_mutex_t                 queue_lock = PTHREAD_MUTEX_INITIALIZER;
+
+  char queue[QUEUE_SIZE] = {0};
 
   io = import_registers();
   if (io != NULL)
@@ -337,41 +362,63 @@ int main( void )
     io->pwm.CTL.field.PWEN1 = 1;  /* enable the PWM channel */
     io->pwm.CTL.field.PWEN2 = 1;  /* enable the PWM channel */
 
-    thread12_parameter.pin = 20;
-    thread12_parameter.gpio = &(io->gpio);
-    thread12_parameter.pwm = &(io->pwm);
-    thread12_parameter.done = &done;
-    thread12_parameter.pause = &pause1;
-    thread13_parameter.pin = 26;
-    thread13_parameter.pwm = &(io->pwm);
-    thread13_parameter.gpio = &(io->gpio);
-    thread13_parameter.done = &done;
-    thread13_parameter.pause = &pause2;
-    thread18_parameter.pin = 16;
-    thread18_parameter.pwm = &(io->pwm);
-    thread18_parameter.gpio = &(io->gpio);
-    thread18_parameter.done = &done;
-    thread18_parameter.pause = &pause3;
-    thread19_parameter.pin = 19;
-    thread19_parameter.pwm = &(io->pwm);
-    thread19_parameter.gpio = &(io->gpio);
-    thread19_parameter.done = &done;
-    thread19_parameter.pause = &pause4;
+    // // CONTROL
+    // thread_control_parameter.pause = &pause_control;
+    // thread_control_parameter.done = &done;
+    // thread_control_parameter.queue_length = 0;
+    // memset(&thread_control_parameter.queue, 0, QUEUE_SIZE);
+    
+    // CLOCK
+    thread_clock_parameter.period = 1;
+    thread_clock_parameter.pause = &pause_clock;
+    thread_clock_parameter.done = &done;
+    thread_clock_parameter.current_command = '\0';
+    thread_clock_parameter.control_queue_lock = queue_lock;
+    
+    // KEY
     thread_key_parameter.done = &done;
-    thread_key_parameter.pause1 = &pause1;
-    thread_key_parameter.pause2 = &pause2;
-    thread_key_parameter.pause3 = &pause3;
-    thread_key_parameter.pause4 = &pause4;
-    pthread_create( &thread12_handle, 0, ThreadHW, (void *)&thread12_parameter );
-    pthread_create( &thread13_handle, 0, ThreadHW, (void *)&thread13_parameter );
-    pthread_create( &thread18_handle, 0, ThreadSW, (void *)&thread18_parameter );
-    pthread_create( &thread19_handle, 0, ThreadSW, (void *)&thread19_parameter );
+    thread_key_parameter.pause_control = &pause_control;
+    thread_key_parameter.pause_left_motor = &pause_left_motor;
+    thread_key_parameter.pause_right_motor = &pause_right_motor;
+    thread_key_parameter.pause_clock = &pause_clock;
+    thread_key_parameter.control_queue = &queue;
+    thread_key_parameter.control_queue_length = 0;
+    thread_key_parameter.control_queue_lock = queue_lock;
+
+    // LEFT
+    thread_left_motor_parameter.pause = &set_motors;
+    thread_left_motor_parameter.done = &done;
+    thread_left_motor_parameter.PWM_pin = 12;
+    thread_left_motor_parameter.I1_pin = 5;
+    thread_left_motor_parameter.I2_pin = 6;
+    thread_left_motor_parameter.gpio = &(io->gpio);
+    thread_left_motor_parameter.pwm = &(io->pwm);
+    thread_left_motor_parameter.current_command = thread_clock_parameter.current_command;
+    thread_left_motor_parameter.left_motor = true;
+
+    // RIGHT
+    thread_right_motor_parameter.pause = &set_motors;
+    thread_right_motor_parameter.done = &done;
+    thread_right_motor_parameter.PWM_pin = 13;
+    thread_right_motor_parameter.I1_pin = 22;
+    thread_right_motor_parameter.I2_pin = 23;
+    thread_right_motor_parameter.gpio = &(io->gpio);
+    thread_right_motor_parameter.pwm = &(io->pwm);
+    thread_right_motor_parameter.current_command = thread_clock_parameter.current_command;
+    thread_right_motor_parameter.left_motor = false;
+
+
+    // THREADS
     pthread_create( &thread_key_handle, 0, ThreadKey, (void *)&thread_key_parameter );
-    pthread_join( thread12_handle, 0 );
-    pthread_join( thread13_handle, 0 );
-    pthread_join( thread18_handle, 0 );
-    pthread_join( thread19_handle, 0 );
+    pthread_create( &thread_control_handle, 0, ThreadControl, (void *)&thread_control_parameter );
+    pthread_create( &thread_left_motor_handle, 0, ThreadMotor, (void *)&thread_left_motor_parameter );
+    pthread_create( &thread_right_motor_handle, 0, ThreadMotor, (void *)&thread_right_motor_parameter );
+    pthread_create( &thread_clock_handle, 0, ThreadClock, NULL);
     pthread_join( thread_key_handle, 0 );
+    pthread_join( thread_control_handle, 0 );
+    pthread_join( thread_left_motor_handle, 0 );
+    pthread_join( thread_right_motor_handle, 0 );
+    pthread_join( thread_clock_handle, 0 );
   }
   else
   {

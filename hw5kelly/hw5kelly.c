@@ -130,12 +130,16 @@ void DimLevUnit(int Level, int pin, volatile struct gpio_register *gpio)
 
 void *ThreadClock( void * arg  )
 {
+  printf("cc thread\n");
   struct clock_thread_parameter * parameter = (struct clock_thread_parameter *)arg;
+  printf("cc thread param\n");
 
   pthread_mutex_lock( &(parameter->done->lock) );
   while (!(parameter->done->done))
   {
     pthread_mutex_unlock( &(parameter->done->lock) );
+
+    printf("starting cc\n");
 
     usleep(parameter->period * 1000000);
 
@@ -201,13 +205,6 @@ void *ThreadMotor( void * arg  )
     }
     pthread_mutex_unlock( &(parameter->pause->lock) );
   }
-}
-
-
-
-void *ThreadControl( void * arg  )
-{
-
 }
 
 
@@ -417,7 +414,7 @@ int main( void )
 
     // THREADS
     pthread_create( &thread_key_handle, 0, ThreadKey, (void *)&thread_key_parameter );
-    pthread_create( &thread_control_handle, 0, ThreadControl, (void *)&thread_control_parameter );
+    // pthread_create( &thread_control_handle, 0, ThreadControl, (void *)&thread_control_parameter );
     pthread_create( &thread_left_motor_handle, 0, ThreadMotor, (void *)&thread_left_motor_parameter );
     pthread_create( &thread_right_motor_handle, 0, ThreadMotor, (void *)&thread_right_motor_parameter );
     pthread_create( &thread_clock_handle, 0, ThreadClock, (void *)&thread_clock_parameter);
@@ -436,3 +433,4 @@ int main( void )
   return 0;
 }
 
+// b hw5kelly.c:424

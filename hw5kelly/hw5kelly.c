@@ -334,6 +334,7 @@ int main( void )
 
   char *queue;
   queue = calloc(QUEUE_SIZE, sizeof(char));
+  printf("MAIN: queue addr: %lu", (unsigned long)queue);
   
   printf( "what\n" );
 

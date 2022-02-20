@@ -38,7 +38,7 @@
 #include "enable_pwm_clock.h"
 
 #define PWM_RANGE 100
-#define PWM_MOTOR_MIN 40
+#define PWM_MOTOR_MIN 20
 #define QUEUE_SIZE 100
 #define STOP 0
 #define FORWARD 2
@@ -223,10 +223,10 @@ void *ThreadMotor( void * arg  )
       GPIO_CLR( parameter->gpio, parameter->I1_pin );
       GPIO_CLR( parameter->gpio, parameter->I2_pin );
     }
-
+ 
     // Execute params
-    parameter->pwm->DAT1 = PWM;
-    parameter->pwm->DAT2 = PWM_RANGE - PWM;
+    parameter->pwm->DAT1 = PWM_RANGE - PWM;
+    parameter->pwm->DAT2 = PWM;
     
     if (I1){
       //printf("\n%s MOTOR: Setting I1\n", parameter->left_motor ? "LEFT" : "RIGHT");  

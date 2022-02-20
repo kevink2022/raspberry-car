@@ -211,14 +211,14 @@ void *ThreadMotor( void * arg  )
     pthread_mutex_unlock( &(parameter->done->lock) );
 
     // If changing modes (STOP, FORWARD, BACKWARD), need to fade pwm to 0
-    if (current_mode != next_mode){
-      while (PWM > 0){
-        PWM--;
-        parameter->pwm->DAT1 = PWM;
-        parameter->pwm->DAT2 = PWM_RANGE - PWM;
-      }
-      current_mode = next_mode;
-    }
+    // if (current_mode != next_mode){
+    //   while (PWM > 0){
+    //     PWM--;
+    //     parameter->pwm->DAT1 = PWM;
+    //     parameter->pwm->DAT2 = PWM_RANGE - PWM;
+    //   }
+    //   current_mode = next_mode;
+    // }
 
     // Execute params
     parameter->pwm->DAT1 = PWM;

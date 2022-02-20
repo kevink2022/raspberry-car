@@ -340,6 +340,7 @@ int main( void )
 
   unsigned int *queue_len;
   queue_len = calloc(1, sizeof(unsigned int));
+  printf("MAIN: queue_len addr: %lu", (unsigned long)queue_len);
 
   io = import_registers();
   if (io != NULL)

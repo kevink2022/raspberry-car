@@ -134,7 +134,7 @@ void *ThreadClock( void * arg  )
   struct clock_thread_parameter * parameter = (struct clock_thread_parameter *)arg;
   printf("CLOCK: cc thread param\n");
   printf("CLOCK: queue_len %i\n", *(unsigned int*)parameter->control_queue_length);
-  *(char*)parameter->current_command = '\0';
+  char current_command = '\0';
 
   pthread_mutex_lock( &(parameter->done->lock) );
   while (!(parameter->done->done))
@@ -149,11 +149,11 @@ void *ThreadClock( void * arg  )
 
     // Get commands out of queue
     pthread_mutex_lock( parameter->control_queue_lock );
-    printf("CLOCK: in lock\n");
     if (*(unsigned int*)parameter->control_queue_length > 0){
+      printf("CLOCK: in if\n");
       printf("CLOCK: in lock, curr_cmd: %c\n", *(char*)parameter->control_queue);
-      *(char*)parameter->current_command = *(char*)parameter->control_queue;
-      printf("CLOCK: in lock, new curr_cmd: %c\n", *(char*)parameter->control_queue);
+      current_command = *(char*)parameter->control_queue;
+      printf("CLOCK: in lock, new curr_cmd: %c\n", current_command);
 
       *(unsigned int*)parameter->control_queue_length -= 1;
       printf("CLOCK: in lock, new queue_len: %i\n", *(unsigned int*)parameter->control_queue_length);

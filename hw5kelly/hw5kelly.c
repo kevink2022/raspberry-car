@@ -336,6 +336,9 @@ int main( void )
 
     enable_pwm_clock( io );
 
+    printf( "enable pwm\n" );
+
+
     /* set the pin function to alternate function 0 for GPIO12 */
     /* set the pin function to alternate function 0 for GPIO13 */
     io->gpio.GPFSEL2.field.FSEL0 = GPFSEL_ALTERNATE_FUNCTION0;
@@ -367,6 +370,8 @@ int main( void )
     // thread_control_parameter.done = &done;
     // thread_control_parameter.queue_length = 0;
     // memset(&thread_control_parameter.queue, 0, QUEUE_SIZE);
+
+    printf( "config pwm\n" );
     
     // CLOCK
     thread_clock_parameter.period = 1;
@@ -407,6 +412,8 @@ int main( void )
     thread_right_motor_parameter.current_command = &thread_clock_parameter.current_command;
     thread_right_motor_parameter.left_motor = false;
 
+    printf( "thread param\n" );
+
 
     // THREADS
     pthread_create( &thread_key_handle, 0, ThreadKey, (void *)&thread_key_parameter );
@@ -414,6 +421,7 @@ int main( void )
     pthread_create( &thread_left_motor_handle, 0, ThreadMotor, (void *)&thread_left_motor_parameter );
     pthread_create( &thread_right_motor_handle, 0, ThreadMotor, (void *)&thread_right_motor_parameter );
     pthread_create( &thread_clock_handle, 0, ThreadClock, NULL);
+    printf( "thread create\n" );
     pthread_join( thread_key_handle, 0 );
     pthread_join( thread_control_handle, 0 );
     pthread_join( thread_left_motor_handle, 0 );

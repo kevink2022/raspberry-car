@@ -231,9 +231,19 @@ void *ThreadMotor( void * arg  )
           break;
         case 'a':
           printf("\nMOTOR: Recieved Command: LEFT\n");
+          if(parameter->left_motor){
+            PWM -= 5;
+          } else {
+            PWM += 5;
+          }
           break;
         case 'd':
           printf("\nMOTOR: Recieved Command: RIGHT\n");
+          if(parameter->left_motor){
+            PWM += 5;
+          } else {
+            PWM -= 5;
+          }
           break;
         default:
           break;

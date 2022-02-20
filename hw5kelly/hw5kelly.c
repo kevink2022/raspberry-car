@@ -334,7 +334,8 @@ int main( void )
   
   printf( "what\n" );
 
-  unsigned int * queue_len;
+  unsigned int *queue_len;
+  printf( "how\n" );
   *queue_len = 0;
 
   io = import_registers();

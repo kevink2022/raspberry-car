@@ -94,7 +94,7 @@ struct motor_thread_parameter
 struct clock_thread_parameter
 {
   int                 period;
-  char                current_command;
+  char              * current_command;
   char              * control_queue;
   unsigned int      * control_queue_length;
   struct pause_flag * pause;

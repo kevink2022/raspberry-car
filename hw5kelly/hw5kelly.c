@@ -150,7 +150,7 @@ void *ThreadClock( void * arg  )
     // Get commands out of queue
     pthread_mutex_lock( parameter->control_queue_lock );
     if (*(unsigned int*)parameter->control_queue_length > 0){
-      printf("CLOCK: in if\n");
+      printf("CLOCK: control queue addr: %lu\n", (unsigned long)parameter->control_queue);
       printf("CLOCK: in lock, curr_cmd: %c\n", *(char*)parameter->control_queue);
       current_command = *(char*)parameter->control_queue;
       printf("CLOCK: in lock, new curr_cmd: %c\n", current_command);
@@ -280,7 +280,7 @@ void *ThreadKey( void * arg )
         if (*(int*)thread_key_parameter->control_queue_length < QUEUE_SIZE) {
           *(char*)(thread_key_parameter->control_queue + *(int*)thread_key_parameter->control_queue_length) = 'w';
           *(unsigned int*)thread_key_parameter->control_queue_length += 1;
-          printf("KEY_THREAD: Added to Queue: FORWARD\nQueue Lengh: %i\n", *(unsigned int*)thread_key_parameter->control_queue_length);
+          printf("KEY_THREAD: Added to Queue: FORWARD\nKEY_THREAD: Queue Lengh: %i\n", *(unsigned int*)thread_key_parameter->control_queue_length);
         }
         pthread_mutex_unlock( thread_key_parameter->control_queue_lock );
         break;

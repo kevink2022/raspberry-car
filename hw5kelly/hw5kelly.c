@@ -335,11 +335,7 @@ int main( void )
   printf( "what\n" );
 
   unsigned int *queue_len;
-  if (queue_len == NULL) {
-    printf("fuck you");
-  }
-  printf( "how\n" );
-  *queue_len = 0;
+  queue_len = calloc(1, sizeof(unsigned int));
 
   io = import_registers();
   if (io != NULL)

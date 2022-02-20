@@ -220,6 +220,8 @@ void *ThreadMotor( void * arg  )
         parameter->pwm->DAT2 = PWM_RANGE - PWM;
       }
       current_mode = next_mode;
+      GPIO_CLR( parameter->gpio, parameter->I1_pin );
+      GPIO_CLR( parameter->gpio, parameter->I2_pin );
     }
 
     // Execute params
@@ -265,7 +267,7 @@ void *ThreadMotor( void * arg  )
           printf("\n%s MOTOR: Recieved Command: BACKWARD\n", parameter->left_motor ? "LEFT" : "RIGHT");
           I1 = 0;
           I2 = 1;
-          next_mode = FORWARD;
+          next_mode = BACKWARD;
           break;
         case 'i':
           printf("\n%s MOTOR: Recieved Command: FASTER\n", parameter->left_motor ? "LEFT" : "RIGHT");

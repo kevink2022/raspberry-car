@@ -188,8 +188,8 @@ void *ThreadMotor( void * arg  )
     pthread_mutex_unlock( &(parameter->done->lock) );
 
     // Execute params
-    printf("MOTOR: Executing command\n");
-    usleep(2*1000000);
+    printf(".");
+    usleep(1*10000);
 
 
     pthread_mutex_lock( &(parameter->pause->lock) );

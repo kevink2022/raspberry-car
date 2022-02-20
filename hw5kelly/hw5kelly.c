@@ -130,10 +130,10 @@ void DimLevUnit(int Level, int pin, volatile struct gpio_register *gpio)
 
 void *ThreadClock( void * arg  )
 {
-  printf("CLOCK: cc thread\n");
+  printf("CLOCK INIT: cc thread\n");
   struct clock_thread_parameter * parameter = (struct clock_thread_parameter *)arg;
-  printf("CLOCK: cc thread param\n");
-  printf("CLOCK: queue_len %i\n", *(unsigned int*)parameter->control_queue_length);
+  printf("CLOCK INIT: cc thread param\n");
+  printf("CLOCK INIT: control queue addr: %lu\n", (unsigned long)parameter->control_queue);
   char current_command = '\0';
 
   pthread_mutex_lock( &(parameter->done->lock) );

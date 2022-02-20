@@ -409,7 +409,7 @@ int main( void )
     thread_left_motor_parameter.I2_pin = 6;
     thread_left_motor_parameter.gpio = &(io->gpio);
     thread_left_motor_parameter.pwm = &(io->pwm);
-    thread_left_motor_parameter.current_command = &thread_clock_parameter.current_command;
+    thread_left_motor_parameter.current_command = thread_clock_parameter.current_command;
     thread_left_motor_parameter.left_motor = true;
 
     // RIGHT
@@ -420,7 +420,7 @@ int main( void )
     thread_right_motor_parameter.I2_pin = 23;
     thread_right_motor_parameter.gpio = &(io->gpio);
     thread_right_motor_parameter.pwm = &(io->pwm);
-    thread_right_motor_parameter.current_command = &thread_clock_parameter.current_command;
+    thread_right_motor_parameter.current_command = thread_clock_parameter.current_command;
     thread_right_motor_parameter.left_motor = false;
 
     printf( "thread param\n" );

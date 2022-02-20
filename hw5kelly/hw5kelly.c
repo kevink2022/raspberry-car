@@ -143,7 +143,7 @@ void *ThreadClock( void * arg  )
 
     usleep(parameter->period * 1000000);
 
-    printf("CLOCK: queue_len %i\n", *(int*)parameter->control_queue_length);
+    printf("CLOCK: queue_len %i\n", *(unsigned int*)parameter->control_queue_length);
 
     // Get commands out of queue
     if (*(int*)parameter->control_queue_length > 0){

@@ -22,6 +22,7 @@
  */
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
 #include <stdbool.h>
@@ -325,7 +326,7 @@ int main( void )
   pthread_mutex_t                 queue_lock = PTHREAD_MUTEX_INITIALIZER;
 
   char *queue;
-  queue = calloc(queue, QUEUE_SIZE);
+  queue = calloc(QUEUE_SIZE, sizeof(char));
 
   io = import_registers();
   if (io != NULL)
@@ -380,7 +381,7 @@ int main( void )
     thread_key_parameter.pause_left_motor = &pause_left_motor;
     thread_key_parameter.pause_right_motor = &pause_right_motor;
     thread_key_parameter.pause_clock = &pause_clock;
-    thread_key_parameter.control_queue = &queue;
+    thread_key_parameter.control_queue = queue;
     thread_key_parameter.control_queue_length = 0;
     thread_key_parameter.control_queue_lock = queue_lock;
 

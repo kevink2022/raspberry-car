@@ -143,7 +143,7 @@ void *ThreadClock( void * arg  )
     parameter->current_command = parameter->control_queue[0];
 
     parameter->control_queue_length--;
-    memmove(parameter->control_queue, parameter->control_queue + 1, parameter->control_queue_length);
+    memmove(parameter->control_queue, parameter->control_queue + 1, *(unsigned int*)parameter->control_queue_length);
     pthread_mutex_unlock( &(parameter->control_queue_lock) );
 
 
@@ -324,7 +324,8 @@ int main( void )
 
   pthread_mutex_t                 queue_lock = PTHREAD_MUTEX_INITIALIZER;
 
-  char queue[QUEUE_SIZE] = {0};
+  char *queue;
+  queue = calloc(queue, QUEUE_SIZE);
 
   io = import_registers();
   if (io != NULL)
@@ -391,7 +392,7 @@ int main( void )
     thread_left_motor_parameter.I2_pin = 6;
     thread_left_motor_parameter.gpio = &(io->gpio);
     thread_left_motor_parameter.pwm = &(io->pwm);
-    thread_left_motor_parameter.current_command = thread_clock_parameter.current_command;
+    thread_left_motor_parameter.current_command = &thread_clock_parameter.current_command;
     thread_left_motor_parameter.left_motor = true;
 
     // RIGHT
@@ -402,7 +403,7 @@ int main( void )
     thread_right_motor_parameter.I2_pin = 23;
     thread_right_motor_parameter.gpio = &(io->gpio);
     thread_right_motor_parameter.pwm = &(io->pwm);
-    thread_right_motor_parameter.current_command = thread_clock_parameter.current_command;
+    thread_right_motor_parameter.current_command = &thread_clock_parameter.current_command;
     thread_right_motor_parameter.left_motor = false;
 
 

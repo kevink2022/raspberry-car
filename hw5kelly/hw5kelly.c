@@ -148,7 +148,7 @@ void *ThreadClock( void * arg  )
     printf("CLOCK: queue_len %i\n", *(unsigned int*)parameter->control_queue_length);
 
     // Get commands out of queue
-    if (*(int*)parameter->control_queue_length > 0){
+    if (*(unsigned int*)parameter->control_queue_length > 0){
       pthread_mutex_lock( &(parameter->control_queue_lock) );
       printf("CLOCK: in lock, curr_cmd: %c\n", *(char*)parameter->control_queue);
       *(char*)parameter->current_command = *(char*)parameter->control_queue;

@@ -200,6 +200,8 @@ void *ThreadClock( void * arg  )
 #define PWM_RANGE 100
 #define PWM_MOTOR_MAX 80
 #define PWM_MOTOR_MIN 20
+#define PWM_SPEED_STEP 5
+#define PWM_TURN_STEP 10
 #define PWM_ORIENTATION 1
 
 void *ThreadMotor( void * arg  )
@@ -302,29 +304,29 @@ void *ThreadMotor( void * arg  )
           break;
         case 'i':
           printf("\n%s MOTOR: Recieved Command: FASTER\n", parameter->left_motor ? "LEFT" : "RIGHT");
-          if (PWM < PWM_MOTOR_MAX) {PWM_next += 5;}
+          if (PWM < PWM_MOTOR_MAX) {PWM_next += PWM_SPEED_STEP;}
           printf("%s MOTOR: PWM = %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM_next);
           break;
         case 'j':
           printf("\n%s MOTOR: Recieved Command: SLOWER\n", parameter->left_motor ? "LEFT" : "RIGHT");
-          if(PWM > PWM_MOTOR_MIN){PWM_next -= 5;}
+          if(PWM > PWM_MOTOR_MIN){PWM_next -= PWM_SPEED_STEP;}
           printf("%s MOTOR: PWM = %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM_next);
           break;
         case 'a':
           printf("\n%s MOTOR: Recieved Command: LEFT\n", parameter->left_motor ? "LEFT" : "RIGHT");
           if(parameter->left_motor){
-            if(PWM > PWM_MOTOR_MIN){PWM_next -= 5;}
+            if(PWM > PWM_MOTOR_MIN){PWM_next -= PWM_TURN_STEP;}
           } else {
-            if (PWM < 100) {PWM_next += 5;}
+            if (PWM < 100) {PWM_next += PWM_TURN_STEP;}
           }
           printf("%s MOTOR: PWM = %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM_next);
           break;
         case 'd':
           printf("\nMOTOR: Recieved Command: RIGHT\n");
           if(parameter->left_motor){
-            if (PWM < PWM_MOTOR_MAX) {PWM_next += 5;}
+            if (PWM < PWM_MOTOR_MAX) {PWM_next += PWM_TURN_STEP;}
           } else {
-            if(PWM > PWM_MOTOR_MIN){PWM_next -= 5;}
+            if(PWM > PWM_MOTOR_MIN){PWM_next -= PWM_TURN_STEP;}
           }
           printf("%s MOTOR: PWM = %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM);
           break;

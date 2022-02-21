@@ -250,7 +250,7 @@ void *ThreadMotor( void * arg  )
         parameter->pwm->DAT2 = PWM;
       }
       
-      printf("\n%s MOTOR: Setting I1: STOP\n", parameter->left_motor ? "LEFT" : "RIGHT");
+      printf("\n%s MOTOR: Setting I1: %i\n", parameter->left_motor ? "LEFT" : "RIGHT", I1);
       
       if (I1){
         //printf("\n%s MOTOR: Setting I1\n", parameter->left_motor ? "LEFT" : "RIGHT");  
@@ -260,7 +260,7 @@ void *ThreadMotor( void * arg  )
         GPIO_CLR( parameter->gpio, parameter->I1_pin );
       }
 
-      printf("\n%s MOTOR: Setting I2: STOP\n", parameter->left_motor ? "LEFT" : "RIGHT");
+      printf("\n%s MOTOR: Setting I2: %i\n", parameter->left_motor ? "LEFT" : "RIGHT", I2);
 
       if (I2){
         //printf("\n%s MOTOR: Setting I2\n", parameter->left_motor ? "LEFT" : "RIGHT");  
@@ -270,7 +270,7 @@ void *ThreadMotor( void * arg  )
         GPIO_CLR( parameter->gpio, parameter->I2_pin );
       }
 
-      printf("\n%s MOTOR: Everything Set: STOP\n", parameter->left_motor ? "LEFT" : "RIGHT");
+      printf("\n%s MOTOR: Everything Set\n", parameter->left_motor ? "LEFT" : "RIGHT");
     }
 
     pthread_mutex_lock( &(parameter->pause->lock) );

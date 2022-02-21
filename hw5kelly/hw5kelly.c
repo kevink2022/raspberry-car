@@ -349,6 +349,7 @@ int get_pressed_key(void)
   return ch;
 }
 
+#define DEBUG
 void *ThreadKey( void * arg )
 {
   struct key_thread_parameter *thread_key_parameter = (struct key_thread_parameter *)arg;
@@ -480,6 +481,7 @@ void *ThreadKey( void * arg )
 
   return (void *)0;
 }
+#undef DEBUG
 #define DEBUG
 int main( void )
 {

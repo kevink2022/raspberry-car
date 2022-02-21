@@ -199,6 +199,9 @@ void *ThreadMotor( void * arg  )
       I1 = I1_next;
       I2 = I2_next;
 
+      #ifdef DEBUG  
+      printf("\n%s MOTOR: PWM Pre Slow Stop: %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM);
+      #endif
       // Slow down during any mode change
       while(PWM > PWM_MOTOR_MIN){
         PWM -= PWM_SPEED_STEP;
@@ -209,6 +212,9 @@ void *ThreadMotor( void * arg  )
         }
         usleep(10000); // 0.01s
       }
+      #ifdef DEBUG  
+      printf("\n%s MOTOR: PWM Post Slow Stop: %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM);
+      #endif
 
       if (I1){
         //printf("\n%s MOTOR: Setting I1\n", parameter->left_motor ? "LEFT" : "RIGHT");  
@@ -230,6 +236,9 @@ void *ThreadMotor( void * arg  )
         GPIO_CLR( parameter->gpio, parameter->I2_pin );
       }
 
+      #ifdef DEBUG  
+      printf("\n%s MOTOR: PWM Pre Slow Go: %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM);
+      #endif
       // If moving, return to original speed
       if (I1 || I2){
         while(PWM < PWM_next){ //we use PWM_next here, as it will be the original speed.
@@ -242,6 +251,9 @@ void *ThreadMotor( void * arg  )
           usleep(10000); // 0.01s
         }
       }
+      #ifdef DEBUG  
+      printf("\n%s MOTOR: PWM Post Slow Go: %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM);
+      #endif
 
       #ifdef DEBUG
       printf("\n%s MOTOR: Everything Set\n", parameter->left_motor ? "LEFT" : "RIGHT");
@@ -250,7 +262,7 @@ void *ThreadMotor( void * arg  )
 
     pthread_mutex_lock( &(parameter->pause->lock) );
     if (parameter->pause->pause)
-    { printf(".");
+    {
       // Update params
       switch (*(char*)parameter->current_command)
       {

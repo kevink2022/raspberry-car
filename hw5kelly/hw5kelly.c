@@ -199,6 +199,7 @@ void *ThreadClock( void * arg  )
 
 // Bringing this down here for easier access temporarily
 #define PWM_MOTOR_MIN 0
+#define PWM_ORIENTATION 1
 
 void *ThreadMotor( void * arg  )
 {
@@ -242,7 +243,7 @@ void *ThreadMotor( void * arg  )
       printf("\n%s MOTOR: Setting PWM\n", parameter->left_motor ? "LEFT" : "RIGHT");
   
       // Execute params
-      if(parameter->left_motor){
+      if(PWM_ORIENTATION){
         parameter->pwm->DAT1 = PWM;
         parameter->pwm->DAT2 = PWM_RANGE - PWM;
       } else {

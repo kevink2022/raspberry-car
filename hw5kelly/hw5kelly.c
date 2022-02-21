@@ -198,8 +198,8 @@ void *ThreadClock( void * arg  )
 
 // Bringing this down here for easier access temporarily
 #define PWM_RANGE 100
-#define PWM_MOTOR_MAX 60
-#define PWM_MOTOR_MIN 40
+#define PWM_MOTOR_MAX 80
+#define PWM_MOTOR_MIN 20
 #define PWM_ORIENTATION 1
 
 void *ThreadMotor( void * arg  )

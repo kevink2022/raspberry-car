@@ -37,7 +37,6 @@
 #include "io_peripherals.h"
 #include "enable_pwm_clock.h"
 
-#define PWM_RANGE 100
 #define QUEUE_SIZE 100
 #define STOP 0
 #define FORWARD 2
@@ -198,7 +197,8 @@ void *ThreadClock( void * arg  )
 }
 
 // Bringing this down here for easier access temporarily
-#define PWM_MOTOR_MIN 0
+#define PWM_RANGE 95
+#define PWM_MOTOR_MIN 5
 #define PWM_ORIENTATION 1
 
 void *ThreadMotor( void * arg  )

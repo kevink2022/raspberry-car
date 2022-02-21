@@ -631,6 +631,10 @@ int main( void )
     pthread_create( &thread_right_motor_handle, 0, ThreadMotor, (void *)&thread_right_motor_parameter );
     pthread_create( &thread_clock_handle, 0, ThreadClock, (void *)&thread_clock_parameter);
     printf( "thread create\n" );
+    while(!done.done){
+      sleep(1);
+      printf(".");
+    }
     pthread_join( thread_key_handle, 0 );
     pthread_join( thread_control_handle, 0 );
     pthread_join( thread_left_motor_handle, 0 );

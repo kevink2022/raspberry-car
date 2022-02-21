@@ -479,7 +479,7 @@ void *ThreadKey( void * arg )
 
   return (void *)0;
 }
-
+#define DEBUG
 int main( void )
 {
   volatile struct io_peripherals *io;
@@ -629,3 +629,4 @@ int main( void )
 
   return 0;
 }
+#undef DEBUG

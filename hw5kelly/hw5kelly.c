@@ -241,7 +241,7 @@ void *ThreadMotor( void * arg  )
       //   GPIO_CLR( parameter->gpio, parameter->I2_pin );
       // }
 
-      printf("\n%s MOTOR: Setting PWM\n", parameter->left_motor ? "LEFT" : "RIGHT");
+      printf("\n%s MOTOR: Setting PWM: %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM);
   
       // Execute params
       if(left){
@@ -302,12 +302,12 @@ void *ThreadMotor( void * arg  )
         case 'i':
           printf("\n%s MOTOR: Recieved Command: FASTER\n", parameter->left_motor ? "LEFT" : "RIGHT");
           if (PWM < 100) {PWM_next += 5;}
-          printf("%s MOTOR: PWM = %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM);
+          printf("%s MOTOR: PWM = %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM_next);
           break;
         case 'j':
           printf("\n%s MOTOR: Recieved Command: SLOWER\n", parameter->left_motor ? "LEFT" : "RIGHT");
           if(PWM > PWM_MOTOR_MIN){PWM_next -= 5;}
-          printf("%s MOTOR: PWM = %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM);
+          printf("%s MOTOR: PWM = %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM_next);
           break;
         case 'a':
           printf("\n%s MOTOR: Recieved Command: LEFT\n", parameter->left_motor ? "LEFT" : "RIGHT");
@@ -316,7 +316,7 @@ void *ThreadMotor( void * arg  )
           } else {
             if (PWM < 100) {PWM_next += 5;}
           }
-          printf("%s MOTOR: PWM = %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM);
+          printf("%s MOTOR: PWM = %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM_next);
           break;
         case 'd':
           printf("\nMOTOR: Recieved Command: RIGHT\n");

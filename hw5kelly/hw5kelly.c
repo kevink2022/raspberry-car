@@ -52,8 +52,7 @@ struct done_flag
 
 struct key_thread_parameter
 {
-  struct done_flag *  done;
-  struct pause_flag * pause_control;
+  struct done_flag  * done;
   struct pause_flag * pause_left_motor;
   struct pause_flag * pause_right_motor;
   struct pause_flag * pause_clock;
@@ -378,7 +377,6 @@ void *ThreadKey( void * arg )
         #ifdef DEBUG
         printf("KEY_THREAD: 1\n");
         #endif
-        thread_key_parameter->pause_control->pause = !(thread_key_parameter->pause_control->pause);
         #ifdef DEBUG
         printf("KEY_THREAD: 2\n");
         #endif
@@ -402,7 +400,6 @@ void *ThreadKey( void * arg )
 
         // Lock Control Thread
         pthread_mutex_lock( thread_key_parameter->control_queue_lock );
-        thread_key_parameter->pause_control->pause = !(thread_key_parameter->pause_control->pause);
         if (*(int*)thread_key_parameter->control_queue_length < QUEUE_SIZE) {
           *(char*)(thread_key_parameter->control_queue + *(int*)thread_key_parameter->control_queue_length) = 'w';
           *(unsigned int*)thread_key_parameter->control_queue_length += 1;
@@ -417,7 +414,6 @@ void *ThreadKey( void * arg )
 
         // Lock Control Thread
         pthread_mutex_lock( thread_key_parameter->control_queue_lock );
-        thread_key_parameter->pause_control->pause = !(thread_key_parameter->pause_control->pause);
         if (*(int*)thread_key_parameter->control_queue_length < QUEUE_SIZE) {
           *(char*)(thread_key_parameter->control_queue + *(int*)thread_key_parameter->control_queue_length) = 'x';
           *(unsigned int*)thread_key_parameter->control_queue_length += 1;
@@ -432,7 +428,6 @@ void *ThreadKey( void * arg )
 
         // Lock Control Thread
         pthread_mutex_lock( thread_key_parameter->control_queue_lock );
-        thread_key_parameter->pause_control->pause = !(thread_key_parameter->pause_control->pause);
         if (*(int*)thread_key_parameter->control_queue_length < QUEUE_SIZE) {
           *(char*)(thread_key_parameter->control_queue + *(int*)thread_key_parameter->control_queue_length) = 'i';
           *(unsigned int*)thread_key_parameter->control_queue_length += 1;
@@ -447,7 +442,6 @@ void *ThreadKey( void * arg )
 
         // Lock Control Thread
         pthread_mutex_lock( thread_key_parameter->control_queue_lock );
-        thread_key_parameter->pause_control->pause = !(thread_key_parameter->pause_control->pause);
         if (*(int*)thread_key_parameter->control_queue_length < QUEUE_SIZE) {
           *(char*)(thread_key_parameter->control_queue + *(int*)thread_key_parameter->control_queue_length) = 'j';
           *(unsigned int*)thread_key_parameter->control_queue_length += 1;
@@ -462,7 +456,6 @@ void *ThreadKey( void * arg )
 
         // Lock Control Thread
         pthread_mutex_lock( thread_key_parameter->control_queue_lock );
-        thread_key_parameter->pause_control->pause = !(thread_key_parameter->pause_control->pause);
         if (*(int*)thread_key_parameter->control_queue_length < QUEUE_SIZE) {
           *(char*)(thread_key_parameter->control_queue + *(int*)thread_key_parameter->control_queue_length) = 'a';
           *(unsigned int*)thread_key_parameter->control_queue_length += 1;
@@ -475,7 +468,6 @@ void *ThreadKey( void * arg )
 
         // Lock Control Thread
         pthread_mutex_lock( thread_key_parameter->control_queue_lock );
-        thread_key_parameter->pause_control->pause = !(thread_key_parameter->pause_control->pause);
         if (*(int*)thread_key_parameter->control_queue_length < QUEUE_SIZE) {
           *(char*)(thread_key_parameter->control_queue + *(int*)thread_key_parameter->control_queue_length) = 'd';
           *(unsigned int*)thread_key_parameter->control_queue_length += 1;

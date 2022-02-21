@@ -208,6 +208,7 @@ void *ThreadMotor( void * arg  )
   bool I1 = 0, I2 = 0, I1_next = 0, I2_next = 0;
   char current_command = '\0';
   int current_mode = STOP, next_mode = STOP;
+  bool left = parameter->left_motor;
 
   pthread_mutex_lock( &(parameter->done->lock) );
   while (!(parameter->done->done))
@@ -243,7 +244,7 @@ void *ThreadMotor( void * arg  )
       printf("\n%s MOTOR: Setting PWM\n", parameter->left_motor ? "LEFT" : "RIGHT");
   
       // Execute params
-      if(parameter->left_motor){
+      if(left){
         parameter->pwm->DAT1 = PWM;
         parameter->pwm->DAT2 = PWM_RANGE - PWM;
       } else {

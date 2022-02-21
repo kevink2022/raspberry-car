@@ -375,9 +375,21 @@ void *ThreadKey( void * arg )
 
         // Lock Control Thread
         pthread_mutex_lock( thread_key_parameter->control_queue_lock );
+        #ifdef DEBUG
+        printf("KEY_THREAD: 1\n");
+        #endif
         thread_key_parameter->pause_control->pause = !(thread_key_parameter->pause_control->pause);
+        #ifdef DEBUG
+        printf("KEY_THREAD: 2\n");
+        #endif
         if (*(int*)thread_key_parameter->control_queue_length < QUEUE_SIZE) {
+          #ifdef DEBUG
+          printf("KEY_THREAD: 3\n");
+          #endif
           *(char*)(thread_key_parameter->control_queue + *(int*)thread_key_parameter->control_queue_length) = 's';
+          #ifdef DEBUG
+          printf("KEY_THREAD: 4\n");
+          #endif
           *(unsigned int*)thread_key_parameter->control_queue_length += 1;
           #ifdef DEBUG
           printf("KEY_THREAD: Added to Queue: STOP\nKEY_THREAD: Queue Length: %i\n", *(unsigned int*)thread_key_parameter->control_queue_length);

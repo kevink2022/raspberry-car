@@ -275,7 +275,7 @@ void *ThreadMotor( void * arg  )
 
     pthread_mutex_lock( &(parameter->pause->lock) );
     if (parameter->pause->pause)
-    {
+    { printf(".");
       // Update params
       switch (*(char*)parameter->current_command)
       {

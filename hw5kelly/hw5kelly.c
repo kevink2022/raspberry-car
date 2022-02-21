@@ -215,6 +215,12 @@ void *ThreadMotor( void * arg  )
 
     // Only execute if any properties change
     if ((PWM != PWM_next) || (I1 != I1_next) || (I2 != I2_next)){
+
+      // Update properties
+      PWM = PWM_next;
+      I1 = I1_next;
+      I2 = I2_next;
+
       // If changing modes (STOP, FORWARD, BACKWARD), need to fade pwm to 0
       if (current_mode != next_mode){
         printf("\n%s MOTOR: Smooth mode change: %s -> %s\n", parameter->left_motor ? "LEFT" : "RIGHT", current_mode ? (current_mode - 1 ? "FORWARD" : "BACKWARD") : "STOP", next_mode ? (next_mode - 1 ? "FORWARD" : "BACKWARD") : "STOP");
@@ -250,17 +256,17 @@ void *ThreadMotor( void * arg  )
       }
 
       printf("\n%s MOTOR: Setting I2: STOP\n", parameter->left_motor ? "LEFT" : "RIGHT");
-    }
 
-    if (I2){
-      //printf("\n%s MOTOR: Setting I2\n", parameter->left_motor ? "LEFT" : "RIGHT");  
-      GPIO_SET( parameter->gpio, parameter->I2_pin );
-    } else {
-      //printf("\n%s MOTOR: Clearing I2\n", parameter->left_motor ? "LEFT" : "RIGHT");  
-      GPIO_CLR( parameter->gpio, parameter->I2_pin );
+      if (I2){
+        //printf("\n%s MOTOR: Setting I2\n", parameter->left_motor ? "LEFT" : "RIGHT");  
+        GPIO_SET( parameter->gpio, parameter->I2_pin );
+      } else {
+        //printf("\n%s MOTOR: Clearing I2\n", parameter->left_motor ? "LEFT" : "RIGHT");  
+        GPIO_CLR( parameter->gpio, parameter->I2_pin );
+      }
+
+      printf("\n%s MOTOR: Everything Set: STOP\n", parameter->left_motor ? "LEFT" : "RIGHT");
     }
-    
-    printf("\n%s MOTOR: Everything Set: STOP\n", parameter->left_motor ? "LEFT" : "RIGHT");
 
     pthread_mutex_lock( &(parameter->pause->lock) );
     if (parameter->pause->pause)

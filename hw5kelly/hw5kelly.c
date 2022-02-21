@@ -226,28 +226,12 @@ void *ThreadMotor( void * arg  )
       I1 = I1_next;
       I2 = I2_next;
 
-      // // If changing modes (STOP, FORWARD, BACKWARD), need to fade pwm to 0
-      // if (current_mode != next_mode){
-      //   printf("\n%s MOTOR: Smooth mode change: %s -> %s\n", parameter->left_motor ? "LEFT" : "RIGHT", current_mode ? (current_mode - 1 ? "FORWARD" : "BACKWARD") : "STOP", next_mode ? (next_mode - 1 ? "FORWARD" : "BACKWARD") : "STOP");
-      //   while (PWM > PWM_MOTOR_MIN){
-      //     PWM--;
-      //     if(parameter->left_motor){
-      //       parameter->pwm->DAT1 = PWM;
-      //       parameter->pwm->DAT2 = PWM_RANGE - PWM;
-      //     } else {
-      //       parameter->pwm->DAT1 = PWM_RANGE - PWM;
-      //       parameter->pwm->DAT2 = PWM;
-      //     }
-      //   }
-      //   current_mode = next_mode;
-      //   GPIO_CLR( parameter->gpio, parameter->I1_pin );
-      //   GPIO_CLR( parameter->gpio, parameter->I2_pin );
-      // }
+     
 
       printf("\n%s MOTOR: Setting PWM: %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM);
   
       // Execute params
-      if(PWM_ORIENTATION){
+      if(left){
         parameter->pwm->DAT1 = PWM;
         parameter->pwm->DAT2 = PWM_RANGE - PWM;
       } else {

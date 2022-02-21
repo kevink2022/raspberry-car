@@ -232,11 +232,11 @@ void *ThreadMotor( void * arg  )
   
       // Execute params
       if(left){
-        parameter->pwm->DAT1 = PWM;
+        parameter->pwm->DAT2 = PWM;
         //parameter->pwm->DAT2 = PWM_RANGE - PWM;
       } else {
         //parameter->pwm->DAT1 = PWM_RANGE - PWM;
-        parameter->pwm->DAT2 = PWM;
+        parameter->pwm->DAT1 = PWM;
       }
       
       printf("\n%s MOTOR: Setting I1: %i\n", parameter->left_motor ? "LEFT" : "RIGHT", I1);

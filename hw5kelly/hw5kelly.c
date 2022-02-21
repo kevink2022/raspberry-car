@@ -301,7 +301,7 @@ void *ThreadMotor( void * arg  )
           break;
         case 'i':
           printf("\n%s MOTOR: Recieved Command: FASTER\n", parameter->left_motor ? "LEFT" : "RIGHT");
-          if (PWM < 100) {PWM_next += 5;}
+          if (PWM < PWM_RANGE) {PWM_next += 5;}
           printf("%s MOTOR: PWM = %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM_next);
           break;
         case 'j':
@@ -321,7 +321,7 @@ void *ThreadMotor( void * arg  )
         case 'd':
           printf("\nMOTOR: Recieved Command: RIGHT\n");
           if(parameter->left_motor){
-            if (PWM < 100) {PWM_next += 5;}
+            if (PWM < PWM_RANGE) {PWM_next += 5;}
           } else {
             if(PWM > PWM_MOTOR_MIN){PWM_next -= 5;}
           }

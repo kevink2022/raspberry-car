@@ -243,7 +243,7 @@ void *ThreadMotor( void * arg  )
       printf("\n%s MOTOR: Setting PWM\n", parameter->left_motor ? "LEFT" : "RIGHT");
   
       // Execute params
-      if(PWM_ORIENTATION){
+      if(parameter->left_motor){
         parameter->pwm->DAT1 = PWM;
         parameter->pwm->DAT2 = PWM_RANGE - PWM;
       } else {

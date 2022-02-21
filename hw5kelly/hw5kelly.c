@@ -198,10 +198,10 @@ void *ThreadClock( void * arg  )
 
 // Bringing this down here for easier access temporarily
 #define PWM_RANGE 100
-#define PWM_MOTOR_MAX 80
+#define PWM_MOTOR_MAX 95
 #define PWM_MOTOR_MIN 20
 #define PWM_SPEED_STEP 5
-#define PWM_TURN_STEP 10
+#define PWM_TURN_STEP 15
 #define PWM_ORIENTATION 1
 
 void *ThreadMotor( void * arg  )
@@ -225,8 +225,6 @@ void *ThreadMotor( void * arg  )
       PWM = PWM_next;
       I1 = I1_next;
       I2 = I2_next;
-
-     
 
       printf("\n%s MOTOR: Setting PWM: %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM);
   

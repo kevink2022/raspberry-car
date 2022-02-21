@@ -160,6 +160,7 @@ void *ThreadClock( void * arg  )
 #define PWM_TURN_STEP 15
 #define PWM_ORIENTATION 1
 
+#define DEBUG
 void *ThreadMotor( void * arg  )
 {
   struct motor_thread_parameter * parameter = (struct motor_thread_parameter *)arg;
@@ -326,7 +327,7 @@ void *ThreadMotor( void * arg  )
     pthread_mutex_unlock( &(parameter->pause->lock) );
   }
 }
-
+#undef DEBUG
 
 int get_pressed_key(void)
 {

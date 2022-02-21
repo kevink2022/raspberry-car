@@ -197,7 +197,8 @@ void *ThreadClock( void * arg  )
 }
 
 // Bringing this down here for easier access temporarily
-#define PWM_RANGE 60
+#define PWM_RANGE 100
+#define PWM_MOTOR_MAX 60
 #define PWM_MOTOR_MIN 40
 #define PWM_ORIENTATION 1
 
@@ -301,7 +302,7 @@ void *ThreadMotor( void * arg  )
           break;
         case 'i':
           printf("\n%s MOTOR: Recieved Command: FASTER\n", parameter->left_motor ? "LEFT" : "RIGHT");
-          if (PWM < PWM_RANGE) {PWM_next += 5;}
+          if (PWM < PWM_MOTOR_MAX) {PWM_next += 5;}
           printf("%s MOTOR: PWM = %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM_next);
           break;
         case 'j':
@@ -321,7 +322,7 @@ void *ThreadMotor( void * arg  )
         case 'd':
           printf("\nMOTOR: Recieved Command: RIGHT\n");
           if(parameter->left_motor){
-            if (PWM < PWM_RANGE) {PWM_next += 5;}
+            if (PWM < PWM_MOTOR_MAX) {PWM_next += 5;}
           } else {
             if(PWM > PWM_MOTOR_MIN){PWM_next -= 5;}
           }

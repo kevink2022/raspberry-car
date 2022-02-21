@@ -199,16 +199,16 @@ void *ThreadMotor( void * arg  )
       I1 = I1_next;
       I2 = I2_next;
 
-      // // Slow down during any mode change
-      // while(PWM > PWM_MOTOR_MIN){
-      //   PWM -= PWM_SPEED_STEP;
-      //   if(left){
-      //     parameter->pwm->DAT2 = PWM;
-      //   } else {
-      //     parameter->pwm->DAT1 = PWM;
-      //   }
-      //   usleep(10000); // 0.01s
-      // }
+      // Slow down during any mode change
+      while(PWM > PWM_MOTOR_MIN){
+        PWM -= PWM_SPEED_STEP;
+        if(left){
+          parameter->pwm->DAT2 = PWM;
+        } else {
+          parameter->pwm->DAT1 = PWM;
+        }
+        usleep(10000); // 0.01s
+      }
 
       if (I1){
         //printf("\n%s MOTOR: Setting I1\n", parameter->left_motor ? "LEFT" : "RIGHT");  
@@ -230,17 +230,18 @@ void *ThreadMotor( void * arg  )
         GPIO_CLR( parameter->gpio, parameter->I2_pin );
       }
 
-      // if (I1 || I2){
-      //   while(PWM < PWM_next){ //we use PWM_next here, as it will be the original speed.
-      //     PWM += PWM_SPEED_STEP;
-      //     if(left){
-      //       parameter->pwm->DAT2 = PWM;
-      //     } else {
-      //       parameter->pwm->DAT1 = PWM;
-      //     }
-      //     usleep(10000); // 0.01s
-      //   }
-      // }
+      // If moving, return to original speed
+      if (I1 || I2){
+        while(PWM < PWM_next){ //we use PWM_next here, as it will be the original speed.
+          PWM += PWM_SPEED_STEP;
+          if(left){
+            parameter->pwm->DAT2 = PWM;
+          } else {
+            parameter->pwm->DAT1 = PWM;
+          }
+          usleep(10000); // 0.01s
+        }
+      }
 
       #ifdef DEBUG
       printf("\n%s MOTOR: Everything Set\n", parameter->left_motor ? "LEFT" : "RIGHT");
@@ -374,20 +375,8 @@ void *ThreadKey( void * arg )
 
         // Lock Control Thread
         pthread_mutex_lock( thread_key_parameter->control_queue_lock );
-        #ifdef DEBUG
-        printf("KEY_THREAD: 1\n");
-        #endif
-        #ifdef DEBUG
-        printf("KEY_THREAD: 2\n");
-        #endif
         if (*(int*)thread_key_parameter->control_queue_length < QUEUE_SIZE) {
-          #ifdef DEBUG
-          printf("KEY_THREAD: 3\n");
-          #endif
           *(char*)(thread_key_parameter->control_queue + *(int*)thread_key_parameter->control_queue_length) = 's';
-          #ifdef DEBUG
-          printf("KEY_THREAD: 4\n");
-          #endif
           *(unsigned int*)thread_key_parameter->control_queue_length += 1;
           #ifdef DEBUG
           printf("KEY_THREAD: Added to Queue: STOP\nKEY_THREAD: Queue Length: %i\n", *(unsigned int*)thread_key_parameter->control_queue_length);

@@ -1,25 +1,15 @@
 /**************************************************
 * CMPEN 473, Spring 2022, Penn State University
 * 
-* Homework 3 Program 1
-* 2/2/2022 
+* Homework 5
+* 2/20/2022 
+* 
+* Car Driving Program
 * 
 * By Kevin Kelly and Kyusun Choi
 * 
 ***************************************************/
 
-/* Homework 2 Sample Program 1
- * Slow LED blinking program example in C for 
- * Raspberry Pi 4 computer with 
- * Red LED and Blue LED: 
- *    --- connected in series with a 430 ohm and 470 ohm resistor
- *    --- connected in series with GPIO 12
- * Green LED and Yellow LED: 
- *    --- connected in series with a 430 ohm and 470 ohm resistor
- *    --- connected in series with GPIO 22
- * Turn on each LED in sequence, switching every 0.25 seconds
- * 
- */
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -72,14 +62,6 @@ struct key_thread_parameter
   pthread_mutex_t   * control_queue_lock;
 };
 
-struct control_thread_parameter
-{
-  char                queue[QUEUE_SIZE];
-  int                 queue_length;
-  struct pause_flag * pause;
-  struct done_flag  * done;
-};
-
 struct motor_thread_parameter
 {
   char                          * current_command;
@@ -105,32 +87,6 @@ struct clock_thread_parameter
   struct pause_flag * motor_pause_right;
   pthread_mutex_t   * control_queue_lock;
 };
-
-
-int  Tstep = 50;  /* PWM time resolution, number used for usleep(Tstep) */
-int  Tlevel = 5;  /* repetition count of each light level, eg. repeat 12% light level for 5 times. */
-
-void DimLevUnit(int Level, int pin, volatile struct gpio_register *gpio)
-{
-  int ONcount, OFFcount;
-
-  ONcount = Level;
-  OFFcount = 100 - Level;
-
-  /* create the output pin signal duty cycle, same as Level */
-  GPIO_SET( gpio, pin ); /* ON LED at GPIO 18 */
-  while (ONcount > 0)
-  {
-    usleep( Tstep );
-    ONcount = ONcount - 1;
-  }
-  GPIO_CLR( gpio, pin ); /* OFF LED at GPIO 18 */
-  while (OFFcount > 0)
-  {
-    usleep( Tstep );
-    OFFcount = OFFcount - 1;
-  }
-}
 
 void *ThreadClock( void * arg  )
 {
@@ -210,7 +166,6 @@ void *ThreadMotor( void * arg  )
   int PWM = PWM_MOTOR_MIN, PWM_next = PWM_MOTOR_MIN;
   bool I1 = 0, I2 = 0, I1_next = 0, I2_next = 0;
   char current_command = '\0';
-  int current_mode = STOP, next_mode = STOP;
   bool left = parameter->left_motor;
 
   pthread_mutex_lock( &(parameter->done->lock) );
@@ -219,26 +174,42 @@ void *ThreadMotor( void * arg  )
     pthread_mutex_unlock( &(parameter->done->lock) );
 
     // Only execute if any properties change
-    if ((PWM != PWM_next) || (I1 != I1_next) || (I2 != I2_next)){
+    if (PWM != PWM_next){
 
       // Update properties
       PWM = PWM_next;
-      I1 = I1_next;
-      I2 = I2_next;
 
+      #ifdef DEBUG  
       printf("\n%s MOTOR: Setting PWM: %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM);
-  
+      #endif
+
       // Execute params
       if(left){
         parameter->pwm->DAT2 = PWM;
-        //parameter->pwm->DAT2 = PWM_RANGE - PWM;
       } else {
-        //parameter->pwm->DAT1 = PWM_RANGE - PWM;
         parameter->pwm->DAT1 = PWM;
       }
-      
+    }
+
+    if ((I1 != I1_next) || (I2 != I2_next)) {
+      #ifdef DEBUG
       printf("\n%s MOTOR: Setting I1: %i\n", parameter->left_motor ? "LEFT" : "RIGHT", I1);
-      
+      #endif
+
+      I1 = I1_next;
+      I2 = I2_next;
+
+      // Slow down during any mode change
+      while(PWM > PWM_MOTOR_MIN){
+        PWM -= PWM_SPEED_STEP;
+        if(left){
+          parameter->pwm->DAT2 = PWM;
+        } else {
+          parameter->pwm->DAT1 = PWM;
+        }
+        usleep(10000); // 0.01s
+      }
+
       if (I1){
         //printf("\n%s MOTOR: Setting I1\n", parameter->left_motor ? "LEFT" : "RIGHT");  
         GPIO_SET( parameter->gpio, parameter->I1_pin );
@@ -247,7 +218,9 @@ void *ThreadMotor( void * arg  )
         GPIO_CLR( parameter->gpio, parameter->I1_pin );
       }
 
+      #ifdef DEBUG
       printf("\n%s MOTOR: Setting I2: %i\n", parameter->left_motor ? "LEFT" : "RIGHT", I2);
+      #endif
 
       if (I2){
         //printf("\n%s MOTOR: Setting I2\n", parameter->left_motor ? "LEFT" : "RIGHT");  
@@ -257,7 +230,21 @@ void *ThreadMotor( void * arg  )
         GPIO_CLR( parameter->gpio, parameter->I2_pin );
       }
 
+      if (I1 || I2){
+        while(PWM < PWM_next){ //we use PWM_next here, as it will be the original speed.
+          PWM += PWM_SPEED_STEP;
+          if(left){
+            parameter->pwm->DAT2 = PWM;
+          } else {
+            parameter->pwm->DAT1 = PWM;
+          }
+          usleep(10000); // 0.01s
+        }
+      }
+
+      #ifdef DEBUG
       printf("\n%s MOTOR: Everything Set\n", parameter->left_motor ? "LEFT" : "RIGHT");
+      #endif
     }
 
     pthread_mutex_lock( &(parameter->pause->lock) );
@@ -267,50 +254,69 @@ void *ThreadMotor( void * arg  )
       switch (*(char*)parameter->current_command)
       {
         case 's':
+          #ifdef DEBUG
           printf("\n%s MOTOR: Recieved Command: STOP\n", parameter->left_motor ? "LEFT" : "RIGHT");
+          #endif
           I1_next = 0;
           I2_next = 0;
-          next_mode = STOP;
           break;
         case 'w':
+          #ifdef DEBUG
           printf("\n%s MOTOR: Recieved Command: FORWARD\n", parameter->left_motor ? "LEFT" : "RIGHT");
+          #endif
           I1_next = 1;
           I2_next = 0;
-          next_mode = FORWARD;
           break;
         case 'x':
+          #ifdef DEBUG
           printf("\n%s MOTOR: Recieved Command: BACKWARD\n", parameter->left_motor ? "LEFT" : "RIGHT");
+          #endif
           I1_next = 0;
           I2_next = 1;
-          next_mode = BACKWARD;
           break;
         case 'i':
+          #ifdef DEBUG
           printf("\n%s MOTOR: Recieved Command: FASTER\n", parameter->left_motor ? "LEFT" : "RIGHT");
+          #endif
           if (PWM < PWM_MOTOR_MAX) {PWM_next += PWM_SPEED_STEP;}
+          #ifdef DEBUG
           printf("%s MOTOR: PWM = %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM_next);
+          #endif
           break;
         case 'j':
+          #ifdef DEBUG
           printf("\n%s MOTOR: Recieved Command: SLOWER\n", parameter->left_motor ? "LEFT" : "RIGHT");
+          #endif
           if(PWM > PWM_MOTOR_MIN){PWM_next -= PWM_SPEED_STEP;}
+          #ifdef DEBUG
           printf("%s MOTOR: PWM = %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM_next);
+          #endif
           break;
         case 'a':
+          #ifdef DEBUG
           printf("\n%s MOTOR: Recieved Command: LEFT\n", parameter->left_motor ? "LEFT" : "RIGHT");
+          #endif
           if(parameter->left_motor){
             if(PWM > PWM_MOTOR_MIN){PWM_next -= PWM_TURN_STEP;}
           } else {
             if (PWM < 100) {PWM_next += PWM_TURN_STEP;}
           }
+          #ifdef DEBUG
           printf("%s MOTOR: PWM = %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM_next);
+          #endif
           break;
         case 'd':
+          #ifdef DEBUG
           printf("\nMOTOR: Recieved Command: RIGHT\n");
+          #endif
           if(parameter->left_motor){
             if (PWM < PWM_MOTOR_MAX) {PWM_next += PWM_TURN_STEP;}
           } else {
             if(PWM > PWM_MOTOR_MIN){PWM_next -= PWM_TURN_STEP;}
           }
+          #ifdef DEBUG
           printf("%s MOTOR: PWM = %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM);
+          #endif
           break;
         default:
           break;
@@ -371,7 +377,9 @@ void *ThreadKey( void * arg )
         if (*(int*)thread_key_parameter->control_queue_length < QUEUE_SIZE) {
           *(char*)(thread_key_parameter->control_queue + *(int*)thread_key_parameter->control_queue_length) = 's';
           *(unsigned int*)thread_key_parameter->control_queue_length += 1;
+          #ifdef DEBUG
           printf("KEY_THREAD: Added to Queue: STOP\nKEY_THREAD: Queue Length: %i\n", *(unsigned int*)thread_key_parameter->control_queue_length);
+          #endif
         }
         pthread_mutex_unlock( thread_key_parameter->control_queue_lock );
         break;
@@ -384,7 +392,9 @@ void *ThreadKey( void * arg )
         if (*(int*)thread_key_parameter->control_queue_length < QUEUE_SIZE) {
           *(char*)(thread_key_parameter->control_queue + *(int*)thread_key_parameter->control_queue_length) = 'w';
           *(unsigned int*)thread_key_parameter->control_queue_length += 1;
+          #ifdef DEBUG
           printf("KEY_THREAD: Added to Queue: FORWARD\nKEY_THREAD: Queue Lengh: %i\n", *(unsigned int*)thread_key_parameter->control_queue_length);
+          #endif
         }
         pthread_mutex_unlock( thread_key_parameter->control_queue_lock );
         break;
@@ -397,10 +407,11 @@ void *ThreadKey( void * arg )
         if (*(int*)thread_key_parameter->control_queue_length < QUEUE_SIZE) {
           *(char*)(thread_key_parameter->control_queue + *(int*)thread_key_parameter->control_queue_length) = 'x';
           *(unsigned int*)thread_key_parameter->control_queue_length += 1;
+          #ifdef DEBUG
           printf("KEY_THREAD: Added to Queue: STOP\nKEY_THREAD: Queue Length: %i\n", *(unsigned int*)thread_key_parameter->control_queue_length);
+          #endif
         }
         pthread_mutex_unlock( thread_key_parameter->control_queue_lock );
-        break;
         break;
       case 'i':
         printf("KEY_THREAD: Recieved Command: FASTER\n");
@@ -411,10 +422,11 @@ void *ThreadKey( void * arg )
         if (*(int*)thread_key_parameter->control_queue_length < QUEUE_SIZE) {
           *(char*)(thread_key_parameter->control_queue + *(int*)thread_key_parameter->control_queue_length) = 'i';
           *(unsigned int*)thread_key_parameter->control_queue_length += 1;
+          #ifdef DEBUG
           printf("KEY_THREAD: Added to Queue: STOP\nKEY_THREAD: Queue Length: %i\n", *(unsigned int*)thread_key_parameter->control_queue_length);
+          #endif
         }
         pthread_mutex_unlock( thread_key_parameter->control_queue_lock );
-        break;
         break;
       case 'j':
         printf("KEY_THREAD: Recieved Command: SLOWER\n");
@@ -425,10 +437,11 @@ void *ThreadKey( void * arg )
         if (*(int*)thread_key_parameter->control_queue_length < QUEUE_SIZE) {
           *(char*)(thread_key_parameter->control_queue + *(int*)thread_key_parameter->control_queue_length) = 'j';
           *(unsigned int*)thread_key_parameter->control_queue_length += 1;
+          #ifdef DEBUG
           printf("KEY_THREAD: Added to Queue: STOP\nKEY_THREAD: Queue Length: %i\n", *(unsigned int*)thread_key_parameter->control_queue_length);
+          #endif
         }
         pthread_mutex_unlock( thread_key_parameter->control_queue_lock );
-        break;
         break;
       case 'a':
         printf("KEY_THREAD: Recieved Command: LEFT\n");
@@ -443,7 +456,6 @@ void *ThreadKey( void * arg )
         }
         pthread_mutex_unlock( thread_key_parameter->control_queue_lock );
         break;
-        break;
       case 'd':
         printf("KEY_THREAD: Recieved Command: RIGHT\n");
 
@@ -453,16 +465,17 @@ void *ThreadKey( void * arg )
         if (*(int*)thread_key_parameter->control_queue_length < QUEUE_SIZE) {
           *(char*)(thread_key_parameter->control_queue + *(int*)thread_key_parameter->control_queue_length) = 'd';
           *(unsigned int*)thread_key_parameter->control_queue_length += 1;
+          #ifdef DEBUG
           printf("KEY_THREAD: Added to Queue: STOP\nKEY_THREAD: Queue Length: %i\n", *(unsigned int*)thread_key_parameter->control_queue_length);
+          #endif
         }
         pthread_mutex_unlock( thread_key_parameter->control_queue_lock );
-        break;
         break;
       default:
         break;
     }
   } while (!done);
-  printf( "key thread exiting\n" );
+  printf( "KEY_THREAD: Exiting...\n" );
 
   return (void *)0;
 }
@@ -473,11 +486,9 @@ int main( void )
   pthread_t                       thread_key_handle;
   struct key_thread_parameter     thread_key_parameter;
 
-  pthread_t                       thread_control_handle;
   pthread_t                       thread_left_motor_handle;
   pthread_t                       thread_right_motor_handle;
   pthread_t                       thread_clock_handle;
-  struct control_thread_parameter thread_control_parameter;
   struct motor_thread_parameter   thread_left_motor_parameter;
   struct motor_thread_parameter   thread_right_motor_parameter;
   struct clock_thread_parameter   thread_clock_parameter;
@@ -485,7 +496,6 @@ int main( void )
   struct pause_flag               pause_left_motor = {PTHREAD_MUTEX_INITIALIZER, false};
   struct pause_flag               pause_right_motor = {PTHREAD_MUTEX_INITIALIZER, false};
   struct pause_flag               set_motors = {PTHREAD_MUTEX_INITIALIZER, false};
-  struct pause_flag               pause_control = {PTHREAD_MUTEX_INITIALIZER, false};
   struct pause_flag               pause_clock = {PTHREAD_MUTEX_INITIALIZER, false};
   struct done_flag                done   = {PTHREAD_MUTEX_INITIALIZER, false};
 
@@ -493,17 +503,21 @@ int main( void )
 
   char *queue;
   queue = calloc(QUEUE_SIZE, sizeof(char));
+  #ifdef DEBUG
   printf("MAIN: queue addr: %lx", (unsigned long)queue);
-  
-  printf( "what\n" );
+  #endif
 
   unsigned int *queue_len;
   queue_len = calloc(1, sizeof(unsigned int));
+  #ifdef DEBUG
   printf("MAIN: queue_len addr: %lx", (unsigned long)queue_len);
+  #endif
 
   char *curr_cmd;
   curr_cmd = calloc(1, sizeof(char));
+  #ifdef DEBUG
   printf("MAIN: queue_len addr: %lx", (unsigned long)curr_cmd);
+  #endif
 
   io = import_registers();
   if (io != NULL)
@@ -512,8 +526,6 @@ int main( void )
     printf( "mem at 0x%8.8X\n", (unsigned long)io );
 
     enable_pwm_clock( io );
-
-    printf( "enable pwm\n" );
 
     io->gpio.GPFSEL1.field.FSEL2 = GPFSEL_INPUT;
     io->gpio.GPFSEL1.field.FSEL3 = GPFSEL_INPUT;
@@ -550,14 +562,6 @@ int main( void )
     io->pwm.CTL.field.CLRF1 = 1;  /* clear the FIFO, even though it is not used */
     io->pwm.CTL.field.PWEN1 = 1;  /* enable the PWM channel */
     io->pwm.CTL.field.PWEN2 = 1;  /* enable the PWM channel */
-
-    // // CONTROL
-    // thread_control_parameter.pause = &pause_control;
-    // thread_control_parameter.done = &done;
-    // thread_control_parameter.queue_length = 0;
-    // memset(&thread_control_parameter.queue, 0, QUEUE_SIZE);
-
-    printf( "config pwm\n" );
     
     // CLOCK
     thread_clock_parameter.period = .01;
@@ -570,10 +574,8 @@ int main( void )
     thread_clock_parameter.motor_pause_left = &pause_left_motor;
     thread_clock_parameter.motor_pause_right = &pause_right_motor;
 
-
     // KEY
     thread_key_parameter.done = &done;
-    thread_key_parameter.pause_control = &pause_control;
     thread_key_parameter.pause_left_motor = &pause_left_motor;
     thread_key_parameter.pause_right_motor = &pause_right_motor;
     thread_key_parameter.pause_clock = &pause_clock;
@@ -589,7 +591,6 @@ int main( void )
     thread_left_motor_parameter.I2_pin = 6;
     thread_left_motor_parameter.gpio = &(io->gpio);
     thread_left_motor_parameter.pwm = &(io->pwm);
-    thread_left_motor_parameter.current_command = thread_clock_parameter.current_command;
     thread_left_motor_parameter.left_motor = true;
     thread_left_motor_parameter.current_command = curr_cmd;
 
@@ -601,27 +602,15 @@ int main( void )
     thread_right_motor_parameter.I2_pin = 23;
     thread_right_motor_parameter.gpio = &(io->gpio);
     thread_right_motor_parameter.pwm = &(io->pwm);
-    thread_right_motor_parameter.current_command = thread_clock_parameter.current_command;
     thread_right_motor_parameter.left_motor = false;
     thread_right_motor_parameter.current_command = curr_cmd;
 
-
-    printf( "thread param\n" );
-
-
     // THREADS
     pthread_create( &thread_key_handle, 0, ThreadKey, (void *)&thread_key_parameter );
-    // pthread_create( &thread_control_handle, 0, ThreadControl, (void *)&thread_control_parameter );
     pthread_create( &thread_left_motor_handle, 0, ThreadMotor, (void *)&thread_left_motor_parameter );
     pthread_create( &thread_right_motor_handle, 0, ThreadMotor, (void *)&thread_right_motor_parameter );
     pthread_create( &thread_clock_handle, 0, ThreadClock, (void *)&thread_clock_parameter);
-    printf( "thread create\n" );
-    while(!done.done){
-      sleep(1);
-      printf(".");
-    }
     pthread_join( thread_key_handle, 0 );
-    pthread_join( thread_control_handle, 0 );
     pthread_join( thread_left_motor_handle, 0 );
     pthread_join( thread_right_motor_handle, 0 );
     pthread_join( thread_clock_handle, 0 );
@@ -631,6 +620,7 @@ int main( void )
     io->gpio.GPFSEL0.field.FSEL6 = GPFSEL_INPUT;
     io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_INPUT;
     io->gpio.GPFSEL2.field.FSEL3 = GPFSEL_INPUT;
+    printf("\nExiting Program...\n");
   }
   else
   {
@@ -639,5 +629,3 @@ int main( void )
 
   return 0;
 }
-
-// b hw5kelly.c:424

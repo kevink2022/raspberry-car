@@ -199,16 +199,16 @@ void *ThreadMotor( void * arg  )
       I1 = I1_next;
       I2 = I2_next;
 
-      // Slow down during any mode change
-      while(PWM > PWM_MOTOR_MIN){
-        PWM -= PWM_SPEED_STEP;
-        if(left){
-          parameter->pwm->DAT2 = PWM;
-        } else {
-          parameter->pwm->DAT1 = PWM;
-        }
-        usleep(10000); // 0.01s
-      }
+      // // Slow down during any mode change
+      // while(PWM > PWM_MOTOR_MIN){
+      //   PWM -= PWM_SPEED_STEP;
+      //   if(left){
+      //     parameter->pwm->DAT2 = PWM;
+      //   } else {
+      //     parameter->pwm->DAT1 = PWM;
+      //   }
+      //   usleep(10000); // 0.01s
+      // }
 
       if (I1){
         //printf("\n%s MOTOR: Setting I1\n", parameter->left_motor ? "LEFT" : "RIGHT");  
@@ -230,17 +230,17 @@ void *ThreadMotor( void * arg  )
         GPIO_CLR( parameter->gpio, parameter->I2_pin );
       }
 
-      if (I1 || I2){
-        while(PWM < PWM_next){ //we use PWM_next here, as it will be the original speed.
-          PWM += PWM_SPEED_STEP;
-          if(left){
-            parameter->pwm->DAT2 = PWM;
-          } else {
-            parameter->pwm->DAT1 = PWM;
-          }
-          usleep(10000); // 0.01s
-        }
-      }
+      // if (I1 || I2){
+      //   while(PWM < PWM_next){ //we use PWM_next here, as it will be the original speed.
+      //     PWM += PWM_SPEED_STEP;
+      //     if(left){
+      //       parameter->pwm->DAT2 = PWM;
+      //     } else {
+      //       parameter->pwm->DAT1 = PWM;
+      //     }
+      //     usleep(10000); // 0.01s
+      //   }
+      // }
 
       #ifdef DEBUG
       printf("\n%s MOTOR: Everything Set\n", parameter->left_motor ? "LEFT" : "RIGHT");

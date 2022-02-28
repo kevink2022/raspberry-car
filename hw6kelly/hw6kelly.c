@@ -163,7 +163,7 @@ void *ThreadClock( void * arg  )
 #define PWM_SPEED_STEP 5
 #define PWM_TURN_STEP 15
 #define PWM_ORIENTATION 1
-#define PWM_MODE2_STEP 5
+#define PWM_MODE2_STEP 15
 
 #define DEBUG
 #undef DEBUG
@@ -201,10 +201,17 @@ void *ThreadMotor( void * arg  )
     } else if (mode == MODE_2) {
       while(GPIO_READ(parameter->gpio, parameter->IR_pin) != 0) {
         if(left){
-          parameter->pwm->DAT1 -= PWM_MODE2_STEP;
-        } else {
+          parameter->pwm->DAT1 += PWM_MODE2_STEP;
           parameter->pwm->DAT2 -= PWM_MODE2_STEP;
+        } else {
+          parameter->pwm->DAT2 += PWM_MODE2_STEP;
+          parameter->pwm->DAT1 -= PWM_MODE2_STEP;
         }
+      }
+      if(left){
+        parameter->pwm->DAT2 = PWM;
+      } else {
+        parameter->pwm->DAT1 = PWM;
       }
     }
 
@@ -448,7 +455,7 @@ void *ThreadKey( void * arg )
           *(char*)(thread_key_parameter->control_queue + *(int*)thread_key_parameter->control_queue_length) = 'x';
           *(unsigned int*)thread_key_parameter->control_queue_length += 1;
           #ifdef DEBUG
-          printf("KEY_THREAD: Added to Queue: STOP\nKEY_THREAD: Queue Length: %i\n", *(unsigned int*)thread_key_parameter->control_queue_length);
+          printf("KEY_THREAD: Added to Queue: BACKWARD\nKEY_THREAD: Queue Length: %i\n", *(unsigned int*)thread_key_parameter->control_queue_length);
           #endif
         }
         pthread_mutex_unlock( thread_key_parameter->control_queue_lock );
@@ -462,7 +469,7 @@ void *ThreadKey( void * arg )
           *(char*)(thread_key_parameter->control_queue + *(int*)thread_key_parameter->control_queue_length) = 'i';
           *(unsigned int*)thread_key_parameter->control_queue_length += 1;
           #ifdef DEBUG
-          printf("KEY_THREAD: Added to Queue: STOP\nKEY_THREAD: Queue Length: %i\n", *(unsigned int*)thread_key_parameter->control_queue_length);
+          printf("KEY_THREAD: Added to Queue: SLOWER\nKEY_THREAD: Queue Length: %i\n", *(unsigned int*)thread_key_parameter->control_queue_length);
           #endif
         }
         pthread_mutex_unlock( thread_key_parameter->control_queue_lock );
@@ -476,7 +483,7 @@ void *ThreadKey( void * arg )
           *(char*)(thread_key_parameter->control_queue + *(int*)thread_key_parameter->control_queue_length) = 'j';
           *(unsigned int*)thread_key_parameter->control_queue_length += 1;
           #ifdef DEBUG
-          printf("KEY_THREAD: Added to Queue: STOP\nKEY_THREAD: Queue Length: %i\n", *(unsigned int*)thread_key_parameter->control_queue_length);
+          printf("KEY_THREAD: Added to Queue: SLOWER\nKEY_THREAD: Queue Length: %i\n", *(unsigned int*)thread_key_parameter->control_queue_length);
           #endif
         }
         pthread_mutex_unlock( thread_key_parameter->control_queue_lock );
@@ -489,7 +496,7 @@ void *ThreadKey( void * arg )
         if (*(int*)thread_key_parameter->control_queue_length < QUEUE_SIZE) {
           *(char*)(thread_key_parameter->control_queue + *(int*)thread_key_parameter->control_queue_length) = 'a';
           *(unsigned int*)thread_key_parameter->control_queue_length += 1;
-          printf("KEY_THREAD: Added to Queue: STOP\nKEY_THREAD: Queue Length: %i\n", *(unsigned int*)thread_key_parameter->control_queue_length);
+          printf("KEY_THREAD: Added to Queue: LEFT\nKEY_THREAD: Queue Length: %i\n", *(unsigned int*)thread_key_parameter->control_queue_length);
         }
         pthread_mutex_unlock( thread_key_parameter->control_queue_lock );
         break;
@@ -502,7 +509,7 @@ void *ThreadKey( void * arg )
           *(char*)(thread_key_parameter->control_queue + *(int*)thread_key_parameter->control_queue_length) = 'd';
           *(unsigned int*)thread_key_parameter->control_queue_length += 1;
           #ifdef DEBUG
-          printf("KEY_THREAD: Added to Queue: STOP\nKEY_THREAD: Queue Length: %i\n", *(unsigned int*)thread_key_parameter->control_queue_length);
+          printf("KEY_THREAD: Added to Queue: RIGHT\nKEY_THREAD: Queue Length: %i\n", *(unsigned int*)thread_key_parameter->control_queue_length);
           #endif
         }
         pthread_mutex_unlock( thread_key_parameter->control_queue_lock );
@@ -536,7 +543,7 @@ void *ThreadKey( void * arg )
               *(char*)(thread_key_parameter->control_queue + *(int*)thread_key_parameter->control_queue_length) = '2';
               *(unsigned int*)thread_key_parameter->control_queue_length += 1;
               #ifdef DEBUG
-              printf("KEY_THREAD: Added to Queue: STOP\nKEY_THREAD: Queue Length: %i\n", *(unsigned int*)thread_key_parameter->control_queue_length);
+              printf("KEY_THREAD: Added to Queue: MODE 2\nKEY_THREAD: Queue Length: %i\n", *(unsigned int*)thread_key_parameter->control_queue_length);
               #endif
             }
             pthread_mutex_unlock( thread_key_parameter->control_queue_lock );

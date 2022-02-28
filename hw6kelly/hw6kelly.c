@@ -617,7 +617,8 @@ int main( void )
     io->gpio.GPFSEL0.field.FSEL6 = GPFSEL_INPUT;
     io->gpio.GPFSEL2.field.FSEL2 = GPFSEL_INPUT;
     io->gpio.GPFSEL2.field.FSEL3 = GPFSEL_INPUT;
-
+    io->gpio.GPFSEL2.field.FSEL4 = GPFSEL_INPUT;
+    io->gpio.GPFSEL2.field.FSEL5 = GPFSEL_INPUT;
 
     /* set the pin function to alternate function 0 for GPIO12 */
     /* set the pin function to alternate function 0 for GPIO13 */

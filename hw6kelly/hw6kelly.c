@@ -209,6 +209,7 @@ void *ThreadMotor( void * arg  )
           parameter->pwm->DAT1 += PWM_MOTOR_MAX;
         }
         while(GPIO_READ(parameter->gpio, parameter->IR_pin) != 0) { 
+          usleep(1000);
         }
       }
       if(left){

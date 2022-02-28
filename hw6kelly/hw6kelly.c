@@ -198,16 +198,16 @@ void *ThreadMotor( void * arg  )
         parameter->pwm->DAT1 = PWM;
       }
 
-    } else if (mode == MODE_2) {
+    } else if ( I1 && (mode == MODE_2)) {
       while(GPIO_READ(parameter->gpio, parameter->IR_pin) != 0) {
-        printf("\n%s MOTOR: mode 2 turn step\n", parameter->left_motor ? "LEFT" : "RIGHT");
         if(left){
-          parameter->pwm->DAT1 += PWM_MODE2_STEP;
-          parameter->pwm->DAT2 -= PWM_MODE2_STEP;
-        } else {
-          parameter->pwm->DAT2 += PWM_MODE2_STEP;
           parameter->pwm->DAT1 -= PWM_MODE2_STEP;
+          parameter->pwm->DAT2 += PWM_MODE2_STEP;
+        } else {
+          parameter->pwm->DAT2 -= PWM_MODE2_STEP;
+          parameter->pwm->DAT1 += PWM_MODE2_STEP;
         }
+        printf("\n%s MOTOR: mode 2 turn step\n", parameter->left_motor ? "LEFT" : "RIGHT");
       }
       if(left){
         parameter->pwm->DAT2 = PWM;

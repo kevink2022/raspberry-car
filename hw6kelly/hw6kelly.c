@@ -163,7 +163,7 @@ void *ThreadClock( void * arg  )
 #define PWM_SPEED_STEP 5
 #define PWM_TURN_STEP 15
 #define PWM_ORIENTATION 1
-#define PWM_MODE2_STEP 15
+#define PWM_MODE2_STEP 20
 
 #define DEBUG
 #undef DEBUG
@@ -174,7 +174,7 @@ void *ThreadMotor( void * arg  )
   bool I1 = 0, I2 = 0, I1_next = 0, I2_next = 0;
   char current_command = '\0';
   bool left = parameter->left_motor;
-  int mode = MODE_1;
+  int mode = MODE_1, mode_step = 0;
 
   pthread_mutex_lock( &(parameter->done->lock) );
   while (!(parameter->done->done))
@@ -199,15 +199,20 @@ void *ThreadMotor( void * arg  )
       }
 
     } else if ( I1 && (mode == MODE_2)) {
+      mode_step = PWM_MODE2_STEP;
       while(GPIO_READ(parameter->gpio, parameter->IR_pin) != 0) {
-        if(left){
-          //parameter->pwm->DAT1 -= PWM_MODE2_STEP;
-          parameter->pwm->DAT2 += PWM_MODE2_STEP;
-        } else {
-          //parameter->pwm->DAT2 -= PWM_MODE2_STEP;
-          parameter->pwm->DAT1 += PWM_MODE2_STEP;
+        if (PWM + PWM_MODE2_STEP < PWM_MOTOR_MAX)
+        {
+          mode_step += PWM_MODE2_STEP;
+          if(left){
+            //parameter->pwm->DAT1 -= PWM_MODE2_STEP;
+            parameter->pwm->DAT2 += PWM_MODE2_STEP;
+          } else {
+            //parameter->pwm->DAT2 -= PWM_MODE2_STEP;
+            parameter->pwm->DAT1 += PWM_MODE2_STEP;
+          }
         }
-        usleep(5000); // 0.005s
+        usleep(1000); // 0.001s
         printf("\n%s MOTOR: mode 2 turn step\n", parameter->left_motor ? "LEFT" : "RIGHT");
       }
       if(left){

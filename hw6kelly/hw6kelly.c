@@ -163,7 +163,7 @@ void *ThreadClock( void * arg  )
 #define PWM_SPEED_STEP 5
 #define PWM_TURN_STEP 15
 #define PWM_ORIENTATION 1
-#define PWM_MODE2_STEP 5
+#define PWM_MODE2_STEP 15
 
 #define DEBUG
 #undef DEBUG
@@ -202,12 +202,13 @@ void *ThreadMotor( void * arg  )
       while(GPIO_READ(parameter->gpio, parameter->IR_pin) != 0) {
         if(left){
           //parameter->pwm->DAT1 -= PWM_MODE2_STEP;
-          parameter->pwm->DAT2 += PWM_MODE2_STEP;
+          parameter->pwm->DAT1 += PWM_MODE2_STEP;
         } else {
           //parameter->pwm->DAT2 -= PWM_MODE2_STEP;
-          parameter->pwm->DAT1 += PWM_MODE2_STEP;
+          parameter->pwm->DAT2 += PWM_MODE2_STEP;
         }
-          printf("\n%s MOTOR: mode 2 turn step\n", parameter->left_motor ? "LEFT" : "RIGHT");
+        usleep(10000); // 0.01s
+        printf("\n%s MOTOR: mode 2 turn step\n", parameter->left_motor ? "LEFT" : "RIGHT");
       }
       if(left){
         parameter->pwm->DAT2 = PWM;

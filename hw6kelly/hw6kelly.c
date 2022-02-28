@@ -166,6 +166,7 @@ void *ThreadClock( void * arg  )
 #define PWM_MODE2_STEP 5
 
 #define DEBUG
+#undef DEBUG
 void *ThreadMotor( void * arg  )
 {
   struct motor_thread_parameter * parameter = (struct motor_thread_parameter *)arg;
@@ -200,9 +201,9 @@ void *ThreadMotor( void * arg  )
     } else if (mode == MODE_2) {
       while(GPIO_READ(parameter->gpio, parameter->IR_pin) != 0) {
         if(left){
-          parameter->pwm->DAT2 += PWM_MODE2_STEP;
+          parameter->pwm->DAT1 -= PWM_MODE2_STEP;
         } else {
-          parameter->pwm->DAT1 += PWM_MODE2_STEP;
+          parameter->pwm->DAT2 -= PWM_MODE2_STEP;
         }
       }
     }
@@ -352,18 +353,12 @@ void *ThreadMotor( void * arg  )
           printf("\nMOTOR: Recieved Command: RIGHT\n");
           #endif
           mode = MODE_1;
-          #ifdef DEBUG
-          printf("%s MOTOR: PWM = %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM);
-          #endif
           break;
         case '2':
           #ifdef DEBUG
           printf("\nMOTOR: Recieved Command: RIGHT\n");
           #endif
           mode = MODE_2;
-          #ifdef DEBUG
-          printf("%s MOTOR: PWM = %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM);
-          #endif
           break;  
         default:
           break;
@@ -526,7 +521,7 @@ void *ThreadKey( void * arg )
               *(char*)(thread_key_parameter->control_queue + *(int*)thread_key_parameter->control_queue_length) = '1';
               *(unsigned int*)thread_key_parameter->control_queue_length += 1;
               #ifdef DEBUG
-              printf("KEY_THREAD: Added to Queue: STOP\nKEY_THREAD: Queue Length: %i\n", *(unsigned int*)thread_key_parameter->control_queue_length);
+              printf("KEY_THREAD: Added to Queue: MODE 1\nKEY_THREAD: Queue Length: %i\n", *(unsigned int*)thread_key_parameter->control_queue_length);
               #endif
             }
             pthread_mutex_unlock( thread_key_parameter->control_queue_lock );

@@ -163,7 +163,7 @@ void *ThreadClock( void * arg  )
 #define PWM_SPEED_STEP 5
 #define PWM_TURN_STEP 15
 #define PWM_ORIENTATION 1
-#define PWM_MODE2_STEP 15
+#define PWM_MODE2_STEP 5
 
 #define DEBUG
 #undef DEBUG

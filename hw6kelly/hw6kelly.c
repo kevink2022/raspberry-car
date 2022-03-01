@@ -158,7 +158,7 @@ void *ThreadClock( void * arg  )
 
 // Bringing this down here for easier access temporarily
 #define PWM_RANGE 100
-#define PWM_MOTOR_MAX 95
+#define PWM_MOTOR_MAX 110 // Testing beyond 100
 #define PWM_MOTOR_MIN 20
 #define PWM_SPEED_STEP 5
 #define PWM_TURN_STEP 15
@@ -182,7 +182,7 @@ void *ThreadMotor( void * arg  )
     pthread_mutex_unlock( &(parameter->done->lock) );
 
     // Only execute if any properties change
-    if ((mode == MODE_1) && (PWM != PWM_next)){
+    if ((PWM != PWM_next)){
 
       // Update properties
       PWM = PWM_next;
@@ -197,9 +197,9 @@ void *ThreadMotor( void * arg  )
       } else {
         parameter->pwm->DAT1 = PWM;
       }
+    }
 
-    } else if ( I1 && (mode == MODE_2)) {
-      mode_step = PWM_MODE2_STEP;  
+    if ( I1 && (mode == MODE_2)) {
       while(GPIO_READ(parameter->gpio, parameter->IR_pin) != 0) { 
           if(left){
           //parameter->pwm->DAT1 -= PWM_MODE2_STEP;
@@ -279,6 +279,8 @@ void *ThreadMotor( void * arg  )
           }
           usleep(10000); // 0.01s
         }
+      } else {
+        PWM_next = 0;
       }
       #ifdef DEBUG  
       printf("\n%s MOTOR: PWM Post Slow Go: %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM);

@@ -213,30 +213,41 @@ void *ThreadMotor( void * arg  )
       printf("\nMOTOR: mode 2 turn\n");
        #endif
       while(GPIO_READ(parameter->gpio, parameter->AIR_pin) != 0) { 
-        // if(left){
-          parameter->pwm->DAT2 = PWM_MOTOR_MAX;
-          parameter->pwm->DAT1 = PWM_MOTOR_MIN;
-        // } else {
-          //parameter->pwm->DAT1 = PWM_MOTOR_MAX;
-          //parameter->pwm->DAT2 = PWM_MOTOR_MIN;
-        // }
+        parameter->pwm->DAT2 = PWM_MOTOR_MAX;
+        GPIO_CLR( parameter->gpio, parameter->BI1_pin );
+        GPIO_CLR( parameter->gpio, parameter->BI1_pin );
+
       }
       while(GPIO_READ(parameter->gpio, parameter->BIR_pin) != 0) { 
-        // if(left){
-          //parameter->pwm->DAT2 = PWM_MOTOR_MAX;
-          //parameter->pwm->DAT1 = PWM_MOTOR_MIN;
-        // } else {
-          parameter->pwm->DAT2 = PWM_MOTOR_MIN;
-          parameter->pwm->DAT1 = PWM_MOTOR_MAX;
-        // }
+        parameter->pwm->DAT1 = PWM_MOTOR_MAX;
+        GPIO_CLR( parameter->gpio, parameter->AI1_pin );
+        GPIO_CLR( parameter->gpio, parameter->AI1_pin );
       }
-      //if(left){
-        parameter->pwm->DAT2 = A_PWM;
-        parameter->pwm->DAT1 = B_PWM;
-      //} else {
-        //parameter->pwm->DAT1 = PWM;
-        //parameter->pwm->DAT2 = PWM;
-      //}
+      parameter->pwm->DAT2 = A_PWM;
+      parameter->pwm->DAT1 = B_PWM;
+      if (AI1){
+        GPIO_SET( parameter->gpio, parameter->AI1_pin );
+      } else {
+        GPIO_CLR( parameter->gpio, parameter->AI1_pin );
+      }
+
+      if (AI2){
+        GPIO_SET( parameter->gpio, parameter->AI2_pin );
+      } else {
+        GPIO_CLR( parameter->gpio, parameter->AI2_pin );
+      }      
+
+      if (BI1){
+        GPIO_SET( parameter->gpio, parameter->BI1_pin );
+      } else {
+        GPIO_CLR( parameter->gpio, parameter->BI1_pin );
+      }
+
+      if (BI2){
+        GPIO_SET( parameter->gpio, parameter->BI2_pin );
+      } else {
+        GPIO_CLR( parameter->gpio, parameter->BI2_pin );
+      }
     }
 
     if ((AI1 != AI1_next) || (AI2 != AI2_next) || (BI1 != AI1_next) || (BI2 != AI2_next)) {
@@ -268,34 +279,26 @@ void *ThreadMotor( void * arg  )
     
 
       if (AI1){
-        //printf("\n%s MOTOR: Setting I1\n", parameter->left_motor ? "LEFT" : "RIGHT");  
         GPIO_SET( parameter->gpio, parameter->AI1_pin );
       } else {
-        //printf("\n%s MOTOR: Clearing I1\n", parameter->left_motor ? "LEFT" : "RIGHT");  
         GPIO_CLR( parameter->gpio, parameter->AI1_pin );
       }
 
       if (AI2){
-        //printf("\n%s MOTOR: Setting I2\n", parameter->left_motor ? "LEFT" : "RIGHT");  
         GPIO_SET( parameter->gpio, parameter->AI2_pin );
       } else {
-        //printf("\n%s MOTOR: Clearing I2\n", parameter->left_motor ? "LEFT" : "RIGHT");  
         GPIO_CLR( parameter->gpio, parameter->AI2_pin );
       }      
 
       if (BI1){
-        //printf("\n%s MOTOR: Setting I1\n", parameter->left_motor ? "LEFT" : "RIGHT");  
         GPIO_SET( parameter->gpio, parameter->BI1_pin );
       } else {
-        //printf("\n%s MOTOR: Clearing I1\n", parameter->left_motor ? "LEFT" : "RIGHT");  
         GPIO_CLR( parameter->gpio, parameter->BI1_pin );
       }
 
       if (BI2){
-        //printf("\n%s MOTOR: Setting I2\n", parameter->left_motor ? "LEFT" : "RIGHT");  
         GPIO_SET( parameter->gpio, parameter->BI2_pin );
       } else {
-        //printf("\n%s MOTOR: Clearing I2\n", parameter->left_motor ? "LEFT" : "RIGHT");  
         GPIO_CLR( parameter->gpio, parameter->BI2_pin );
       }
 

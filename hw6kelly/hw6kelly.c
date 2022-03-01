@@ -199,9 +199,9 @@ void *ThreadMotor( void * arg  )
       }
 
     } else if ( I1 && (mode == MODE_2)) {
-      mode_step = PWM_MODE2_STEP;
-      if(GPIO_READ(parameter->gpio, parameter->IR_pin) != 0){
-        if(left){
+      mode_step = PWM_MODE2_STEP;  
+      while(GPIO_READ(parameter->gpio, parameter->IR_pin) != 0) { 
+          if(left){
           //parameter->pwm->DAT1 -= PWM_MODE2_STEP;
           parameter->pwm->DAT2 = PWM_MOTOR_MAX;
           //parameter->pwm->DAT1 = PWM_MOTOR_MIN;
@@ -209,8 +209,6 @@ void *ThreadMotor( void * arg  )
           //parameter->pwm->DAT2 -= PWM_MODE2_STEP;
           parameter->pwm->DAT1 = PWM_MOTOR_MAX;
           //parameter->pwm->DAT2 = PWM_MOTOR_MIN;
-        }
-        while(GPIO_READ(parameter->gpio, parameter->IR_pin) != 0) { 
         }
       }
       if(left){

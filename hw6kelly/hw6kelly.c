@@ -216,7 +216,7 @@ void *ThreadMotor( void * arg  )
           GPIO_CLR( parameter->gpio, parameter->AI2_pin ); 
         }
       }
-      else if(GPIO_READ(parameter->gpio, parameter->BIR_pin) != 0){
+      if(GPIO_READ(parameter->gpio, parameter->BIR_pin) != 0){
         while(GPIO_READ(parameter->gpio, parameter->AIR_pin) == 0) {
           parameter->pwm->DAT1 = PWM_MOTOR_MAX;
           GPIO_CLR( parameter->gpio, parameter->BI1_pin );

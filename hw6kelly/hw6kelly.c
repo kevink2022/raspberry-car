@@ -215,58 +215,59 @@ void *ThreadMotor( void * arg  )
           GPIO_CLR( parameter->gpio, parameter->AI1_pin );
           GPIO_CLR( parameter->gpio, parameter->AI2_pin ); 
         }
-      }
-      parameter->pwm->DAT2 = A_PWM;
-      parameter->pwm->DAT1 = B_PWM;
-      if (AI1){
-        GPIO_SET( parameter->gpio, parameter->AI1_pin );
-      } else {
-        GPIO_CLR( parameter->gpio, parameter->AI1_pin );
-      }
-
-      if (AI2){
-        GPIO_SET( parameter->gpio, parameter->AI2_pin );
-      } else {
-        GPIO_CLR( parameter->gpio, parameter->AI2_pin );
-      }      
-
-      if (BI1){
-        GPIO_SET( parameter->gpio, parameter->BI1_pin );
-      } else {
-        GPIO_CLR( parameter->gpio, parameter->BI1_pin );
-      }
       
-      if(GPIO_READ(parameter->gpio, parameter->BIR_pin) != 0){
+        parameter->pwm->DAT2 = A_PWM;
+        parameter->pwm->DAT1 = B_PWM;
+        if (AI1){
+          GPIO_SET( parameter->gpio, parameter->AI1_pin );
+        } else {
+          GPIO_CLR( parameter->gpio, parameter->AI1_pin );
+        }
+
+        if (AI2){
+          GPIO_SET( parameter->gpio, parameter->AI2_pin );
+        } else {
+          GPIO_CLR( parameter->gpio, parameter->AI2_pin );
+        }      
+
+        if (BI1){
+          GPIO_SET( parameter->gpio, parameter->BI1_pin );
+        } else {
+          GPIO_CLR( parameter->gpio, parameter->BI1_pin );
+        }
+      }
+
+      else if(GPIO_READ(parameter->gpio, parameter->BIR_pin) != 0){
         while(GPIO_READ(parameter->gpio, parameter->AIR_pin) == 0) {
           parameter->pwm->DAT1 = PWM_MOTOR_MAX;
           GPIO_CLR( parameter->gpio, parameter->BI1_pin );
           GPIO_CLR( parameter->gpio, parameter->BI2_pin ); 
         }
-      }
-      parameter->pwm->DAT2 = A_PWM;
-      parameter->pwm->DAT1 = B_PWM;
-      if (AI1){
-        GPIO_SET( parameter->gpio, parameter->AI1_pin );
-      } else {
-        GPIO_CLR( parameter->gpio, parameter->AI1_pin );
-      }
+        parameter->pwm->DAT2 = A_PWM;
+        parameter->pwm->DAT1 = B_PWM;
+        if (AI1){
+          GPIO_SET( parameter->gpio, parameter->AI1_pin );
+        } else {
+          GPIO_CLR( parameter->gpio, parameter->AI1_pin );
+        }
 
-      if (AI2){
-        GPIO_SET( parameter->gpio, parameter->AI2_pin );
-      } else {
-        GPIO_CLR( parameter->gpio, parameter->AI2_pin );
-      }      
+        if (AI2){
+          GPIO_SET( parameter->gpio, parameter->AI2_pin );
+        } else {
+          GPIO_CLR( parameter->gpio, parameter->AI2_pin );
+        }      
 
-      if (BI1){
-        GPIO_SET( parameter->gpio, parameter->BI1_pin );
-      } else {
-        GPIO_CLR( parameter->gpio, parameter->BI1_pin );
-      }
+        if (BI1){
+          GPIO_SET( parameter->gpio, parameter->BI1_pin );
+        } else {
+          GPIO_CLR( parameter->gpio, parameter->BI1_pin );
+        }
 
-      if (BI2){
-        GPIO_SET( parameter->gpio, parameter->BI2_pin );
-      } else {
-        GPIO_CLR( parameter->gpio, parameter->BI2_pin );
+        if (BI2){
+          GPIO_SET( parameter->gpio, parameter->BI2_pin );
+        } else {
+          GPIO_CLR( parameter->gpio, parameter->BI2_pin );
+        }
       }
     }
 

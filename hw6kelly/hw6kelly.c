@@ -204,18 +204,21 @@ void *ThreadMotor( void * arg  )
         if(left){
           //parameter->pwm->DAT1 -= PWM_MODE2_STEP;
           parameter->pwm->DAT2 += PWM_MOTOR_MAX;
+          parameter->pwm->DAT1 += PWM_MOTOR_MIN;
         } else {
           //parameter->pwm->DAT2 -= PWM_MODE2_STEP;
           parameter->pwm->DAT1 += PWM_MOTOR_MAX;
+          parameter->pwm->DAT2 += PWM_MOTOR_MIN;
         }
         while(GPIO_READ(parameter->gpio, parameter->IR_pin) != 0) { 
-          usleep(10000);
         }
       }
       if(left){
         parameter->pwm->DAT2 = PWM;
+        parameter->pwm->DAT1 = PWM;
       } else {
         parameter->pwm->DAT1 = PWM;
+        parameter->pwm->DAT2 = PWM;
       }
     }
 

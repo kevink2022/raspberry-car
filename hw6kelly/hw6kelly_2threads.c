@@ -66,16 +66,13 @@ struct motor_thread_parameter
   char                          * current_command;
   volatile struct gpio_register * gpio;
   volatile struct pwm_register  * pwm;
-  int                             A_PWM_pin;
-  int                             AI1_pin;
-  int                             AI2_pin;
-  int                             AIR_pin;
-  int                             B_PWM_pin;
-  int                             BI1_pin;
-  int                             BI2_pin;
-  int                             BIR_pin;
+  int                             PWM_pin;
+  int                             I1_pin;
+  int                             I2_pin;
+  int                             IR_pin;
   struct pause_flag *             pause;
   struct done_flag *              done;
+  bool                            left_motor;
   enum                      mode {
                                   MODE_1,
                                   MODE_2
@@ -168,19 +165,15 @@ void *ThreadClock( void * arg  )
 #define PWM_ORIENTATION 1
 #define PWM_MODE2_STEP 20
 
-// A == LEFT  == DAT2
-// B == RIGHT == DAT1
-
 #define DEBUG
 #undef DEBUG
 void *ThreadMotor( void * arg  )
 {
   struct motor_thread_parameter * parameter = (struct motor_thread_parameter *)arg;
-  int A_PWM = PWM_MOTOR_MIN, A_PWM_next = PWM_MOTOR_MIN;
-  int B_PWM = PWM_MOTOR_MIN, B_PWM_next = PWM_MOTOR_MIN;
-  bool AI1 = 0, AI2 = 0, AI1_next = 0, AI2_next = 0;
-  bool BI1 = 0, BI2 = 0, BI1_next = 0, BI2_next = 0;
+  int PWM = PWM_MOTOR_MIN, PWM_next = PWM_MOTOR_MIN;
+  bool I1 = 0, I2 = 0, I1_next = 0, I2_next = 0;
   char current_command = '\0';
+  bool left = parameter->left_motor;
   int mode = MODE_1, mode_step = 0;
 
   pthread_mutex_lock( &(parameter->done->lock) );
@@ -189,129 +182,105 @@ void *ThreadMotor( void * arg  )
     pthread_mutex_unlock( &(parameter->done->lock) );
 
     // Only execute if any properties change
-    if ((A_PWM != A_PWM_next) || (B_PWM != B_PWM_next)){
+    if ((PWM != PWM_next)){
 
       // Update properties
-      A_PWM = A_PWM_next;
-      B_PWM = B_PWM_next;
+      PWM = PWM_next;
 
       #ifdef DEBUG  
       printf("\n%s MOTOR: Setting PWM: %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM);
       #endif
 
       // Execute params
-      //if(left){
-        parameter->pwm->DAT2 = A_PWM;
-      //} else {
-        parameter->pwm->DAT1 = B_PWM;
-      //}
+      if(left){
+        parameter->pwm->DAT2 = PWM;
+      } else {
+        parameter->pwm->DAT1 = PWM;
+      }
     }
 
-    if ( (AI1 && BI1) && (mode == MODE_2)) {
-      while(GPIO_READ(parameter->gpio, parameter->AIR_pin) != 0) { 
-        // if(left){
+    if ( I1 && (mode == MODE_2)) {
+      while(GPIO_READ(parameter->gpio, parameter->IR_pin) != 0) { 
+          if(left){
+          //parameter->pwm->DAT1 -= PWM_MODE2_STEP;
           parameter->pwm->DAT2 = PWM_MOTOR_MAX;
           parameter->pwm->DAT1 = PWM_MOTOR_MIN;
-        // } else {
-          //parameter->pwm->DAT1 = PWM_MOTOR_MAX;
-          //parameter->pwm->DAT2 = PWM_MOTOR_MIN;
-        // }
-      }
-      while(GPIO_READ(parameter->gpio, parameter->BIR_pin) != 0) { 
-        // if(left){
-          //parameter->pwm->DAT2 = PWM_MOTOR_MAX;
-          //parameter->pwm->DAT1 = PWM_MOTOR_MIN;
-        // } else {
-          parameter->pwm->DAT2 = PWM_MOTOR_MIN;
+        } else {
+          //parameter->pwm->DAT2 -= PWM_MODE2_STEP;
           parameter->pwm->DAT1 = PWM_MOTOR_MAX;
-        // }
+          parameter->pwm->DAT2 = PWM_MOTOR_MIN;
+        }
       }
-      //if(left){
-        parameter->pwm->DAT2 = A_PWM;
-        parameter->pwm->DAT1 = B_PWM;
-      //} else {
-        //parameter->pwm->DAT1 = PWM;
-        //parameter->pwm->DAT2 = PWM;
-      //}
+      if(left){
+        parameter->pwm->DAT2 = PWM;
+        parameter->pwm->DAT1 = PWM;
+      } else {
+        parameter->pwm->DAT1 = PWM;
+        parameter->pwm->DAT2 = PWM;
+      }
     }
 
-    if ((AI1 != AI1_next) || (AI2 != AI2_next) || (BI1 != AI1_next) || (BI2 != AI2_next)) {
+    if ((I1 != I1_next) || (I2 != I2_next)) {
       #ifdef DEBUG
       printf("\n%s MOTOR: Setting I1: %i\n", parameter->left_motor ? "LEFT" : "RIGHT", I1);
       #endif
 
-      AI1 = AI1_next;
-      AI2 = AI2_next;
-      BI1 = BI1_next;
-      BI2 = BI2_next;
+      I1 = I1_next;
+      I2 = I2_next;
 
       #ifdef DEBUG  
       printf("\n%s MOTOR: PWM Pre Slow Stop: %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM);
       #endif
       // Slow down during any mode change
-      while((A_PWM > PWM_MOTOR_MIN) || ((A_PWM > PWM_MOTOR_MIN) > PWM_MOTOR_MIN)){
-        A_PWM -= PWM_SPEED_STEP;
-        B_PWM -= PWM_SPEED_STEP;
-        //if(left){
-          parameter->pwm->DAT2 = A_PWM;
-        //} else {
-          parameter->pwm->DAT1 = B_PWM;
-        //}
+      while(PWM > PWM_MOTOR_MIN){
+        PWM -= PWM_SPEED_STEP;
+        if(left){
+          parameter->pwm->DAT2 = PWM;
+        } else {
+          parameter->pwm->DAT1 = PWM;
+        }
         usleep(10000); // 0.01s
       }
       #ifdef DEBUG  
       printf("\n%s MOTOR: PWM Post Slow Stop: %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM);
       #endif
 
-      if (AI1){
+      if (I1){
         //printf("\n%s MOTOR: Setting I1\n", parameter->left_motor ? "LEFT" : "RIGHT");  
-        GPIO_SET( parameter->gpio, parameter->AI1_pin );
+        GPIO_SET( parameter->gpio, parameter->I1_pin );
       } else {
         //printf("\n%s MOTOR: Clearing I1\n", parameter->left_motor ? "LEFT" : "RIGHT");  
-        GPIO_CLR( parameter->gpio, parameter->AI1_pin );
+        GPIO_CLR( parameter->gpio, parameter->I1_pin );
       }
 
-      if (AI2){
+      #ifdef DEBUG
+      printf("\n%s MOTOR: Setting I2: %i\n", parameter->left_motor ? "LEFT" : "RIGHT", I2);
+      #endif
+
+      if (I2){
         //printf("\n%s MOTOR: Setting I2\n", parameter->left_motor ? "LEFT" : "RIGHT");  
-        GPIO_SET( parameter->gpio, parameter->AI2_pin );
+        GPIO_SET( parameter->gpio, parameter->I2_pin );
       } else {
         //printf("\n%s MOTOR: Clearing I2\n", parameter->left_motor ? "LEFT" : "RIGHT");  
-        GPIO_CLR( parameter->gpio, parameter->AI2_pin );
-      }      
-
-      if (BI1){
-        //printf("\n%s MOTOR: Setting I1\n", parameter->left_motor ? "LEFT" : "RIGHT");  
-        GPIO_SET( parameter->gpio, parameter->BI1_pin );
-      } else {
-        //printf("\n%s MOTOR: Clearing I1\n", parameter->left_motor ? "LEFT" : "RIGHT");  
-        GPIO_CLR( parameter->gpio, parameter->BI1_pin );
-      }
-
-      if (BI2){
-        //printf("\n%s MOTOR: Setting I2\n", parameter->left_motor ? "LEFT" : "RIGHT");  
-        GPIO_SET( parameter->gpio, parameter->BI2_pin );
-      } else {
-        //printf("\n%s MOTOR: Clearing I2\n", parameter->left_motor ? "LEFT" : "RIGHT");  
-        GPIO_CLR( parameter->gpio, parameter->BI2_pin );
+        GPIO_CLR( parameter->gpio, parameter->I2_pin );
       }
 
       #ifdef DEBUG  
       printf("\n%s MOTOR: PWM Pre Slow Go: %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM);
       #endif
       // If moving, return to original speed
-      if (AI1 || AI2 || BI1 || BI2){
-        while((A_PWM < A_PWM_next) || (B_PWM < B_PWM_next)){ //we use PWM_next here, as it will be the original speed.
-          A_PWM += PWM_SPEED_STEP;
-          B_PWM += PWM_SPEED_STEP;
-          //if(left){
-            parameter->pwm->DAT2 = A_PWM;
-          //} else {
-            parameter->pwm->DAT1 = B_PWM;
-          //}
+      if (I1 || I2){
+        while(PWM < PWM_next){ //we use PWM_next here, as it will be the original speed.
+          PWM += PWM_SPEED_STEP;
+          if(left){
+            parameter->pwm->DAT2 = PWM;
+          } else {
+            parameter->pwm->DAT1 = PWM;
+          }
           usleep(10000); // 0.01s
         }
-      //} else {
-      //  PWM_next = 0;
+      } else {
+        PWM_next = 0;
       }
       #ifdef DEBUG  
       printf("\n%s MOTOR: PWM Post Slow Go: %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM);
@@ -332,35 +301,28 @@ void *ThreadMotor( void * arg  )
           #ifdef DEBUG
           printf("\n%s MOTOR: Recieved Command: STOP\n", parameter->left_motor ? "LEFT" : "RIGHT");
           #endif
-          AI1_next = 0;
-          AI2_next = 0;
-          BI1_next = 0;
-          BI2_next = 0;
+          I1_next = 0;
+          I2_next = 0;
           break;
         case 'w':
           #ifdef DEBUG
           printf("\n%s MOTOR: Recieved Command: FORWARD\n", parameter->left_motor ? "LEFT" : "RIGHT");
           #endif
-          AI1_next = 1;
-          AI2_next = 0;
-          BI1_next = 1;
-          BI2_next = 0;
+          I1_next = 1;
+          I2_next = 0;
           break;
         case 'x':
           #ifdef DEBUG
           printf("\n%s MOTOR: Recieved Command: BACKWARD\n", parameter->left_motor ? "LEFT" : "RIGHT");
           #endif
-          AI1_next = 0;
-          AI2_next = 1;
-          BI1_next = 0;
-          BI2_next = 1;
+          I1_next = 0;
+          I2_next = 1;
           break;
         case 'i':
           #ifdef DEBUG
           printf("\n%s MOTOR: Recieved Command: FASTER\n", parameter->left_motor ? "LEFT" : "RIGHT");
           #endif
-          if (A_PWM < PWM_MOTOR_MAX) {A_PWM_next += PWM_SPEED_STEP;}
-          if (B_PWM < PWM_MOTOR_MAX) {B_PWM_next += PWM_SPEED_STEP;}
+          if (PWM < PWM_MOTOR_MAX) {PWM_next += PWM_SPEED_STEP;}
           #ifdef DEBUG
           printf("%s MOTOR: PWM = %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM_next);
           #endif
@@ -369,8 +331,7 @@ void *ThreadMotor( void * arg  )
           #ifdef DEBUG
           printf("\n%s MOTOR: Recieved Command: SLOWER\n", parameter->left_motor ? "LEFT" : "RIGHT");
           #endif
-          if (A_PWM > PWM_MOTOR_MIN) {A_PWM_next -= PWM_SPEED_STEP;}
-          if (B_PWM > PWM_MOTOR_MIN) {B_PWM_next -= PWM_SPEED_STEP;}
+          if(PWM > PWM_MOTOR_MIN){PWM_next -= PWM_SPEED_STEP;}
           #ifdef DEBUG
           printf("%s MOTOR: PWM = %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM_next);
           #endif
@@ -379,11 +340,11 @@ void *ThreadMotor( void * arg  )
           #ifdef DEBUG
           printf("\n%s MOTOR: Recieved Command: LEFT\n", parameter->left_motor ? "LEFT" : "RIGHT");
           #endif
-          //if(parameter->left_motor){
-            if(A_PWM > PWM_MOTOR_MIN){A_PWM_next -= PWM_TURN_STEP;}
-          //} else {
-            if (B_PWM < PWM_MOTOR_MAX) {B_PWM_next += PWM_TURN_STEP;}
-          //}
+          if(parameter->left_motor){
+            if(PWM > PWM_MOTOR_MIN){PWM_next -= PWM_TURN_STEP;}
+          } else {
+            if (PWM < 100) {PWM_next += PWM_TURN_STEP;}
+          }
           #ifdef DEBUG
           printf("%s MOTOR: PWM = %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM_next);
           #endif
@@ -392,11 +353,11 @@ void *ThreadMotor( void * arg  )
           #ifdef DEBUG
           printf("\nMOTOR: Recieved Command: RIGHT\n");
           #endif
-          //if(parameter->left_motor){
-            if (A_PWM < PWM_MOTOR_MAX) {A_PWM_next += PWM_TURN_STEP;}
-          //} else {
-            if(A_PWM > PWM_MOTOR_MIN){A_PWM_next -= PWM_TURN_STEP;}
-          //}
+          if(parameter->left_motor){
+            if (PWM < PWM_MOTOR_MAX) {PWM_next += PWM_TURN_STEP;}
+          } else {
+            if(PWM > PWM_MOTOR_MIN){PWM_next -= PWM_TURN_STEP;}
+          }
           #ifdef DEBUG
           printf("%s MOTOR: PWM = %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM);
           #endif
@@ -615,12 +576,11 @@ int main( void )
   pthread_t                       thread_key_handle;
   struct key_thread_parameter     thread_key_parameter;
 
-  pthread_t                       thread_motor_handle;
-  //pthread_t                       thread_right_motor_handle;
+  pthread_t                       thread_left_motor_handle;
+  pthread_t                       thread_right_motor_handle;
   pthread_t                       thread_clock_handle;
-  struct motor_thread_parameter   thread_motor_parameter;
-  // struct motor_thread_parameter   thread_left_motor_parameter;
-  // struct motor_thread_parameter   thread_right_motor_parameter;
+  struct motor_thread_parameter   thread_left_motor_parameter;
+  struct motor_thread_parameter   thread_right_motor_parameter;
   struct clock_thread_parameter   thread_clock_parameter;
 
   struct pause_flag               pause_left_motor = {PTHREAD_MUTEX_INITIALIZER, false};
@@ -714,56 +674,40 @@ int main( void )
     thread_key_parameter.control_queue_length = queue_len;
     thread_key_parameter.control_queue_lock = &queue_lock;
 
-    // Single MOTOR Thread
-    thread_motor_parameter.pause = &pause_left_motor;
-    thread_motor_parameter.done = &done;
-    thread_motor_parameter.A_PWM_pin = 12;
-    thread_motor_parameter.AI1_pin = 5;
-    thread_motor_parameter.AI2_pin = 6;
-    thread_motor_parameter.AIR_pin = 24;
-    thread_motor_parameter.B_PWM_pin = 13;
-    thread_motor_parameter.BI1_pin = 22;
-    thread_motor_parameter.BI2_pin = 23;
-    thread_motor_parameter.BIR_pin = 25;
-    thread_motor_parameter.gpio = &(io->gpio);
-    thread_motor_parameter.pwm = &(io->pwm);
-    //thread_motor_parameter.left_motor = true;
-    thread_motor_parameter.current_command = curr_cmd;
-    thread_motor_parameter.mode = MODE_1;
-    
-    // // LEFT
-    // thread_left_motor_parameter.pause = &pause_left_motor;
-    // thread_left_motor_parameter.done = &done;
-    // thread_left_motor_parameter.PWM_pin = 12;
-    // thread_left_motor_parameter.I1_pin = 5;
-    // thread_left_motor_parameter.I2_pin = 6;
-    // thread_left_motor_parameter.IR_pin = 24;
-    // thread_left_motor_parameter.gpio = &(io->gpio);
-    // thread_left_motor_parameter.pwm = &(io->pwm);
-    // thread_left_motor_parameter.left_motor = true;
-    // thread_left_motor_parameter.current_command = curr_cmd;
-    // thread_left_motor_parameter.mode = MODE_1;
+    // LEFT
+    thread_left_motor_parameter.pause = &pause_left_motor;
+    thread_left_motor_parameter.done = &done;
+    thread_left_motor_parameter.PWM_pin = 12;
+    thread_left_motor_parameter.I1_pin = 5;
+    thread_left_motor_parameter.I2_pin = 6;
+    thread_left_motor_parameter.IR_pin = 24;
+    thread_left_motor_parameter.gpio = &(io->gpio);
+    thread_left_motor_parameter.pwm = &(io->pwm);
+    thread_left_motor_parameter.left_motor = true;
+    thread_left_motor_parameter.current_command = curr_cmd;
+    thread_left_motor_parameter.mode = MODE_1;
 
-    // // RIGHT
-    // thread_right_motor_parameter.pause = &pause_right_motor;
-    // thread_right_motor_parameter.done = &done;
-    // thread_right_motor_parameter.PWM_pin = 13;
-    // thread_right_motor_parameter.I1_pin = 22;
-    // thread_right_motor_parameter.I2_pin = 23;
-    // thread_right_motor_parameter.IR_pin = 25;
-    // thread_right_motor_parameter.gpio = &(io->gpio);
-    // thread_right_motor_parameter.pwm = &(io->pwm);
-    // thread_right_motor_parameter.left_motor = false;
-    // thread_right_motor_parameter.current_command = curr_cmd;
-    // thread_right_motor_parameter.mode = MODE_1;
+    // RIGHT
+    thread_right_motor_parameter.pause = &pause_right_motor;
+    thread_right_motor_parameter.done = &done;
+    thread_right_motor_parameter.PWM_pin = 13;
+    thread_right_motor_parameter.I1_pin = 22;
+    thread_right_motor_parameter.I2_pin = 23;
+    thread_right_motor_parameter.IR_pin = 25;
+    thread_right_motor_parameter.gpio = &(io->gpio);
+    thread_right_motor_parameter.pwm = &(io->pwm);
+    thread_right_motor_parameter.left_motor = false;
+    thread_right_motor_parameter.current_command = curr_cmd;
+    thread_right_motor_parameter.mode = MODE_1;
 
     // THREADS
     pthread_create( &thread_key_handle, 0, ThreadKey, (void *)&thread_key_parameter );
-    pthread_create( &thread_motor_handle, 0, ThreadMotor, (void *)&thread_motor_parameter );
-    //pthread_create( &thread_right_motor_handle, 0, ThreadMotor, (void *)&thread_right_motor_parameter );
+    pthread_create( &thread_left_motor_handle, 0, ThreadMotor, (void *)&thread_left_motor_parameter );
+    pthread_create( &thread_right_motor_handle, 0, ThreadMotor, (void *)&thread_right_motor_parameter );
     pthread_create( &thread_clock_handle, 0, ThreadClock, (void *)&thread_clock_parameter);
     pthread_join( thread_key_handle, 0 );
-    pthread_join( thread_motor_handle, 0 );
+    pthread_join( thread_left_motor_handle, 0 );
+    pthread_join( thread_right_motor_handle, 0 );
     pthread_join( thread_clock_handle, 0 );
     io->gpio.GPFSEL1.field.FSEL2 = GPFSEL_INPUT;
     io->gpio.GPFSEL1.field.FSEL3 = GPFSEL_INPUT;

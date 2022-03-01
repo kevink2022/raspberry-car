@@ -1,11 +1,11 @@
 cd cmpen473/
 sudo rm -r cmpen473kelly/
 git clone git@github.com:kevink2023/cmpen473kelly.git
-cd cmpen473kelly/hw5kelly/
+cd cmpen473kelly/hw6kelly/
 make
-sudo ./hw5kelly
+sudo ./hw6kelly
 
-git add hw5kelly.c
+git add hw6kelly.c
 git commit -m "
 git push
 
@@ -14,7 +14,7 @@ ssh pi@172.16.95.133
 make clean
 git pull
 make
-sudo ./hw5kelly
+sudo ./hw6kelly
 
 
 RPi4 pin GPIO12 <-> Motor Driver Board pin PWMA = left motor speed control

@@ -213,13 +213,13 @@ void *ThreadMotor( void * arg  )
       printf("\nMOTOR: mode 2 turn\n");
        #endif
       while(GPIO_READ(parameter->gpio, parameter->AIR_pin) != 0) { 
-        parameter->pwm->DAT2 = PWM_MOTOR_MAX;
+        parameter->pwm->DAT1 = PWM_MOTOR_MAX;
         GPIO_CLR( parameter->gpio, parameter->BI1_pin );
         GPIO_CLR( parameter->gpio, parameter->BI1_pin );
 
       }
       while(GPIO_READ(parameter->gpio, parameter->BIR_pin) != 0) { 
-        parameter->pwm->DAT1 = PWM_MOTOR_MAX;
+        parameter->pwm->DAT2 = PWM_MOTOR_MAX;
         GPIO_CLR( parameter->gpio, parameter->AI1_pin );
         GPIO_CLR( parameter->gpio, parameter->AI1_pin );
       }
@@ -400,7 +400,7 @@ void *ThreadMotor( void * arg  )
           //if(parameter->left_motor){
             if (A_PWM < PWM_MOTOR_MAX) {A_PWM_next += PWM_TURN_STEP;}
           //} else {
-            if(A_PWM > PWM_MOTOR_MIN){A_PWM_next -= PWM_TURN_STEP;}
+            if(B_PWM > PWM_MOTOR_MIN) {B_PWM_next -= PWM_TURN_STEP;}
           //}
           #ifdef DEBUG
           printf("\nMOTOR: A_PWM = %i\n", A_PWM_next);

@@ -172,7 +172,7 @@ void *ThreadClock( void * arg  )
 // B == RIGHT == DAT1
 
 #define DEBUG
-#undef DEBUG
+//#undef DEBUG
 void *ThreadMotor( void * arg  )
 {
   struct motor_thread_parameter * parameter = (struct motor_thread_parameter *)arg;
@@ -196,7 +196,8 @@ void *ThreadMotor( void * arg  )
       B_PWM = B_PWM_next;
 
       #ifdef DEBUG  
-      printf("\n%s MOTOR: Setting PWM: %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM);
+      printf("\nMOTOR: Setting A_PWM: %i\n", A_PWM);
+      printf("MOTOR: Setting B_PWM: %i\n", B_PWM);
       #endif
 
       // Execute params
@@ -208,6 +209,9 @@ void *ThreadMotor( void * arg  )
     }
 
     if ( (AI1 && BI1) && (mode == MODE_2)) {
+      #ifdef DEBUG  
+      printf("\nMOTOR: mode 2 turn\n");
+       #endif
       while(GPIO_READ(parameter->gpio, parameter->AIR_pin) != 0) { 
         // if(left){
           parameter->pwm->DAT2 = PWM_MOTOR_MAX;
@@ -237,7 +241,8 @@ void *ThreadMotor( void * arg  )
 
     if ((AI1 != AI1_next) || (AI2 != AI2_next) || (BI1 != AI1_next) || (BI2 != AI2_next)) {
       #ifdef DEBUG
-      printf("\n%s MOTOR: Setting I1: %i\n", parameter->left_motor ? "LEFT" : "RIGHT", I1);
+      printf("\nMOTOR: Setting AI1: %i\n", AI1);
+      printf("MOTOR: Setting BI1: %i\n", BI1);
       #endif
 
       AI1 = AI1_next;
@@ -246,7 +251,8 @@ void *ThreadMotor( void * arg  )
       BI2 = BI2_next;
 
       #ifdef DEBUG  
-      printf("\n%s MOTOR: PWM Pre Slow Stop: %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM);
+      printf("\nMOTOR: A_PWM Pre Slow Stop: %i\n", A_PWM);
+      printf("MOTOR: B_PWM Pre Slow Stop: %i\n", B_PWM);
       #endif
       // Slow down during any mode change
       while((A_PWM > PWM_MOTOR_MIN) || ((A_PWM > PWM_MOTOR_MIN) > PWM_MOTOR_MIN)){
@@ -259,9 +265,7 @@ void *ThreadMotor( void * arg  )
         //}
         usleep(10000); // 0.01s
       }
-      #ifdef DEBUG  
-      printf("\n%s MOTOR: PWM Post Slow Stop: %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM);
-      #endif
+    
 
       if (AI1){
         //printf("\n%s MOTOR: Setting I1\n", parameter->left_motor ? "LEFT" : "RIGHT");  
@@ -295,9 +299,7 @@ void *ThreadMotor( void * arg  )
         GPIO_CLR( parameter->gpio, parameter->BI2_pin );
       }
 
-      #ifdef DEBUG  
-      printf("\n%s MOTOR: PWM Pre Slow Go: %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM);
-      #endif
+    
       // If moving, return to original speed
       if (AI1 || AI2 || BI1 || BI2){
         while((A_PWM < A_PWM_next) || (B_PWM < B_PWM_next)){ //we use PWM_next here, as it will be the original speed.
@@ -313,12 +315,9 @@ void *ThreadMotor( void * arg  )
       //} else {
       //  PWM_next = 0;
       }
-      #ifdef DEBUG  
-      printf("\n%s MOTOR: PWM Post Slow Go: %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM);
-      #endif
 
       #ifdef DEBUG
-      printf("\n%s MOTOR: Everything Set\n", parameter->left_motor ? "LEFT" : "RIGHT");
+      printf("\nMOTOR: Everything Set\n");
       #endif
     }
 
@@ -330,7 +329,7 @@ void *ThreadMotor( void * arg  )
       {
         case 's':
           #ifdef DEBUG
-          printf("\n%s MOTOR: Recieved Command: STOP\n", parameter->left_motor ? "LEFT" : "RIGHT");
+          printf("\nMOTOR: Recieved Command: STOP\n");
           #endif
           AI1_next = 0;
           AI2_next = 0;
@@ -339,7 +338,7 @@ void *ThreadMotor( void * arg  )
           break;
         case 'w':
           #ifdef DEBUG
-          printf("\n%s MOTOR: Recieved Command: FORWARD\n", parameter->left_motor ? "LEFT" : "RIGHT");
+          printf("\nMOTOR: Recieved Command: FORWARD\n");
           #endif
           AI1_next = 1;
           AI2_next = 0;
@@ -348,7 +347,7 @@ void *ThreadMotor( void * arg  )
           break;
         case 'x':
           #ifdef DEBUG
-          printf("\n%s MOTOR: Recieved Command: BACKWARD\n", parameter->left_motor ? "LEFT" : "RIGHT");
+          printf("\nMOTOR: Recieved Command: BACKWARD\n");
           #endif
           AI1_next = 0;
           AI2_next = 1;
@@ -357,27 +356,29 @@ void *ThreadMotor( void * arg  )
           break;
         case 'i':
           #ifdef DEBUG
-          printf("\n%s MOTOR: Recieved Command: FASTER\n", parameter->left_motor ? "LEFT" : "RIGHT");
+          printf("\nMOTOR: Recieved Command: FASTER\n");
           #endif
           if (A_PWM < PWM_MOTOR_MAX) {A_PWM_next += PWM_SPEED_STEP;}
           if (B_PWM < PWM_MOTOR_MAX) {B_PWM_next += PWM_SPEED_STEP;}
           #ifdef DEBUG
-          printf("%s MOTOR: PWM = %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM_next);
+          printf("\nMOTOR: A_PWM = %i\n", A_PWM_next);
+          printf("MOTOR: B_PWM = %i\n", B_PWM_next);
           #endif
           break;
         case 'j':
           #ifdef DEBUG
-          printf("\n%s MOTOR: Recieved Command: SLOWER\n", parameter->left_motor ? "LEFT" : "RIGHT");
+          printf("\nMOTOR: Recieved Command: SLOWER\n");
           #endif
           if (A_PWM > PWM_MOTOR_MIN) {A_PWM_next -= PWM_SPEED_STEP;}
           if (B_PWM > PWM_MOTOR_MIN) {B_PWM_next -= PWM_SPEED_STEP;}
           #ifdef DEBUG
-          printf("%s MOTOR: PWM = %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM_next);
+          printf("\nMOTOR: A_PWM = %i\n", A_PWM_next);
+          printf("MOTOR: B_PWM = %i\n", B_PWM_next);
           #endif
           break;
         case 'a':
           #ifdef DEBUG
-          printf("\n%s MOTOR: Recieved Command: LEFT\n", parameter->left_motor ? "LEFT" : "RIGHT");
+          printf("\nMOTOR: Recieved Command: LEFT\n");
           #endif
           //if(parameter->left_motor){
             if(A_PWM > PWM_MOTOR_MIN){A_PWM_next -= PWM_TURN_STEP;}
@@ -385,7 +386,8 @@ void *ThreadMotor( void * arg  )
             if (B_PWM < PWM_MOTOR_MAX) {B_PWM_next += PWM_TURN_STEP;}
           //}
           #ifdef DEBUG
-          printf("%s MOTOR: PWM = %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM_next);
+          printf("\nMOTOR: A_PWM = %i\n", A_PWM_next);
+          printf("MOTOR: B_PWM = %i\n", B_PWM_next);
           #endif
           break;
         case 'd':
@@ -398,18 +400,19 @@ void *ThreadMotor( void * arg  )
             if(A_PWM > PWM_MOTOR_MIN){A_PWM_next -= PWM_TURN_STEP;}
           //}
           #ifdef DEBUG
-          printf("%s MOTOR: PWM = %i\n", parameter->left_motor ? "LEFT" : "RIGHT", PWM);
+          printf("\nMOTOR: A_PWM = %i\n", A_PWM_next);
+          printf("MOTOR: B_PWM = %i\n", B_PWM_next);
           #endif
           break;
         case '1':
           #ifdef DEBUG
-          printf("\nMOTOR: Recieved Command: RIGHT\n");
+          printf("\nMOTOR: Recieved Command: MODE 1\n");
           #endif
           mode = MODE_1;
           break;
         case '2':
           #ifdef DEBUG
-          printf("\nMOTOR: Recieved Command: RIGHT\n");
+          printf("\nMOTOR: Recieved Command: MODE 2\n");
           #endif
           mode = MODE_2;
           break;  

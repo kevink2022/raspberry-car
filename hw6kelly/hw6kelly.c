@@ -214,14 +214,14 @@ void *ThreadMotor( void * arg  )
        #endif
       while(GPIO_READ(parameter->gpio, parameter->AIR_pin) != 0) { 
         parameter->pwm->DAT2 = PWM_MOTOR_MAX;
-        GPIO_CLR( parameter->gpio, parameter->BI1_pin );
-        GPIO_CLR( parameter->gpio, parameter->BI2_pin );
+        GPIO_CLR( parameter->gpio, parameter->AI1_pin );
+        GPIO_CLR( parameter->gpio, parameter->AI2_pin );
 
       }
       while(GPIO_READ(parameter->gpio, parameter->BIR_pin) != 0) { 
         parameter->pwm->DAT1 = PWM_MOTOR_MAX;
-        GPIO_CLR( parameter->gpio, parameter->AI1_pin );
-        GPIO_CLR( parameter->gpio, parameter->AI2_pin );
+        GPIO_CLR( parameter->gpio, parameter->BI1_pin );
+        GPIO_CLR( parameter->gpio, parameter->BI2_pin );
       }
       parameter->pwm->DAT2 = A_PWM;
       parameter->pwm->DAT1 = B_PWM;

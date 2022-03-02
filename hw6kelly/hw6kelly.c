@@ -167,6 +167,7 @@ void *ThreadClock( void * arg  )
 #define PWM_TURN_STEP 15
 #define PWM_ORIENTATION 1
 #define PWM_MODE2_STEP 20
+#define PWM_MODE2_TURN_DELAY 20000
 
 // A == LEFT  == DAT2
 // B == RIGHT == DAT1
@@ -214,7 +215,7 @@ void *ThreadMotor( void * arg  )
           parameter->pwm->DAT2 = PWM_MOTOR_MAX;
           GPIO_CLR( parameter->gpio, parameter->AI1_pin );
           GPIO_SET( parameter->gpio, parameter->AI2_pin );
-          usleep(10000); 
+          usleep(PWM_MODE2_TURN_DELAY); 
         }
       
         parameter->pwm->DAT2 = A_PWM;
@@ -243,7 +244,7 @@ void *ThreadMotor( void * arg  )
           parameter->pwm->DAT1 = PWM_MOTOR_MAX;
           GPIO_CLR( parameter->gpio, parameter->BI1_pin );
           GPIO_SET( parameter->gpio, parameter->BI2_pin ); 
-          usleep(10000);
+          usleep(PWM_MODE2_TURN_DELAY);
         }
         parameter->pwm->DAT2 = A_PWM;
         parameter->pwm->DAT1 = B_PWM;

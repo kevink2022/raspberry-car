@@ -163,7 +163,7 @@ void *ThreadClock( void * arg  )
 #define PWM_RANGE 100
 #define PWM_MOTOR_MAX 110 // Testing beyond 100
 #define PWM_MOTOR_MIN 20
-#define PWM_SPEED_STEP 5
+#define PWM_SPEED_STEP 45
 #define PWM_TURN_STEP 15
 #define PWM_ORIENTATION 1
 #define PWM_MODE2_STEP 20

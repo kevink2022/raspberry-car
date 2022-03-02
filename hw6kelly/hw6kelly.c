@@ -235,7 +235,7 @@ void *ThreadMotor( void * arg  )
         } else {
           GPIO_CLR( parameter->gpio, parameter->BI1_pin );
         }
-      }
+      } // THIS WORKS
 
       else if(GPIO_READ(parameter->gpio, parameter->BIR_pin) != 0){
         while(GPIO_READ(parameter->gpio, parameter->BIR_pin) != 0) {

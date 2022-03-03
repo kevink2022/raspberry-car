@@ -161,18 +161,19 @@ void *ThreadClock( void * arg  )
 
 // Bringing this down here for easier access temporarily
 #define PWM_RANGE 100
-#define PWM_MOTOR_MAX 110 // Testing beyond 100
+#define PWM_MOTOR_MAX 100 
 #define PWM_MOTOR_MIN 20
 #define PWM_SPEED_STEP 5
 #define PWM_TURN_STEP 15
 #define PWM_ORIENTATION 1
 #define PWM_MODE2_STEP 20
+#define PWM_MODE2_TURN_DELAY 60000
 
 // A == LEFT  == DAT2
 // B == RIGHT == DAT1
 
 #define DEBUG
-//#undef DEBUG
+#undef DEBUG
 void *ThreadMotor( void * arg  )
 {
   struct motor_thread_parameter * parameter = (struct motor_thread_parameter *)arg;
@@ -213,7 +214,8 @@ void *ThreadMotor( void * arg  )
         while(GPIO_READ(parameter->gpio, parameter->AIR_pin) != 0) {
           parameter->pwm->DAT2 = PWM_MOTOR_MAX;
           GPIO_CLR( parameter->gpio, parameter->AI1_pin );
-          GPIO_CLR( parameter->gpio, parameter->AI2_pin ); 
+          GPIO_SET( parameter->gpio, parameter->AI2_pin );
+          usleep(PWM_MODE2_TURN_DELAY); 
         }
       
         parameter->pwm->DAT2 = A_PWM;
@@ -235,13 +237,14 @@ void *ThreadMotor( void * arg  )
         } else {
           GPIO_CLR( parameter->gpio, parameter->BI1_pin );
         }
-      }
+      } 
 
       else if(GPIO_READ(parameter->gpio, parameter->BIR_pin) != 0){
         while(GPIO_READ(parameter->gpio, parameter->BIR_pin) != 0) {
           parameter->pwm->DAT1 = PWM_MOTOR_MAX;
           GPIO_CLR( parameter->gpio, parameter->BI1_pin );
-          GPIO_CLR( parameter->gpio, parameter->BI2_pin ); 
+          GPIO_SET( parameter->gpio, parameter->BI2_pin ); 
+          usleep(PWM_MODE2_TURN_DELAY);
         }
         parameter->pwm->DAT2 = A_PWM;
         parameter->pwm->DAT1 = B_PWM;
@@ -471,28 +474,28 @@ int get_pressed_key(void)
 }
 
 #define DEBUG
+#undef DEBUG
 void *ThreadKey( void * arg )
 {
   struct key_thread_parameter *thread_key_parameter = (struct key_thread_parameter *)arg;
   bool done;
+  bool mode1 = true;
 
   do
   {
+    printf("\nHw6%s> ", mode1 ? "m1" : "m2");
     switch (get_pressed_key())
     {
       case 'q':
+        printf(" q\n");
         done = true;
-        /* unpause everything */
-        printf("KEY_THREAD: Recieved Command: QUIT\n");
-
         /* indicate that it is time to shut down */
         pthread_mutex_lock( &(thread_key_parameter->done->lock) );
         thread_key_parameter->done->done = true;
         pthread_mutex_unlock( &(thread_key_parameter->done->lock) );
         break;
-        break;
       case 's':
-        printf("\nKEY_THREAD: Recieved Command: STOP\n");
+        printf(" s\n");
 
         // Lock Control Thread
         pthread_mutex_lock( thread_key_parameter->control_queue_lock );
@@ -506,7 +509,7 @@ void *ThreadKey( void * arg )
         pthread_mutex_unlock( thread_key_parameter->control_queue_lock );
         break;
       case 'w':
-        printf("KEY_THREAD: Recieved Command: FORWARD\n");
+        printf(" w\n");
 
         // Lock Control Thread
         pthread_mutex_lock( thread_key_parameter->control_queue_lock );
@@ -520,7 +523,7 @@ void *ThreadKey( void * arg )
         pthread_mutex_unlock( thread_key_parameter->control_queue_lock );
         break;
       case 'x':
-        printf("KEY_THREAD: Recieved Command: BACKWARD\n");
+        printf(" x\n");
 
         // Lock Control Thread
         pthread_mutex_lock( thread_key_parameter->control_queue_lock );
@@ -534,7 +537,7 @@ void *ThreadKey( void * arg )
         pthread_mutex_unlock( thread_key_parameter->control_queue_lock );
         break;
       case 'i':
-        printf("KEY_THREAD: Recieved Command: FASTER\n");
+        printf(" i\n");
 
         // Lock Control Thread
         pthread_mutex_lock( thread_key_parameter->control_queue_lock );
@@ -548,7 +551,7 @@ void *ThreadKey( void * arg )
         pthread_mutex_unlock( thread_key_parameter->control_queue_lock );
         break;
       case 'j':
-        printf("KEY_THREAD: Recieved Command: SLOWER\n");
+        printf(" j\n");
 
         // Lock Control Thread
         pthread_mutex_lock( thread_key_parameter->control_queue_lock );
@@ -562,7 +565,7 @@ void *ThreadKey( void * arg )
         pthread_mutex_unlock( thread_key_parameter->control_queue_lock );
         break;
       case 'a':
-        printf("KEY_THREAD: Recieved Command: LEFT\n");
+        printf(" a\n");
 
         // Lock Control Thread
         pthread_mutex_lock( thread_key_parameter->control_queue_lock );
@@ -574,7 +577,7 @@ void *ThreadKey( void * arg )
         pthread_mutex_unlock( thread_key_parameter->control_queue_lock );
         break;
       case 'd':
-        printf("KEY_THREAD: Recieved Command: RIGHT\n");
+        printf(" d\n");
 
         // Lock Control Thread
         pthread_mutex_lock( thread_key_parameter->control_queue_lock );
@@ -593,7 +596,7 @@ void *ThreadKey( void * arg )
         switch(get_pressed_key())
         {
           case '1':
-            printf("KEY_THREAD: Recieved Command: MODE 1\n");
+            printf(" m1\n");
 
             // Lock Control Thread
             pthread_mutex_lock( thread_key_parameter->control_queue_lock );
@@ -608,7 +611,7 @@ void *ThreadKey( void * arg )
             break;
 
           case'2':
-            printf("KEY_THREAD: Recieved Command: MODE 2\n");
+            printf(" m2\n");
 
             // Lock Control Thread
             pthread_mutex_lock( thread_key_parameter->control_queue_lock );
@@ -636,6 +639,7 @@ void *ThreadKey( void * arg )
 }
 #undef DEBUG
 #define DEBUG
+#undef DEBUG
 int main( void )
 {
   volatile struct io_peripherals *io;
@@ -643,11 +647,8 @@ int main( void )
   struct key_thread_parameter     thread_key_parameter;
 
   pthread_t                       thread_motor_handle;
-  //pthread_t                       thread_right_motor_handle;
   pthread_t                       thread_clock_handle;
   struct motor_thread_parameter   thread_motor_parameter;
-  // struct motor_thread_parameter   thread_left_motor_parameter;
-  // struct motor_thread_parameter   thread_right_motor_parameter;
   struct clock_thread_parameter   thread_clock_parameter;
 
   struct pause_flag               pause_left_motor = {PTHREAD_MUTEX_INITIALIZER, false};
@@ -754,35 +755,8 @@ int main( void )
     thread_motor_parameter.BIR_pin = 25;
     thread_motor_parameter.gpio = &(io->gpio);
     thread_motor_parameter.pwm = &(io->pwm);
-    //thread_motor_parameter.left_motor = true;
     thread_motor_parameter.current_command = curr_cmd;
     thread_motor_parameter.mode = MODE_1;
-    
-    // // LEFT
-    // thread_left_motor_parameter.pause = &pause_left_motor;
-    // thread_left_motor_parameter.done = &done;
-    // thread_left_motor_parameter.PWM_pin = 12;
-    // thread_left_motor_parameter.I1_pin = 5;
-    // thread_left_motor_parameter.I2_pin = 6;
-    // thread_left_motor_parameter.IR_pin = 24;
-    // thread_left_motor_parameter.gpio = &(io->gpio);
-    // thread_left_motor_parameter.pwm = &(io->pwm);
-    // thread_left_motor_parameter.left_motor = true;
-    // thread_left_motor_parameter.current_command = curr_cmd;
-    // thread_left_motor_parameter.mode = MODE_1;
-
-    // // RIGHT
-    // thread_right_motor_parameter.pause = &pause_right_motor;
-    // thread_right_motor_parameter.done = &done;
-    // thread_right_motor_parameter.PWM_pin = 13;
-    // thread_right_motor_parameter.I1_pin = 22;
-    // thread_right_motor_parameter.I2_pin = 23;
-    // thread_right_motor_parameter.IR_pin = 25;
-    // thread_right_motor_parameter.gpio = &(io->gpio);
-    // thread_right_motor_parameter.pwm = &(io->pwm);
-    // thread_right_motor_parameter.left_motor = false;
-    // thread_right_motor_parameter.current_command = curr_cmd;
-    // thread_right_motor_parameter.mode = MODE_1;
 
     // THREADS
     pthread_create( &thread_key_handle, 0, ThreadKey, (void *)&thread_key_parameter );

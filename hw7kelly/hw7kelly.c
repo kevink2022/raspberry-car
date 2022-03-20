@@ -483,7 +483,9 @@ int main( void )
 
     #ifdef DEBUG
     printf("MAIN: enable pwm: \n");
+    printf( "mem at 0x%8.8X\n", (unsigned long)&(io->gpio));
     #endif
+    
 
     io->gpio->GPFSEL1.field.FSEL2 = GPFSEL_INPUT;
     io->gpio->GPFSEL1.field.FSEL3 = GPFSEL_INPUT;

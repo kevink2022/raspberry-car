@@ -616,9 +616,9 @@ void set_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_values){
     GPIO_CLR( motor_pins->gpio, motor_pins->BI1_pin );
   }
   if (motor_pin_values->BI2){
-    GPIO_SET( motor_pins->gpio, motor_pins->BI1_pin );
+    GPIO_SET( motor_pins->gpio, motor_pins->BI2_pin );
   } else {
-    GPIO_CLR( motor_pins->gpio, motor_pins->BI1_pin );
+    GPIO_CLR( motor_pins->gpio, motor_pins->BI2_pin );
   }
 }
 

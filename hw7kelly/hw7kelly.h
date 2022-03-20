@@ -15,6 +15,11 @@
 #include "pwm.h"
 #include "io_peripherals.h"
 #include "enable_pwm_clock.h"
+#include "uart.h"
+#include "bsc.h"
+#include "MPU6050.h"
+#include "MPU9250.h"
+
 
 struct pause_flag
 {
@@ -26,6 +31,14 @@ struct done_flag
 {
   pthread_mutex_t lock;
   bool            done;
+};
+
+struct data_signal
+{
+  pthread_mutex_t lock;
+  FILE            file;
+  bool            recording;
+  bool            m0;
 };
 
 typedef struct {
@@ -97,7 +110,6 @@ struct control_thread_parameter
   struct pause_flag * motor_pause;
 };
 
-
 struct motor_thread_parameter
 {
   struct done_flag  * done;
@@ -107,10 +119,22 @@ struct motor_thread_parameter
   motor_pins        * motor_pins;
 };
 
+struct data_thread_parameter
+{
+  struct done_flag              * done;
+  sem_t                         * data_thread_sem;
+  struct data_signal            * data_signal;
+  struct calibration_data       * calibration_accelerometer;
+  struct calibration_data       * calibration_gyroscope;
+  struct calibration_data       * calibration_magnetometer;
+  volatile struct bsc_register  * bsc;
+};
+
 
 void *ThreadClock( void * arg  );
 void *ThreadControl( void * arg  );
 void *ThreadMotor( void * arg  );
+void *ThreadData( void * arg  );
 int get_pressed_key(void);
 void *ThreadKey( void * arg );
 
@@ -126,3 +150,56 @@ void update_command(motor_pin_values *motor_pin_values, char current_command, in
 
 // Key thread func
 void add_to_queue(control_queue *control_queue, char command);
+
+
+
+// Data Aquisition Stuff
+
+#define APB_CLOCK 250000000
+
+#define ROUND_DIVISION(x,y) (((x) + (y)/2)/(y))
+
+union uint16_to_2uint8
+{
+  struct uint16_to_2uint8_field
+  {
+    uint8_t   L;  /* Little Endian byte order means that the least significant byte goes in the lowest address */
+    uint8_t   H;
+  }         field;
+  uint16_t  unsigned_value;
+  int16_t   signed_value;
+};
+
+struct calibration_data
+{
+  float scale;
+  float offset_x;
+  float offset_y;
+  float offset_z;
+};
+
+union MPU6050_transaction_field_data read_MPU6050_register( /* read a register, returning the read value */
+    uint8_t                         I2C_address,            /* the address of the I2C device to talk to */
+    MPU6050_REGISTER                register_address,       /* the address to read from */
+    volatile struct bsc_register *  bsc );                  /* the BSC address */
+
+void write_MPU6050_register(                                /* write a register */
+    uint8_t                               I2C_address,      /* the address of the I2C device to talk to */
+    MPU6050_REGISTER                      register_address, /* the address to read from */
+    union MPU6050_transaction_field_data  value,            /* the value to write */
+    volatile struct bsc_register *        bsc );            /* the BSC address */
+
+void calibrate_accelerometer_and_gyroscope(
+    struct calibration_data *     calibration_accelerometer,
+    struct calibration_data *     calibration_gyroscope,
+    volatile struct bsc_register *bsc );
+
+void initialize_accelerometer_and_gyroscope(
+    struct calibration_data *     calibration_accelerometer,
+    struct calibration_data *     calibration_gyroscope,
+    volatile struct bsc_register *bsc );
+
+void read_accelerometer_gyroscope(
+    struct calibration_data *     calibration_accelerometer,
+    struct calibration_data *     calibration_gyroscope,
+    volatile struct bsc_register *bsc );

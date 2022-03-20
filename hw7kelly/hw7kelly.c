@@ -496,6 +496,9 @@ int main( void )
     io->gpio->GPFSEL0.field.FSEL2 = GPFSEL_INPUT;
     io->gpio->GPFSEL0.field.FSEL3 = GPFSEL_INPUT;
 
+    #ifdef DEBUG
+    printf("MAIN: gpio cleared: \n");
+    #endif
     
     /* set the pin function to alternate function 0 for GPIO12 */
     /* set the pin function to alternate function 0 for GPIO13 */

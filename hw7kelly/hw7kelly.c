@@ -26,7 +26,7 @@
 #define PWM_MODE2_TURN_DELAY 60000
 #define PWM_MODE2_OFF_DELAY 500
 
-//#define DEBUG
+#define DEBUG
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //  ThreadClock()
@@ -52,7 +52,7 @@ void *ThreadClock( void * arg  )
     usleep(parameter->period * 1000000);
 
     #ifdef DEBUG
-    printf("CLOCK: posting sem\n");
+    printf("CLOCK: posting sems\n");
     #endif
 
     // Wake the control thread to process the queue
@@ -62,6 +62,8 @@ void *ThreadClock( void * arg  )
     sem_post(parameter->data_thread_sem);
   }
 }
+#undef DEBUG
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //  ThreadControl()

@@ -520,7 +520,8 @@ int main( void )
   if (io != NULL)
   {
     /* print where the I/O memory was actually mapped to */
-    printf( "mem at 0x%8.8X\n", (unsigned int)io );
+    printf( "mem at 0x%8.8X\n", (unsigned long)io );
+    printf( "mem at 0x%8.8X\n", (unsigned long)(io->gpio));
     
     printf( "\n" );
     printf( "Hit any key to stop \n" );

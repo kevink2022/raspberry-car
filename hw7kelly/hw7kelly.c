@@ -479,6 +479,10 @@ int main( void )
 
     enable_pwm_clock( io->cm, io->pwm );
 
+    #ifdef DEBUG
+    printf("MAIN: enable pwm: \n");
+    #endif
+
     io->gpio->GPFSEL1.field.FSEL2 = GPFSEL_INPUT;
     io->gpio->GPFSEL1.field.FSEL3 = GPFSEL_INPUT;
     io->gpio->GPFSEL0.field.FSEL5 = GPFSEL_INPUT;
@@ -490,6 +494,7 @@ int main( void )
     io->gpio->GPFSEL0.field.FSEL2 = GPFSEL_INPUT;
     io->gpio->GPFSEL0.field.FSEL3 = GPFSEL_INPUT;
 
+    
     /* set the pin function to alternate function 0 for GPIO12 */
     /* set the pin function to alternate function 0 for GPIO13 */
     io->gpio->GPFSEL1.field.FSEL2 = GPFSEL_ALTERNATE_FUNCTION0;
@@ -500,6 +505,10 @@ int main( void )
     io->gpio->GPFSEL2.field.FSEL3 = GPFSEL_OUTPUT;
     io->gpio->GPFSEL0.field.FSEL2 = GPFSEL_ALTERNATE_FUNCTION0;
     io->gpio->GPFSEL0.field.FSEL3 = GPFSEL_ALTERNATE_FUNCTION0;
+
+    #ifdef DEBUG
+    printf("MAIN: gpio config: \n");
+    #endif
 
     /* configure the PWM channels */
     io->pwm->RNG1 = PWM_RANGE;     /* the default value */
@@ -520,6 +529,10 @@ int main( void )
     io->pwm->CTL.field.PWEN1 = 1;  /* enable the PWM channel */
     io->pwm->CTL.field.PWEN2 = 1;  /* enable the PWM channel */
 
+    #ifdef DEBUG
+    printf("MAIN: pwm config: \n");
+    #endif
+    
     /* configure the I2C interface */
     io->bsc->DIV.field.CDIV  = (PERIPHERAL_CLOCK*10)/400000;
     io->bsc->DEL.field.REDL  = 0x30;
@@ -530,6 +543,10 @@ int main( void )
     io->bsc->C.field.INTR    = 0;
     io->bsc->C.field.I2CEN   = 1;
     io->bsc->C.field.CLEAR   = 1;
+
+    #ifdef DEBUG
+    printf("MAIN: i2c config: \n");
+    #endif
 
 
     motor_pins.gpio = (io->gpio);

@@ -59,7 +59,7 @@ void *ThreadClock( void * arg  )
     sem_post(parameter->control_thread_sem);
 
     // Wake the data aquisition thread 
-    // for hw7
+    sem_post(parameter->data_thread_sem);
   }
 }
 
@@ -563,6 +563,7 @@ int main( void )
     thread_clock_parameter.period = .01;
     thread_clock_parameter.done = &done;
     thread_clock_parameter.control_thread_sem = &control_thread_sem;
+    thread_clock_parameter.data_thread_sem = &data_thread_sem;
 
     // CONTROL
     thread_control_parameter.done = &done;

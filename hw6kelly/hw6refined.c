@@ -70,7 +70,7 @@ void *ThreadClock( void * arg  )
 void *ThreadControl( void * arg  )
 {
   struct control_thread_parameter * parameter = (struct control_thread_parameter *)arg;
-  *(char*)parameter->current_command = '\0';
+  *(char*)parameter->current_command = 's';
 
   #ifdef DEBUG
   printf("CONTROL: sem init\n");
@@ -88,7 +88,7 @@ void *ThreadControl( void * arg  )
     pthread_mutex_lock( parameter->control_queue->control_queue_lock );
     if (*(unsigned int*)parameter->control_queue->control_queue_length > 0){
       #ifdef DEBUG
-      printf("CONTROL: control queue addr: %lu\n", (unsigned long)parameter->control_queue->control_queue);
+      printf("CONTROL: control queue addr: %lx\n", (unsigned long)parameter->control_queue->control_queue);
       printf("CONTROL: in lock, curr_cmd: %c\n", *(char*)parameter->current_command);
       #endif
 
@@ -138,7 +138,7 @@ void *ThreadControl( void * arg  )
 void *ThreadMotor( void * arg  )
 {
   struct motor_thread_parameter * parameter = (struct motor_thread_parameter *)arg;
-  char current_command = '\0';
+  char current_command = 's';
   int mode = MODE_1;
   bool off_course = false; // Used to exit thread if off course and stuck turing in mode 2
 

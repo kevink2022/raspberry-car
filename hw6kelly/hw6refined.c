@@ -92,9 +92,9 @@ void *ThreadControl( void * arg  )
       #endif
 
       // Set the current command to the first command in the queue
-      pthread_mutex_lock( &(parameter->current_command_lock) );
+      pthread_mutex_lock( (parameter->current_command_lock) );
       *(char*)parameter->current_command = *(char*)parameter->control_queue;
-      pthread_mutex_unlock( &(parameter->current_command_lock) );
+      pthread_mutex_unlock( (parameter->current_command_lock) );
       
       #ifdef DEBUG
       printf("CLOCK: in lock, new curr_cmd: %c\n", *(char*)parameter->current_command);
@@ -301,7 +301,7 @@ int main( void )
   sem_t                           control_thread_sem;
   sem_init(&control_thread_sem, 0, 1);
 
-  char queue[QUEUE_SIZE];
+  char *queue = calloc(QUEUE_SIZE, sizeof(char));
   #ifdef DEBUG
   printf("MAIN: queue addr: %lx", (unsigned long)queue);
   #endif

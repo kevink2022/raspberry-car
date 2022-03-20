@@ -578,6 +578,19 @@ void turn(void){
 }
 
 void set_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_values){
+  
+  //#define DEBUG
+
+  #ifdef DEBUG  
+  printf("\nMOTOR-SET-PINS: A_PWM : %i\n", motor_pin_values->A_PWM);
+  printf("MOTOR-SET-PINS: B_PWM : %i\n", motor_pin_values->B_PWM);
+  printf("MOTOR-SET-PINS: A_ : %i\n", motor_pin_values->A_PWM);
+  printf("MOTOR-SET-PINS: B_PWM : %i\n", motor_pin_values->B_PWM);
+  #endif
+
+  //#undef DEBUG
+  
+  
   // Set PWM to original values
   motor_pins->pwm->DAT2 = motor_pin_values->A_PWM;
   motor_pins->pwm->DAT1 = motor_pin_values->B_PWM;
@@ -589,7 +602,7 @@ void set_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_values){
     GPIO_CLR( motor_pins->gpio, motor_pins->AI1_pin );
   }
 
-  if (motor_pin_values->AI1){
+  if (motor_pin_values->AI2){
     GPIO_SET( motor_pins->gpio, motor_pins->AI2_pin );
   } else {
     GPIO_CLR( motor_pins->gpio, motor_pins->AI2_pin );

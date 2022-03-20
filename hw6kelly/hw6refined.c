@@ -156,7 +156,7 @@ void *ThreadMotor( void * arg  )
   {
     pthread_mutex_unlock( &(parameter->done->lock) );
 
-    sleep(1);
+    //sleep(1);
 
     // Update PWM
     if ((motor_pin_values.A_PWM != motor_pin_values.A_PWM_next) || (motor_pin_values.B_PWM != motor_pin_values.B_PWM_next)){

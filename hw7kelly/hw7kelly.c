@@ -341,8 +341,8 @@ void *ThreadData( void * arg  )
         read_accelerometer_gyroscope( parameter->calibration_accelerometer, parameter->calibration_gyroscope, parameter->bsc );
         ////// SAMPLE ///////
       }
-      pthread_mutex_unlock( &(parameter->data_signal->lock) );      
     }
+    pthread_mutex_unlock( &(parameter->data_signal->lock) );
   }
 }
 

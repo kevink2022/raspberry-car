@@ -1,2 +1,1 @@
-volatile void * import_registers( void );
-
+struct io_peripherals *import_registers( void );

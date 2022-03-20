@@ -1,8 +1,8 @@
-TARGET=hw6kelly
+TARGET=refined
 
 SOURCES=import_registers.c \
         enable_pwm_clock.c \
-        hw6kelly.c
+        hw6refined.c
 
 OBJECTS=$(patsubst %.c,%.o,$(SOURCES))
 

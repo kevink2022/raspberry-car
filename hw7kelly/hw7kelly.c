@@ -483,7 +483,7 @@ int main( void )
 
     #ifdef DEBUG
     printf("MAIN: enable pwm: \n");
-    printf( "mem at 0x%8.8X\n", (unsigned long)&(io->gpio));
+    printf( "mem at 0x%8.8X\n", (unsigned long)(io->gpio));
     #endif
     
 

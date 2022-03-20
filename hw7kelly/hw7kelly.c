@@ -479,7 +479,7 @@ int main( void )
     printf( "mem at 0x%8.8X\n", (unsigned long)&(io->cm) );
     printf( "mem at 0x%8.8X\n", (unsigned long)&(io->pwm));
 
-    enable_pwm_clock( &(io->cm), &(io->pwm) );
+    enable_pwm_clock( (volatile struct cm_register *)&(io->cm), (volatile struct pwm_register *)&(io->pwm) );
 
     #ifdef DEBUG
     printf("MAIN: enable pwm: \n");

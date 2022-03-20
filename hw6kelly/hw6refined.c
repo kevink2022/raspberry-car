@@ -264,13 +264,18 @@ void *ThreadKey( void * arg )
   char input = 's';
 
   #ifdef DEBUG
-  printf("Key: init\n");
+  printf("KEY: init\n");
   #endif
 
   do
   {
     printf("\nHw6m%c> ", mode);
     input = get_pressed_key();
+
+    #ifdef DEBUG
+    printf("KEY: input: %c\n", input);
+    #endif
+
     if(input == 'q'){
       printf(" q\n");
       done = true;
@@ -476,6 +481,8 @@ int main( void )
 /////////////////////////// Motor thread functions ///////////////////////////
 // Pass pins and pin values through structs which can then be modified
 
+//#define DEBUG
+
 void init_motor_pin_values(motor_pin_values *motor_pin_values){
   motor_pin_values->A_PWM = PWM_MOTOR_MIN;
   motor_pin_values->AI1 = 0;
@@ -494,6 +501,10 @@ void init_motor_pin_values(motor_pin_values *motor_pin_values){
 
 void smooth_speed_change(motor_pins *motor_pins, motor_pin_values *motor_pin_values, int initial_speed, int final_speed, int step){
   
+  #ifdef DEBUG  
+  printf("\nMOTOR-SMOOTH-SPEED: init: %i, init: %i, step: %i,\n", motor_pin_values->A_PWM);
+  #endif
+
   // Slowdown
   if (initial_speed > final_speed) {
     while(motor_pin_values->A_PWM > final_speed){
@@ -571,8 +582,8 @@ void update_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_value
   if ((motor_pin_values->AI1 != motor_pin_values->AI1_next) || (motor_pin_values->AI2 != motor_pin_values->AI2_next) || (motor_pin_values->BI1 != motor_pin_values->BI1_next) || (motor_pin_values->BI2 != motor_pin_values->BI2_next)) {
     
     #ifdef DEBUG
-    printf("\nMOTOR: Setting AI1: %i\n", AI1);
-    printf("MOTOR: Setting BI1: %i\n", BI1);
+    printf("\nMOTOR-UPDATE-PINS: Setting AI1: %i\n", motor_pin_values->AI1);
+    printf("MOTOR-UPDATE-PINS: Setting BI1: %i\n", motor_pin_values->BI1);
     #endif
 
     motor_pin_values->AI1 = motor_pin_values->AI1_next;
@@ -581,8 +592,8 @@ void update_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_value
     motor_pin_values->BI2 = motor_pin_values->BI2_next;
 
     #ifdef DEBUG  
-    printf("\nMOTOR: A_PWM Pre Slow Stop: %i\n", A_PWM);
-    printf("MOTOR: B_PWM Pre Slow Stop: %i\n", B_PWM);
+    printf("\nMOTOR: A_PWM Pre Slow Stop: %i\n", motor_pin_values->A_PWM);
+    printf("MOTOR: B_PWM Pre Slow Stop: %i\n", motor_pin_values->B_PWM);
     #endif
 
     // Slow stop
@@ -734,9 +745,15 @@ void update_command(motor_pin_values *motor_pin_values, char current_command, in
   }
 }
 
+#define DEBUG
+
 /////////////////////// KEY THREAD FUNCTIONS /////////////////////////////
 void add_to_queue(control_queue *control_queue, char command){
   
+  #ifdef DEBUG
+  printf("ADD-TO-QUEUE: Recieved Command: %c\n", command);
+  #endif
+
   pthread_mutex_lock( control_queue->control_queue_lock );
   
   if (*(int*)control_queue->control_queue_length < QUEUE_SIZE) {
@@ -744,4 +761,8 @@ void add_to_queue(control_queue *control_queue, char command){
     *(unsigned int*)control_queue->control_queue_length += 1;
   }
   pthread_mutex_unlock( control_queue->control_queue_lock );
+
+  #ifdef DEBUG
+  printf("ADD-TO-QUEUE: command added");
+  #endif
 }

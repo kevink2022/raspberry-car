@@ -26,6 +26,7 @@
 #define PWM_MODE2_TURN_DELAY 60000
 #define PWM_MODE2_OFF_DELAY 500
 
+#define DEBUG
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //  ThreadClock()
@@ -35,13 +36,9 @@
 void *ThreadClock( void * arg  )
 {
   #ifdef DEBUG
-  printf("CLOCK INIT: cc thread\n"); 
+  printf("CLOCK: thread started\n"); 
   #endif
   struct clock_thread_parameter * parameter = (struct clock_thread_parameter *)arg;
-  #ifdef DEBUG
-  printf("CLOCK INIT: cc thread param\n");
-  printf("CLOCK INIT: control queue addr: %lx\n", (unsigned long)parameter->control_queue);
-  #endif
 
   pthread_mutex_lock( &(parameter->done->lock) );
   while (!(parameter->done->done))
@@ -55,7 +52,7 @@ void *ThreadClock( void * arg  )
     usleep(parameter->period * 1000000);
 
     #ifdef DEBUG
-    printf("CLOCK: queue_len %i\n", *(unsigned int*)parameter->control_queue_length);
+    printf("CLOCK: posting sem\n");
     #endif
 
     // Wake the control thread to process the queue
@@ -75,6 +72,10 @@ void *ThreadControl( void * arg  )
   struct control_thread_parameter * parameter = (struct control_thread_parameter *)arg;
   *(char*)parameter->current_command = '\0';
 
+  #ifdef DEBUG
+  printf("CONTROL: sem init\n");
+  #endif
+
   pthread_mutex_lock( &(parameter->done->lock) );
   while (!(parameter->done->done))  // Check done
   {
@@ -87,8 +88,8 @@ void *ThreadControl( void * arg  )
     pthread_mutex_lock( parameter->control_queue->control_queue_lock );
     if (*(unsigned int*)parameter->control_queue->control_queue_length > 0){
       #ifdef DEBUG
-      printf("CLOCK: control queue addr: %lu\n", (unsigned long)parameter->control_queue);
-      printf("CLOCK: in lock, curr_cmd: %c\n", *(char*)parameter->control_queue);
+      printf("CONTROL: control queue addr: %lu\n", (unsigned long)parameter->control_queue->control_queue);
+      printf("CONTROL: in lock, curr_cmd: %c\n", *(char*)parameter->current_command);
       #endif
 
       // Set the current command to the first command in the queue
@@ -97,14 +98,14 @@ void *ThreadControl( void * arg  )
       pthread_mutex_unlock( (parameter->current_command_lock) );
       
       #ifdef DEBUG
-      printf("CLOCK: in lock, new curr_cmd: %c\n", *(char*)parameter->current_command);
+      printf("CONTROL: in lock, new curr_cmd: %c\n", *(char*)parameter->current_command);
       #endif
 
       // Decrement the control queue length
       *(unsigned int*)parameter->control_queue->control_queue_length -= 1;
       
       #ifdef DEBUG
-      printf("CLOCK: in lock, new queue_len: %i\n", *(unsigned int*)parameter->control_queue->control_queue_length);
+      printf("CONTROL: in lock, new queue_len: %i\n", *(unsigned int*)parameter->control_queue->control_queue_length);
       #endif
 
       // Move queue commands up
@@ -116,7 +117,7 @@ void *ThreadControl( void * arg  )
       pthread_mutex_unlock( &(parameter->motor_pause->lock) );
 
       #ifdef DEBUG
-      printf("\nCLOCK: exit update");
+      printf("CONTROL: exit update\n");
       #endif
     }
     pthread_mutex_unlock( parameter->control_queue->control_queue_lock );
@@ -128,7 +129,7 @@ void *ThreadControl( void * arg  )
 // B == RIGHT == DAT1
 
 #define DEBUG
-#undef DEBUG
+//#undef DEBUG
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //  ThreadMotor()
@@ -144,6 +145,10 @@ void *ThreadMotor( void * arg  )
   motor_pin_values motor_pin_values;
   init_motor_pin_values(&motor_pin_values);
 
+  #ifdef DEBUG
+  printf("MOTOR: init\n");
+  #endif
+
   pthread_mutex_lock( &(parameter->done->lock) );
   while (!(parameter->done->done))
   {
@@ -151,6 +156,10 @@ void *ThreadMotor( void * arg  )
 
     // Update PWM
     update_motor_pwm(parameter->motor_pins, &motor_pin_values);
+
+    #ifdef DEBUG
+    printf("MOTOR: Updated PWM\n");
+    #endif
 
     // If going forward in mode 2, check IR sensors
     if ( (motor_pin_values.AI1 && motor_pin_values.BI1) && (mode == MODE_2)) {
@@ -196,7 +205,7 @@ void *ThreadMotor( void * arg  )
     update_motor_pins(parameter->motor_pins, &motor_pin_values);
 
     #ifdef DEBUG
-    printf("\nMOTOR: Everything Set\n");
+    printf("MOTOR: updated pins\n");
     #endif
 
     pthread_mutex_lock( &(parameter->pause->lock) );
@@ -207,6 +216,10 @@ void *ThreadMotor( void * arg  )
       parameter->pause->pause = false;
     }
     pthread_mutex_unlock( &(parameter->pause->lock) );
+  
+    #ifdef DEBUG
+    printf("MOTOR: updated commands\n");
+    #endif
   }
 }
 #undef DEBUG
@@ -236,7 +249,7 @@ int get_pressed_key(void)
 }
 
 #define DEBUG
-#undef DEBUG
+//#undef DEBUG
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -249,6 +262,10 @@ void *ThreadKey( void * arg )
   bool done = false;
   char mode = '1';
   char input = 's';
+
+  #ifdef DEBUG
+  printf("Key: init\n");
+  #endif
 
   do
   {
@@ -301,25 +318,26 @@ int main( void )
   sem_t                           control_thread_sem;
   sem_init(&control_thread_sem, 0, 1);
 
+  #ifdef DEBUG
+  printf("MAIN: created sem: %lx", (unsigned long)&control_thread_sem);
+  #endif
+
   char *queue = calloc(QUEUE_SIZE, sizeof(char));
   #ifdef DEBUG
   printf("MAIN: queue addr: %lx", (unsigned long)queue);
   #endif
 
   unsigned int queue_len = 0;
-  #ifdef DEBUG
-  printf("MAIN: queue_len addr: %lx", (unsigned long)queue_len);
-  #endif
-
   char curr_cmd = 's';
-  #ifdef DEBUG
-  printf("MAIN: queue_len addr: %lx", (unsigned long)curr_cmd);
-  #endif
 
   control_queue control_queue;
   control_queue.control_queue = &queue;
   control_queue.control_queue_length = &queue_len;
   control_queue.control_queue_lock = &queue_lock;
+
+  #ifdef DEBUG
+  printf("MAIN: created control queue: %lx", (unsigned long)&control_queue);
+  #endif
 
   motor_pins motor_pins;
   motor_pins.gpio = &(io->gpio);
@@ -332,6 +350,13 @@ int main( void )
   motor_pins.BI1_pin = 22;
   motor_pins.BI2_pin = 23;
   motor_pins.BIR_pin = 25;
+
+  #ifdef DEBUG
+  printf("MAIN: created motor_pins: %lx", (unsigned long)&motor_pins);
+  #endif
+
+  
+  #define DEBUG
 
   io = import_registers();
   if (io != NULL)
@@ -379,7 +404,7 @@ int main( void )
     io->pwm.CTL.field.PWEN2 = 1;  /* enable the PWM channel */
     
     // CLOCK
-    thread_clock_parameter.period = .01;
+    thread_clock_parameter.period = 2;
     thread_clock_parameter.done = &done;
     thread_clock_parameter.control_thread_sem = &control_thread_sem;
 
@@ -402,13 +427,26 @@ int main( void )
     thread_motor_parameter.current_command_lock = &curr_cmd_lock;
     thread_motor_parameter.motor_pins = &motor_pins;
 
+    #ifdef DEBUG
+    printf("\nMAIN: threads ready:");
+    #endif
+
+
     // THREADS
     pthread_create( &thread_key_handle, 0, ThreadKey, (void *)&thread_key_parameter );
     pthread_create( &thread_motor_handle, 0, ThreadMotor, (void *)&thread_motor_parameter );
     pthread_create( &thread_clock_handle, 0, ThreadClock, (void *)&thread_clock_parameter);
+    pthread_create( &thread_control_handle, 0, ThreadControl, (void *)&thread_control_parameter);
+    
+    #ifdef DEBUG
+    printf("\nMAIN: threads created");
+    #endif
+
+    
     pthread_join( thread_key_handle, 0 );
     pthread_join( thread_motor_handle, 0 );
     pthread_join( thread_clock_handle, 0 );
+    pthread_join( thread_control_handle, 0);
     io->gpio.GPFSEL1.field.FSEL2 = GPFSEL_INPUT;
     io->gpio.GPFSEL1.field.FSEL3 = GPFSEL_INPUT;
     io->gpio.GPFSEL0.field.FSEL5 = GPFSEL_INPUT;

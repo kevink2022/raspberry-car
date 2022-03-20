@@ -637,6 +637,10 @@ void update_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_value
   }
 }
 
+
+#define DEBUG
+
+
 void update_command(motor_pin_values *motor_pin_values, char current_command, int *mode){
   // Update params
   switch (current_command)

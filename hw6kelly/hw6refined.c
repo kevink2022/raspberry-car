@@ -159,7 +159,9 @@ void *ThreadMotor( void * arg  )
     sleep(1);
 
     // Update PWM
-    update_motor_pwm(parameter->motor_pins, &motor_pin_values);
+    if ((motor_pin_values.A_PWM != motor_pin_values.A_PWM_next) || (motor_pin_values.B_PWM != motor_pin_values.B_PWM_next)){
+      update_motor_pwm(parameter->motor_pins, &motor_pin_values);
+    }
 
     #ifdef DEBUG
     printf("MOTOR: Updated PWM\n");
@@ -206,8 +208,10 @@ void *ThreadMotor( void * arg  )
     }
 
     // Update A and B pins if needed
-    update_motor_pins(parameter->motor_pins, &motor_pin_values);
-
+    if ((motor_pin_values.AI1 != motor_pin_values.AI1_next) || (motor_pin_values.AI2 != motor_pin_values.AI2_next) || (motor_pin_values.BI1 != motor_pin_values.BI1_next) || (motor_pin_values.BI2 != motor_pin_values.BI2_next)) {
+      update_motor_pins(parameter->motor_pins, &motor_pin_values);
+    }
+    
     #ifdef DEBUG
     printf("MOTOR: updated pins\n");
     #endif
@@ -569,72 +573,72 @@ void set_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_values){
   }
 }
 
+#define DEBUG
+
 void update_motor_pwm(motor_pins *motor_pins, motor_pin_values *motor_pin_values) {
-  if ((motor_pin_values->A_PWM != motor_pin_values->A_PWM_next) || (motor_pin_values->B_PWM != motor_pin_values->B_PWM_next)){
 
-    motor_pin_values->A_PWM = motor_pin_values->A_PWM_next;
-    motor_pin_values->B_PWM = motor_pin_values->B_PWM_next;
+  motor_pin_values->A_PWM = motor_pin_values->A_PWM_next;
+  motor_pin_values->B_PWM = motor_pin_values->B_PWM_next;
 
-    #ifdef DEBUG  
-    printf("\nMOTOR: Setting A_PWM: %i\n", motor_pin_values->A_PWM);
-    printf("MOTOR: Setting B_PWM: %i\n", motor_pin_values->B_PWM);
-    #endif
+  #ifdef DEBUG  
+  printf("\nMOTOR: Setting A_PWM: %i\n", motor_pin_values->A_PWM);
+  printf("MOTOR: Setting B_PWM: %i\n", motor_pin_values->B_PWM);
+  #endif
 
-    // Set new values
-    motor_pins->pwm->DAT1 = motor_pin_values->A_PWM;
-    motor_pins->pwm->DAT2 = motor_pin_values->B_PWM;
-  }
+  // Set new values
+  motor_pins->pwm->DAT1 = motor_pin_values->A_PWM;
+  motor_pins->pwm->DAT2 = motor_pin_values->B_PWM;
 }
 
+#undef DEBUG
+
 void update_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_values) {
-  if ((motor_pin_values->AI1 != motor_pin_values->AI1_next) || (motor_pin_values->AI2 != motor_pin_values->AI2_next) || (motor_pin_values->BI1 != motor_pin_values->BI1_next) || (motor_pin_values->BI2 != motor_pin_values->BI2_next)) {
     
-    #ifdef DEBUG
-    printf("\nMOTOR-UPDATE-PINS: Setting AI1: %i\n", motor_pin_values->AI1);
-    printf("MOTOR-UPDATE-PINS: Setting BI1: %i\n", motor_pin_values->BI1);
-    #endif
+  #ifdef DEBUG
+  printf("\nMOTOR-UPDATE-PINS: Setting AI1: %i\n", motor_pin_values->AI1);
+  printf("MOTOR-UPDATE-PINS: Setting BI1: %i\n", motor_pin_values->BI1);
+  #endif
 
-    motor_pin_values->AI1 = motor_pin_values->AI1_next;
-    motor_pin_values->AI2 = motor_pin_values->AI2_next;
-    motor_pin_values->BI1 = motor_pin_values->BI1_next;
-    motor_pin_values->BI2 = motor_pin_values->BI2_next;
+  motor_pin_values->AI1 = motor_pin_values->AI1_next;
+  motor_pin_values->AI2 = motor_pin_values->AI2_next;
+  motor_pin_values->BI1 = motor_pin_values->BI1_next;
+  motor_pin_values->BI2 = motor_pin_values->BI2_next;
 
-    #ifdef DEBUG  
-    printf("\nMOTOR: A_PWM Pre Slow Stop: %i\n", motor_pin_values->A_PWM);
-    printf("MOTOR: B_PWM Pre Slow Stop: %i\n", motor_pin_values->B_PWM);
-    #endif
+  #ifdef DEBUG  
+  printf("\nMOTOR: A_PWM Pre Slow Stop: %i\n", motor_pin_values->A_PWM);
+  printf("MOTOR: B_PWM Pre Slow Stop: %i\n", motor_pin_values->B_PWM);
+  #endif
 
-    // Slow stop
-    smooth_speed_change(motor_pins, motor_pin_values, motor_pin_values->A_PWM, PWM_MOTOR_MIN, PWM_SPEED_STEP);
+  // Slow stop
+  smooth_speed_change(motor_pins, motor_pin_values, motor_pin_values->A_PWM, PWM_MOTOR_MIN, PWM_SPEED_STEP);
 
-    // Set motor control to original values
-    if (motor_pin_values->AI1){
-      GPIO_SET( motor_pins->gpio, motor_pins->AI1_pin );
-    } else {
-      GPIO_CLR( motor_pins->gpio, motor_pins->AI1_pin );
-    }
-
-    if (motor_pin_values->AI1){
-      GPIO_SET( motor_pins->gpio, motor_pins->AI2_pin );
-    } else {
-      GPIO_CLR( motor_pins->gpio, motor_pins->AI2_pin );
-    }      
-
-    if (motor_pin_values->BI1){
-      GPIO_SET( motor_pins->gpio, motor_pins->BI1_pin );
-    } else {
-      GPIO_CLR( motor_pins->gpio, motor_pins->BI1_pin );
-    }
-    if (motor_pin_values->BI2){
-      GPIO_SET( motor_pins->gpio, motor_pins->BI1_pin );
-    } else {
-      GPIO_CLR( motor_pins->gpio, motor_pins->BI1_pin );
-    }
-
-    // Slow Start
-    smooth_speed_change(motor_pins, motor_pin_values, motor_pin_values->A_PWM_next, PWM_MOTOR_MIN, PWM_SPEED_STEP);
-
+  // Set motor control to original values
+  if (motor_pin_values->AI1){
+    GPIO_SET( motor_pins->gpio, motor_pins->AI1_pin );
+  } else {
+    GPIO_CLR( motor_pins->gpio, motor_pins->AI1_pin );
   }
+
+  if (motor_pin_values->AI1){
+    GPIO_SET( motor_pins->gpio, motor_pins->AI2_pin );
+  } else {
+    GPIO_CLR( motor_pins->gpio, motor_pins->AI2_pin );
+  }      
+
+  if (motor_pin_values->BI1){
+    GPIO_SET( motor_pins->gpio, motor_pins->BI1_pin );
+  } else {
+    GPIO_CLR( motor_pins->gpio, motor_pins->BI1_pin );
+  }
+  if (motor_pin_values->BI2){
+    GPIO_SET( motor_pins->gpio, motor_pins->BI1_pin );
+  } else {
+    GPIO_CLR( motor_pins->gpio, motor_pins->BI1_pin );
+  }
+
+  // Slow Start
+  smooth_speed_change(motor_pins, motor_pin_values, motor_pin_values->A_PWM_next, PWM_MOTOR_MIN, PWM_SPEED_STEP);
+
 }
 
 

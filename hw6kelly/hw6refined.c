@@ -575,6 +575,7 @@ void set_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_values){
 }
 
 #define DEBUG
+#undef DEBUG
 
 void update_motor_pwm(motor_pins *motor_pins, motor_pin_values *motor_pin_values) {
 
@@ -597,13 +598,11 @@ void update_motor_pwm(motor_pins *motor_pins, motor_pin_values *motor_pin_values
 }
 
 #undef DEBUG
+#define DEBUG
 
 void update_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_values) {
     
-  #ifdef DEBUG
-  printf("\nMOTOR-UPDATE-PINS: Setting AI1: %i\n", motor_pin_values->AI1);
-  printf("MOTOR-UPDATE-PINS: Setting BI1: %i\n", motor_pin_values->BI1);
-  #endif
+  
 
   motor_pin_values->AI1 = motor_pin_values->AI1_next;
   motor_pin_values->AI2 = motor_pin_values->AI2_next;
@@ -611,8 +610,15 @@ void update_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_value
   motor_pin_values->BI2 = motor_pin_values->BI2_next;
 
   #ifdef DEBUG  
-  printf("\nMOTOR: A_PWM Pre Slow Stop: %i\n", motor_pin_values->A_PWM);
-  printf("MOTOR: B_PWM Pre Slow Stop: %i\n", motor_pin_values->B_PWM);
+  printf("\nMOTOR-UPDATE-PINS: A_PWM Pre Slow Stop: %i\n", motor_pin_values->A_PWM);
+  printf("MOTOR-UPDATE-PINS: B_PWM Pre Slow Stop: %i\n", motor_pin_values->B_PWM);
+  #endif
+
+  #ifdef DEBUG
+  printf("\nMOTOR-UPDATE-PINS: Setting AI1: %i\n", motor_pin_values->AI1);
+  printf("MOTOR-UPDATE-PINS: Setting BI1: %i\n", motor_pin_values->AI2);
+  printf("MOTOR-UPDATE-PINS: Setting AI1: %i\n", motor_pin_values->BI1);
+  printf("MOTOR-UPDATE-PINS: Setting BI1: %i\n", motor_pin_values->BI2);
   #endif
 
   // Slow stop
@@ -625,7 +631,7 @@ void update_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_value
     GPIO_CLR( motor_pins->gpio, motor_pins->AI1_pin );
   }
 
-  if (motor_pin_values->AI1){
+  if (motor_pin_values->AI2){
     GPIO_SET( motor_pins->gpio, motor_pins->AI2_pin );
   } else {
     GPIO_CLR( motor_pins->gpio, motor_pins->AI2_pin );
@@ -637,9 +643,9 @@ void update_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_value
     GPIO_CLR( motor_pins->gpio, motor_pins->BI1_pin );
   }
   if (motor_pin_values->BI2){
-    GPIO_SET( motor_pins->gpio, motor_pins->BI1_pin );
+    GPIO_SET( motor_pins->gpio, motor_pins->BI2_pin );
   } else {
-    GPIO_CLR( motor_pins->gpio, motor_pins->BI1_pin );
+    GPIO_CLR( motor_pins->gpio, motor_pins->BI2_pin );
   }
 
   // Slow Start

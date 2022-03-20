@@ -286,11 +286,11 @@ void *ThreadKey( void * arg )
     } 
     else if (input == 'm'){
       input = get_pressed_key();
-      printf(" %s\n", input);
+      printf(" %c\n", input);
       add_to_queue(thread_key_parameter->control_queue, input);
     } 
     else {
-      printf(" %s\n", input);
+      printf(" %c\n", input);
       #ifdef DEBUG
       printf("KEY: sending: %c\n", input);
       sleep(1);

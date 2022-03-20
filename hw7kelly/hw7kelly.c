@@ -960,6 +960,44 @@ void add_to_queue(control_queue *control_queue, char command){
 }
 
 /////////////////////// DATA FUNCTIONS /////////////////////////////
+void read_MPU6050_registers(                          /* read a register */
+    uint8_t                         I2C_address,      /* the address of the I2C device to talk to */
+    MPU6050_REGISTER                register_address, /* the address to read from */
+    uint8_t *                       read_data,        /* the data read from the SPI device */
+    size_t                          data_length,      /* the length of data to send/receive */
+    volatile struct bsc_register *  bsc )             /* the BSC address */
+{
+  bsc->S.field.DONE    = 1;
+  bsc->A.field.ADDR    = I2C_address;
+  bsc->C.field.READ    = 0;
+  bsc->DLEN.field.DLEN = 1;
+  bsc->FIFO.value      = register_address;
+  bsc->C.field.ST      = 1;
+  while (bsc->S.field.DONE == 0)
+  {
+    usleep( 100 );
+  }
+  bsc->S.field.DONE    = 1;
+  bsc->A.field.ADDR    = I2C_address;
+  bsc->C.field.READ    = 1;
+  bsc->DLEN.field.DLEN = data_length;
+  bsc->C.field.ST      = 1;
+  while (bsc->S.field.DONE == 0)
+  {
+    usleep( 100 );
+  }
+
+  while (data_length > 0)
+  {
+    *read_data = bsc->FIFO.field.DATA;
+
+    read_data++;
+    data_length--;
+  }
+
+  return;
+}
+
 union MPU6050_transaction_field_data read_MPU6050_register( /* read a register, returning the read value */
     uint8_t                         I2C_address,            /* the address of the I2C device to talk to */
     MPU6050_REGISTER                register_address,       /* the address to read from */

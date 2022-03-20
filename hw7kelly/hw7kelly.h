@@ -179,6 +179,13 @@ struct calibration_data
   float offset_z;
 };
 
+void read_MPU6050_registers(                          /* read a register */
+    uint8_t                         I2C_address,      /* the address of the I2C device to talk to */
+    MPU6050_REGISTER                register_address, /* the address to read from */
+    uint8_t *                       read_data,        /* the data read from the SPI device */
+    size_t                          data_length,      /* the length of data to send/receive */
+    volatile struct bsc_register *  bsc );             /* the BSC address */
+
 union MPU6050_transaction_field_data read_MPU6050_register( /* read a register, returning the read value */
     uint8_t                         I2C_address,            /* the address of the I2C device to talk to */
     MPU6050_REGISTER                register_address,       /* the address to read from */

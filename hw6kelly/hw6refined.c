@@ -583,6 +583,7 @@ void update_motor_pwm(motor_pins *motor_pins, motor_pin_values *motor_pin_values
   #ifdef DEBUG  
   printf("\nMOTOR: Setting A_PWM: %i\n", motor_pin_values->A_PWM);
   printf("MOTOR: Setting B_PWM: %i\n", motor_pin_values->B_PWM);
+  printf("\nMOTOR: PWM: %lx\n", (unsigned long)motor_pins->pwm);
   printf("\nMOTOR: DAT1: %lx\n", (unsigned long)motor_pins->pwm->DAT1);
   printf("MOTOR: DAT2: %lx\n", (unsigned long)motor_pins->pwm->DAT2);
   sleep(2);

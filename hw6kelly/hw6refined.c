@@ -167,12 +167,18 @@ void *ThreadMotor( void * arg  )
     printf("MOTOR: Updated PWM\n");
     #endif
 
+    #define DEBUG
+
     // If going forward in mode 2, check IR sensors
     if ( (motor_pin_values.AI1 && motor_pin_values.BI1) && (mode == MODE_2)) {
 
       // Check IR sensor A
       if(GPIO_READ(parameter->motor_pins->gpio, parameter->motor_pins->AIR_pin) != 0 && !off_course){
         int i = 0;
+        #ifdef DEBUG
+        printf("MOTOR: Auto turn A \n");
+        #endif
+        
         while(GPIO_READ(parameter->motor_pins->gpio, parameter->motor_pins->AIR_pin) != 0) {
           parameter->motor_pins->pwm->DAT2 = PWM_MOTOR_MAX;
           GPIO_CLR( parameter->motor_pins->gpio, parameter->motor_pins->AI1_pin );
@@ -184,13 +190,24 @@ void *ThreadMotor( void * arg  )
           }
           i++;
         }
+        #ifdef DEBUG
+        printf("MOTOR: Auto A done\n");
+        #endif
 
         set_motor_pins(parameter->motor_pins, &motor_pin_values);
+
+        #ifdef DEBUG
+        printf("MOTOR: Auto A set pins\n");
+        #endif
       } 
 
       // Check IR sensor B
       else if(GPIO_READ(parameter->motor_pins->gpio, parameter->motor_pins->BIR_pin) != 0 && !off_course){
         int i = 0;
+        #ifdef DEBUG
+        printf("MOTOR: Auto turn B \n");
+        #endif
+
         while(GPIO_READ(parameter->motor_pins->gpio, parameter->motor_pins->BIR_pin) != 0) {
           parameter->motor_pins->pwm->DAT1 = PWM_MOTOR_MAX;
           GPIO_CLR( parameter->motor_pins->gpio, parameter->motor_pins->BI1_pin );
@@ -203,9 +220,19 @@ void *ThreadMotor( void * arg  )
           i++;
         }
 
+        #ifdef DEBUG
+        printf("MOTOR: Auto B done\n");
+        #endif
+
         set_motor_pins(parameter->motor_pins, &motor_pin_values);
+
+        #ifdef DEBUG
+        printf("MOTOR: Auto B set pins\n");
+        #endif
       }
     }
+
+    #undef DEBUG
 
     // Update A and B pins if needed
     if ((motor_pin_values.AI1 != motor_pin_values.AI1_next) || (motor_pin_values.AI2 != motor_pin_values.AI2_next) || (motor_pin_values.BI1 != motor_pin_values.BI1_next) || (motor_pin_values.BI2 != motor_pin_values.BI2_next)) {

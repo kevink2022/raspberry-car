@@ -180,6 +180,7 @@ void *ThreadMotor( void * arg  )
         #endif
 
         while(GPIO_READ(parameter->motor_pins->gpio, parameter->motor_pins->AIR_pin) != 0) {
+          parameter->motor_pins->pwm->DAT1 = PWM_MOTOR_MAX;
           parameter->motor_pins->pwm->DAT2 = PWM_MOTOR_MAX;
           GPIO_CLR( parameter->motor_pins->gpio, parameter->motor_pins->AI1_pin );
           GPIO_SET( parameter->motor_pins->gpio, parameter->motor_pins->AI2_pin );
@@ -213,6 +214,7 @@ void *ThreadMotor( void * arg  )
 
         while(GPIO_READ(parameter->motor_pins->gpio, parameter->motor_pins->BIR_pin) != 0 && !off_course) {
           parameter->motor_pins->pwm->DAT1 = PWM_MOTOR_MAX;
+          parameter->motor_pins->pwm->DAT2 = PWM_MOTOR_MAX;
           GPIO_CLR( parameter->motor_pins->gpio, parameter->motor_pins->BI1_pin );
           GPIO_SET( parameter->motor_pins->gpio, parameter->motor_pins->BI2_pin ); 
           usleep(PWM_MODE2_TURN_DELAY);

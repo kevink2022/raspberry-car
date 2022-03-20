@@ -357,8 +357,6 @@ int main( void )
   #endif
 
   motor_pins motor_pins;
-  motor_pins.gpio = &(io->gpio);
-  motor_pins.pwm = &(io->pwm);
   motor_pins.A_PWM_pin = 12;
   motor_pins.AI1_pin = 5;
   motor_pins.AI2_pin = 6;
@@ -419,6 +417,9 @@ int main( void )
     io->pwm.CTL.field.CLRF1 = 1;  /* clear the FIFO, even though it is not used */
     io->pwm.CTL.field.PWEN1 = 1;  /* enable the PWM channel */
     io->pwm.CTL.field.PWEN2 = 1;  /* enable the PWM channel */
+
+    motor_pins.gpio = &(io->gpio);
+    motor_pins.pwm = &(io->pwm);
     
     // CLOCK
     thread_clock_parameter.period = 2;

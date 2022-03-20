@@ -402,7 +402,7 @@ void *ThreadKey( void * arg )
 #undef DEBUG
 int main( void )
 {
-  volatile struct io_peripherals *io;
+  struct io_peripherals * io;
   struct calibration_data calibration_accelerometer;
   struct calibration_data calibration_gyroscope;
   struct calibration_data calibration_magnetometer;

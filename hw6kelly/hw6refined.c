@@ -593,8 +593,8 @@ void update_motor_pwm(motor_pins *motor_pins, motor_pin_values *motor_pin_values
 
 
   // Set new values
-  motor_pins->pwm->DAT1 = motor_pin_values->A_PWM;
-  motor_pins->pwm->DAT2 = motor_pin_values->B_PWM;
+  motor_pins->pwm->DAT2 = motor_pin_values->A_PWM;
+  motor_pins->pwm->DAT1 = motor_pin_values->B_PWM;
 }
 
 //#undef DEBUG
@@ -649,7 +649,7 @@ void update_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_value
   }
 
   // Slow Start
-  smooth_speed_change(motor_pins, motor_pin_values, motor_pin_values->A_PWM_next, PWM_MOTOR_MIN, PWM_SPEED_STEP);
+  smooth_speed_change(motor_pins, motor_pin_values, PWM_MOTOR_MIN, motor_pin_values->A_PWM_next, PWM_SPEED_STEP);
 
 }
 

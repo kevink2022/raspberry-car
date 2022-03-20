@@ -291,6 +291,10 @@ void *ThreadKey( void * arg )
     } 
     else {
       printf(" %s\n", input);
+      #ifdef DEBUG
+      printf("KEY: sending: %c\n", input);
+      sleep(1);
+      #endif
       add_to_queue(thread_key_parameter->control_queue, input);
     }
   } while (!done);

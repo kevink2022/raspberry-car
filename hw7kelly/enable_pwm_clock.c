@@ -16,7 +16,7 @@
 #include "io_peripherals.h"
 #include "enable_pwm_clock.h"
 
-void enable_pwm_clock( volatile struct io_peripherals *io )
+void enable_pwm_clock( volatile struct cm_register *cm, volatile struct pwm_register *pwm )
 {
   /*
    * This logic was shamelessly stolen from the WiringPi library.
@@ -47,10 +47,10 @@ void enable_pwm_clock( volatile struct io_peripherals *io )
   union CM_CTL_register cm_control;
   union CM_DIV_register div_register;
 
-  pwm_control = io->pwm.CTL;    // preserve PWM_CONTROL
+  pwm_control = pwm->CTL;    // preserve PWM_CONTROL
 
   // We need to stop PWM prior to stopping PWM clock in MS mode otherwise BUSY stays high.
-  io->pwm.CTL.value = 0;        // Stop PWM
+  pwm->CTL.value = 0;        // Stop PWM
 
   // Stop PWM clock before changing divisor. The delay after this does need to
   // this big (95uS occasionally fails, 100uS OK), it's almost as though the BUSY
@@ -61,10 +61,10 @@ void enable_pwm_clock( volatile struct io_peripherals *io )
   cm_control.field.PASSWD = CM_PASSWORD;
   cm_control.field.ENAB   = 0;  // Stop PWM Clock
   cm_control.field.SRC    = 1;
-  io->cm.CM_PWMCTL        = cm_control;
+  cm->CM_PWMCTL        = cm_control;
   usleep( 110 );                // prevents clock going sloooow
 
-  while (io->cm.CM_PWMCTL.field.BUSY != 0)  // Wait for clock to be !BUSY
+  while (cm->CM_PWMCTL.field.BUSY != 0)  // Wait for clock to be !BUSY
   {
     usleep( 1 );
   }
@@ -72,14 +72,14 @@ void enable_pwm_clock( volatile struct io_peripherals *io )
   div_register.value        = 0;
   div_register.field.PASSWD = CM_PASSWORD;
   div_register.field.DIVI   = divisor;
-  io->cm.CM_PWMDIV          = div_register;
+  cm->CM_PWMDIV          = div_register;
 
   cm_control.value        = 0;
   cm_control.field.PASSWD = CM_PASSWORD;
   cm_control.field.ENAB   = 1;  // Start PWM clock
   cm_control.field.SRC    = 1;
-  io->cm.CM_PWMCTL        = cm_control;
-  io->pwm.CTL = pwm_control;    // restore PWM_CONTROL
+  cm->CM_PWMCTL        = cm_control;
+  pwm->CTL = pwm_control;    // restore PWM_CONTROL
 
   return;
 }

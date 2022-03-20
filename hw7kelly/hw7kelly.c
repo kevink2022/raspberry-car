@@ -308,10 +308,18 @@ void *ThreadData( void * arg  )
       if(parameter->data_signal->m0) // if m0, count samples for 5 seconds (500 samples)
       {
         pthread_mutex_unlock( &(parameter->data_signal->lock) );
+
+        #ifdef DEBUG
+        printf("DATA: m0 loop\n");
+        #endif
        
         ////// SAMPLE ///////
         read_accelerometer_gyroscope( parameter->calibration_accelerometer, parameter->calibration_gyroscope, parameter->bsc );
         ////// SAMPLE ///////
+
+        #ifdef DEBUG
+        printf("DATA: m0 sample\n");
+        #endif
 
         sample_count--;
         if(sample_count == 0){

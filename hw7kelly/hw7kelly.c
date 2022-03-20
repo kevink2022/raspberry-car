@@ -292,7 +292,7 @@ void *ThreadData( void * arg  )
         pthread_mutex_unlock( &(parameter->data_signal->lock) );
        
         ////// SAMPLE ///////
-        read_MPU6050_registers( parameter->calibration_accelerometer, parameter->calibration_gyroscope, parameter->bsc );
+        read_accelerometer_gyroscope( parameter->calibration_accelerometer, parameter->calibration_gyroscope, parameter->bsc );
         ////// SAMPLE ///////
 
         sample_count--;
@@ -310,7 +310,7 @@ void *ThreadData( void * arg  )
         pthread_mutex_unlock( &(parameter->data_signal->lock) );
         
         ////// SAMPLE ///////
-        read_MPU6050_registers( parameter->calibration_accelerometer, parameter->calibration_gyroscope, parameter->bsc );
+        read_accelerometer_gyroscope( parameter->calibration_accelerometer, parameter->calibration_gyroscope, parameter->bsc );
         ////// SAMPLE ///////
       }      
     }

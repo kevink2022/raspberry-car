@@ -91,7 +91,7 @@ struct clock_thread_parameter
   struct done_flag  * done;
   int                 period;
   sem_t             * control_thread_sem;
-  // sem_t             * data_thread_sem; *for hw7
+  sem_t             * data_thread_sem;
 };
 
 struct key_thread_parameter

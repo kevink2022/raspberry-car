@@ -269,7 +269,7 @@ void *ThreadKey( void * arg )
 
   do
   {
-    printf("\nHw6m%s> ", mode);
+    printf("\nHw6m%c> ", mode);
     input = get_pressed_key();
     if(input == 'q'){
       printf(" q\n");
@@ -428,18 +428,27 @@ int main( void )
     thread_motor_parameter.motor_pins = &motor_pins;
 
     #ifdef DEBUG
-    printf("\nMAIN: threads ready:");
+    printf("MAIN: threads ready: \n");
     #endif
 
 
     // THREADS
     pthread_create( &thread_key_handle, 0, ThreadKey, (void *)&thread_key_parameter );
-    pthread_create( &thread_motor_handle, 0, ThreadMotor, (void *)&thread_motor_parameter );
-    pthread_create( &thread_clock_handle, 0, ThreadClock, (void *)&thread_clock_parameter);
-    pthread_create( &thread_control_handle, 0, ThreadControl, (void *)&thread_control_parameter);
-    
     #ifdef DEBUG
-    printf("\nMAIN: threads created");
+    printf("MAIN: key created: \n");
+    #endif
+    pthread_create( &thread_motor_handle, 0, ThreadMotor, (void *)&thread_motor_parameter );
+    #ifdef DEBUG
+    printf("MAIN: motor created: \n");
+    #endif
+    pthread_create( &thread_clock_handle, 0, ThreadClock, (void *)&thread_clock_parameter);
+    #ifdef DEBUG
+    printf("MAIN: clock created: \n");
+    #endif
+    pthread_create( &thread_control_handle, 0, ThreadControl, (void *)&thread_control_parameter);
+
+    #ifdef DEBUG
+    printf("MAIN: threads created");
     #endif
 
     

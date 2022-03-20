@@ -331,7 +331,7 @@ int main( void )
   char curr_cmd = 's';
 
   control_queue control_queue;
-  control_queue.control_queue = &queue;
+  control_queue.control_queue = queue;
   control_queue.control_queue_length = &queue_len;
   control_queue.control_queue_lock = &queue_lock;
 

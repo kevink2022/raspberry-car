@@ -24,8 +24,8 @@ struct pause_flag
 
 struct done_flag
 {
-  bool            done;
   pthread_mutex_t lock;
+  bool            done;
 };
 
 typedef struct {

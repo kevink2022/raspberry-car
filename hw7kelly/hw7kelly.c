@@ -263,6 +263,8 @@ void *ThreadMotor( void * arg  )
 }
 #undef DEBUG
 
+#define DEBUG
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //  ThreadData()
 //
@@ -282,6 +284,10 @@ void *ThreadData( void * arg  )
   
     // Wait for clock signal
     sem_wait(parameter->data_thread_sem);
+
+    #ifdef DEBUG
+    printf("DATA: loop\n");
+    #endif
 
     pthread_mutex_lock( &(parameter->data_signal->lock) );
     // Check if recording  
@@ -316,6 +322,8 @@ void *ThreadData( void * arg  )
     }
   }
 }
+
+#undef DEBUG
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //  get_pressed_key()

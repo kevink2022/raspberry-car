@@ -289,12 +289,16 @@ void *ThreadData( void * arg  )
   while (!(parameter->done->done))
   {
     pthread_mutex_unlock( &(parameter->done->lock) );
+
+    #ifdef DEBUG
+    printf("DATA: loop\n");
+    #endif
   
     // Wait for clock signal
     sem_wait(parameter->data_thread_sem);
 
     #ifdef DEBUG
-    printf("DATA: loop\n");
+    printf("DATA: sem_wait\n");
     #endif
 
     pthread_mutex_lock( &(parameter->data_signal->lock) );

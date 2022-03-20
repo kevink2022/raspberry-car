@@ -487,16 +487,16 @@ int main( void )
     #endif
     
 
-    io->gpio->GPFSEL1.field.FSEL2 = GPFSEL_INPUT;
-    io->gpio->GPFSEL1.field.FSEL3 = GPFSEL_INPUT;
-    io->gpio->GPFSEL0.field.FSEL5 = GPFSEL_INPUT;
-    io->gpio->GPFSEL0.field.FSEL6 = GPFSEL_INPUT;
-    io->gpio->GPFSEL2.field.FSEL2 = GPFSEL_INPUT;
-    io->gpio->GPFSEL2.field.FSEL3 = GPFSEL_INPUT;
-    io->gpio->GPFSEL2.field.FSEL4 = GPFSEL_INPUT;
-    io->gpio->GPFSEL2.field.FSEL5 = GPFSEL_INPUT;
-    io->gpio->GPFSEL0.field.FSEL2 = GPFSEL_INPUT;
-    io->gpio->GPFSEL0.field.FSEL3 = GPFSEL_INPUT;
+    // io->gpio->GPFSEL1.field.FSEL2 = GPFSEL_INPUT;
+    // io->gpio->GPFSEL1.field.FSEL3 = GPFSEL_INPUT;
+    // io->gpio->GPFSEL0.field.FSEL5 = GPFSEL_INPUT;
+    // io->gpio->GPFSEL0.field.FSEL6 = GPFSEL_INPUT;
+    // io->gpio->GPFSEL2.field.FSEL2 = GPFSEL_INPUT;
+    // io->gpio->GPFSEL2.field.FSEL3 = GPFSEL_INPUT;
+    // io->gpio->GPFSEL2.field.FSEL4 = GPFSEL_INPUT;
+    // io->gpio->GPFSEL2.field.FSEL5 = GPFSEL_INPUT;
+    // io->gpio->GPFSEL0.field.FSEL2 = GPFSEL_INPUT;
+    // io->gpio->GPFSEL0.field.FSEL3 = GPFSEL_INPUT;
 
     #ifdef DEBUG
     printf("MAIN: gpio cleared: \n");

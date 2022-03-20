@@ -275,7 +275,15 @@ void *ThreadData( void * arg  )
   int sample_count = 500;
   bool recording = true;
 
+  #ifdef DEBUG
+  printf("DATA: thread init\n");
+  #endif
+
   initialize_accelerometer_and_gyroscope( parameter->calibration_accelerometer, parameter->calibration_gyroscope, parameter->bsc );
+
+  #ifdef DEBUG
+  printf("DATA: accel/gyro init\n");
+  #endif
 
   pthread_mutex_lock( &(parameter->done->lock) );
   while (!(parameter->done->done))

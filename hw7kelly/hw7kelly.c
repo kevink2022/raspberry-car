@@ -495,8 +495,8 @@ int main( void )
     // io->gpio->GPFSEL2.field.FSEL3 = GPFSEL_INPUT;
     // io->gpio->GPFSEL2.field.FSEL4 = GPFSEL_INPUT;
     // io->gpio->GPFSEL2.field.FSEL5 = GPFSEL_INPUT;
-    // io->gpio->GPFSEL0.field.FSEL2 = GPFSEL_INPUT;
-    // io->gpio->GPFSEL0.field.FSEL3 = GPFSEL_INPUT;
+    io->gpio->GPFSEL0.field.FSEL2 = GPFSEL_ALTERNATE_FUNCTION0;
+    io->gpio->GPFSEL0.field.FSEL3 = GPFSEL_ALTERNATE_FUNCTION0;
 
     #ifdef DEBUG
     printf("MAIN: gpio cleared: \n");

@@ -88,13 +88,15 @@ void *ThreadControl( void * arg  )
     pthread_mutex_lock( parameter->control_queue->control_queue_lock );
     if (*(unsigned int*)parameter->control_queue->control_queue_length > 0){
       #ifdef DEBUG
-      printf("CONTROL: control queue addr: %lx\n", (unsigned long)parameter->control_queue->control_queue);
+      printf("CONTROL: in lock, queue_addr: %lx\n", (unsigned long)parameter->control_queue->control_queue);
+      printf("CONTROL: in lock, queue len: %i\n", *(char*)parameter->control_queue->control_queue_length);
       printf("CONTROL: in lock, curr_cmd: %c\n", *(char*)parameter->current_command);
+      printf("CONTROL: in lock, queue casted: %c\n", *(char*)parameter->control_queue->control_queue);
       #endif
 
       // Set the current command to the first command in the queue
       pthread_mutex_lock( (parameter->current_command_lock) );
-      *(char*)parameter->current_command = *(char*)parameter->control_queue;
+      *(char*)parameter->current_command = *(char*)parameter->control_queue->control_queue;
       pthread_mutex_unlock( (parameter->current_command_lock) );
       
       #ifdef DEBUG

@@ -155,9 +155,7 @@ void *ThreadMotor( void * arg  )
   while (!(parameter->done->done))
   {
     pthread_mutex_unlock( &(parameter->done->lock) );
-
-    //sleep(1);
-
+    
     // Update PWM
     if ((motor_pin_values.A_PWM != motor_pin_values.A_PWM_next) || (motor_pin_values.B_PWM != motor_pin_values.B_PWM_next)){
       update_motor_pwm(parameter->motor_pins, &motor_pin_values);
@@ -166,8 +164,6 @@ void *ThreadMotor( void * arg  )
     #ifdef DEBUG
     printf("MOTOR: Updated PWM\n");
     #endif
-
-    //#define DEBUG
 
     // If going forward in mode 2, check IR sensors
     if ( (motor_pin_values.AI1 && motor_pin_values.BI1) && (mode == MODE_2)) {
@@ -255,7 +251,7 @@ void *ThreadMotor( void * arg  )
     if (parameter->pause->pause)
     {
       // Update params
-      update_command(&motor_pin_values, *(char*)parameter->current_command, &mode);
+      update_command(&motor_pin_values, *(char*)parameter->current_command, &mode, parameter->data_signal);
       parameter->pause->pause = false;
     }
     pthread_mutex_unlock( &(parameter->pause->lock) );
@@ -304,7 +300,9 @@ void *ThreadData( void * arg  )
           sample_count = 500;
           pthread_mutex_lock( &(parameter->data_signal->lock) );
           parameter->data_signal->recording = false;
+          parameter->data_signal->m0 = false;
           pthread_mutex_unlock( &(parameter->data_signal->lock) );
+          printf("MODE 0: Sampling complete");
         }
       } 
       else 
@@ -557,6 +555,7 @@ int main( void )
     // Single MOTOR Thread
     thread_motor_parameter.done = &done;
     thread_motor_parameter.pause = &pause_motor;
+    thread_motor_parameter.data_signal = &data_signal;
     thread_motor_parameter.current_command = &curr_cmd;
     thread_motor_parameter.current_command_lock = &curr_cmd_lock;
     thread_motor_parameter.motor_pins = &motor_pins;
@@ -798,7 +797,7 @@ void update_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_value
 //#define DEBUG
 
 
-void update_command(motor_pin_values *motor_pin_values, char current_command, int *mode){
+void update_command(motor_pin_values *motor_pin_values, char current_command, int *mode, struct data_signal * data_signal){
   // Update params
   switch (current_command)
   {
@@ -810,7 +809,16 @@ void update_command(motor_pin_values *motor_pin_values, char current_command, in
       motor_pin_values->AI2_next = 0;
       motor_pin_values->BI1_next = 0;
       motor_pin_values->BI2_next = 0;
-      // Signal Data thread to stop recording
+      
+      // Signal Data thread to start recording
+      if (mode != MODE_0){
+        pthread_mutex_lock( &(data_signal->lock) );
+        data_signal->recording = false;
+        data_signal->m0 = false;
+        pthread_mutex_unlock( &(data_signal->lock) );
+      }
+
+
       break;
 
     case 'w':
@@ -821,7 +829,15 @@ void update_command(motor_pin_values *motor_pin_values, char current_command, in
       motor_pin_values->AI2_next = 0;
       motor_pin_values->BI1_next = 1;
       motor_pin_values->BI2_next = 0;
+      
       // Signal Data thread to start recording
+      if (mode != MODE_0){
+        pthread_mutex_lock( &(data_signal->lock) );
+        data_signal->recording = true;
+        data_signal->m0 = false;
+        pthread_mutex_unlock( &(data_signal->lock) );
+      }
+
       break;
 
     case 'x':
@@ -850,8 +866,10 @@ void update_command(motor_pin_values *motor_pin_values, char current_command, in
       #ifdef DEBUG
       printf("\nMOTOR: Recieved Command: SLOWER\n");
       #endif
+      
       if (motor_pin_values->A_PWM > PWM_MOTOR_MIN) {motor_pin_values->A_PWM_next -= PWM_SPEED_STEP;}
       if (motor_pin_values->B_PWM > PWM_MOTOR_MIN) {motor_pin_values->B_PWM_next -= PWM_SPEED_STEP;}
+      
       #ifdef DEBUG
       printf("\nMOTOR: A_PWM = %i\n", motor_pin_values->A_PWM_next);
       printf("MOTOR: B_PWM = %i\n", motor_pin_values->B_PWM_next);
@@ -862,11 +880,10 @@ void update_command(motor_pin_values *motor_pin_values, char current_command, in
       #ifdef DEBUG
       printf("\nMOTOR: Recieved Command: LEFT\n");
       #endif
-      //if(parameter->left_motor){
-        if(motor_pin_values->A_PWM > PWM_MOTOR_MIN){motor_pin_values->A_PWM_next -= PWM_TURN_STEP;}
-      //} else {
-        if (motor_pin_values->B_PWM < PWM_MOTOR_MAX) {motor_pin_values->B_PWM_next += PWM_TURN_STEP;}
-      //}
+      
+      if(motor_pin_values->A_PWM > PWM_MOTOR_MIN){motor_pin_values->A_PWM_next -= PWM_TURN_STEP;}
+      if (motor_pin_values->B_PWM < PWM_MOTOR_MAX) {motor_pin_values->B_PWM_next += PWM_TURN_STEP;}
+      
       #ifdef DEBUG
       printf("\nMOTOR: A_PWM = %i\n", motor_pin_values->A_PWM_next);
       printf("MOTOR: B_PWM = %i\n", motor_pin_values->B_PWM_next);
@@ -877,11 +894,10 @@ void update_command(motor_pin_values *motor_pin_values, char current_command, in
       #ifdef DEBUG
       printf("\nMOTOR: Recieved Command: RIGHT\n");
       #endif
-      //if(parameter->left_motor){
-        if (motor_pin_values->A_PWM < PWM_MOTOR_MAX) {motor_pin_values->A_PWM_next += PWM_TURN_STEP;}
-      //} else {
-        if(motor_pin_values->B_PWM > PWM_MOTOR_MIN) {motor_pin_values->B_PWM_next -= PWM_TURN_STEP;}
-      //}
+      
+      if (motor_pin_values->A_PWM < PWM_MOTOR_MAX) {motor_pin_values->A_PWM_next += PWM_TURN_STEP;}
+      if(motor_pin_values->B_PWM > PWM_MOTOR_MIN) {motor_pin_values->B_PWM_next -= PWM_TURN_STEP;}
+      
       #ifdef DEBUG
       printf("\nMOTOR: A_PWM = %i\n", motor_pin_values->A_PWM_next);
       printf("MOTOR: B_PWM = %i\n", motor_pin_values->B_PWM_next);
@@ -893,6 +909,13 @@ void update_command(motor_pin_values *motor_pin_values, char current_command, in
       printf("\nMOTOR: Recieved Command: MODE 1\n");
       #endif
       *mode = MODE_0;
+
+      // Start m0 data sampling
+      pthread_mutex_lock( &(data_signal->lock) );
+      data_signal->recording = true;
+      data_signal->m0 = true;
+      pthread_mutex_unlock( &(data_signal->lock) );
+
       break;
 
     case '1':

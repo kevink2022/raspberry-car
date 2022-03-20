@@ -112,11 +112,12 @@ struct control_thread_parameter
 
 struct motor_thread_parameter
 {
-  struct done_flag  * done;
-  struct pause_flag * pause;
-  char              * current_command;
-  pthread_mutex_t   * current_command_lock;
-  motor_pins        * motor_pins;
+  struct done_flag    * done;
+  struct pause_flag   * pause;
+  struct data_signal  * data_signal;
+  char                * current_command;
+  pthread_mutex_t     * current_command_lock;
+  motor_pins          * motor_pins;
 };
 
 struct data_thread_parameter
@@ -145,7 +146,7 @@ void turn(void);
 void set_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_values);
 void update_motor_pwm(motor_pins *motor_pins, motor_pin_values *motor_pin_values);
 void update_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_values);
-void update_command(motor_pin_values *motor_pin_values, char current_command, int *mode);
+void update_command(motor_pin_values *motor_pin_values, char current_command, int *mode, struct data_signal * data_signal);
 
 
 // Key thread func

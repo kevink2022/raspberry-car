@@ -476,6 +476,8 @@ int main( void )
   {
     /* print where the I/O memory was actually mapped to */
     printf( "mem at 0x%8.8X\n", (unsigned long)io );
+    printf( "mem at 0x%8.8X\n", (unsigned long)io->cm );
+    printf( "mem at 0x%8.8X\n", (unsigned long)io->pwm );
 
     enable_pwm_clock( io->cm, io->pwm );
 

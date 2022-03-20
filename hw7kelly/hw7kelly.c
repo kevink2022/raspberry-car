@@ -477,7 +477,7 @@ int main( void )
     /* print where the I/O memory was actually mapped to */
     printf( "mem at 0x%8.8X\n", (unsigned long)io );
 
-    enable_pwm_clock( io );
+    enable_pwm_clock( io->cm, io->pwm );
 
     io->gpio->GPFSEL1.field.FSEL2 = GPFSEL_INPUT;
     io->gpio->GPFSEL1.field.FSEL3 = GPFSEL_INPUT;
@@ -532,8 +532,8 @@ int main( void )
     io->bsc->C.field.CLEAR   = 1;
 
 
-    motor_pins.gpio = &(io->gpio);
-    motor_pins.pwm = &(io->pwm);
+    motor_pins.gpio = (io->gpio);
+    motor_pins.pwm = (io->pwm);
     
     // CLOCK
     thread_clock_parameter.period = .01;
@@ -566,7 +566,7 @@ int main( void )
     thread_data_parameter.calibration_accelerometer = &calibration_accelerometer;
     thread_data_parameter.calibration_gyroscope = &calibration_gyroscope;
     thread_data_parameter.calibration_magnetometer = &calibration_magnetometer;
-    thread_data_parameter.bsc = &(io->bsc);
+    thread_data_parameter.bsc = (io->bsc);
 
     #ifdef DEBUG
     printf("MAIN: threads ready: \n");

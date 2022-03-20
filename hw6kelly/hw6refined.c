@@ -26,7 +26,7 @@
 #define PWM_MODE2_TURN_DELAY 60000
 #define PWM_MODE2_OFF_DELAY 500
 
-#define DEBUG
+//#define DEBUG
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //  ThreadClock()
@@ -422,7 +422,7 @@ int main( void )
     motor_pins.pwm = &(io->pwm);
     
     // CLOCK
-    thread_clock_parameter.period = 2;
+    thread_clock_parameter.period = .5;
     thread_clock_parameter.done = &done;
     thread_clock_parameter.control_thread_sem = &control_thread_sem;
 

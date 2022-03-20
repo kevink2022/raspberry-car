@@ -131,7 +131,7 @@ void *ThreadControl( void * arg  )
 // B == RIGHT == DAT1
 
 #define DEBUG
-#undef DEBUG
+//#undef DEBUG
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //  ThreadMotor()
@@ -155,6 +155,8 @@ void *ThreadMotor( void * arg  )
   while (!(parameter->done->done))
   {
     pthread_mutex_unlock( &(parameter->done->lock) );
+
+    sleep(1);
 
     // Update PWM
     update_motor_pwm(parameter->motor_pins, &motor_pin_values);

@@ -608,6 +608,7 @@ int main( void )
     // DATA
     thread_data_parameter.done = &done;
     thread_data_parameter.data_signal = &data_signal;
+    thread_data_parameter.data_thread_sem = &data_thread_sem;
     thread_data_parameter.calibration_accelerometer = &calibration_accelerometer;
     thread_data_parameter.calibration_gyroscope = &calibration_gyroscope;
     thread_data_parameter.calibration_magnetometer = &calibration_magnetometer;

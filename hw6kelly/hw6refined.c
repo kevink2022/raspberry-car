@@ -131,7 +131,7 @@ void *ThreadControl( void * arg  )
 // B == RIGHT == DAT1
 
 #define DEBUG
-//#undef DEBUG
+#undef DEBUG
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //  ThreadMotor()
@@ -257,7 +257,7 @@ int get_pressed_key(void)
 }
 
 #define DEBUG
-//#undef DEBUG
+#undef DEBUG
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -422,7 +422,7 @@ int main( void )
     motor_pins.pwm = &(io->pwm);
     
     // CLOCK
-    thread_clock_parameter.period = .5;
+    thread_clock_parameter.period = .01;
     thread_clock_parameter.done = &done;
     thread_clock_parameter.control_thread_sem = &control_thread_sem;
 
@@ -597,8 +597,8 @@ void update_motor_pwm(motor_pins *motor_pins, motor_pin_values *motor_pin_values
   motor_pins->pwm->DAT2 = motor_pin_values->B_PWM;
 }
 
-#undef DEBUG
-#define DEBUG
+//#undef DEBUG
+//#define DEBUG
 
 void update_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_values) {
     
@@ -654,7 +654,7 @@ void update_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_value
 }
 
 
-#define DEBUG
+//#define DEBUG
 
 
 void update_command(motor_pin_values *motor_pin_values, char current_command, int *mode){
@@ -773,7 +773,7 @@ void update_command(motor_pin_values *motor_pin_values, char current_command, in
   }
 }
 
-#define DEBUG
+//#define DEBUG
 
 /////////////////////// KEY THREAD FUNCTIONS /////////////////////////////
 void add_to_queue(control_queue *control_queue, char command){

@@ -621,6 +621,8 @@ int main( void )
     #endif
     pthread_create( &thread_control_handle, 0, ThreadControl, (void *)&thread_control_parameter);
 
+    pthread_create( &thread_data_handle, 0, ThreadData, (void *)&thread_data_parameter);
+
     #ifdef DEBUG
     printf("MAIN: threads created\n");
     #endif

@@ -265,7 +265,7 @@ void *ThreadMotor( void * arg  )
 }
 #undef DEBUG
 
-#define DEBUG
+//#define DEBUG
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //  ThreadData()
@@ -302,6 +302,8 @@ void *ThreadData( void * arg  )
     #ifdef DEBUG
     printf("DATA: sem_wait\n");
     #endif
+
+    #define DEBUG
 
     pthread_mutex_lock( &(parameter->data_signal->lock) );
     // Check if recording  

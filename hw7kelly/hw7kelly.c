@@ -15,6 +15,7 @@
 #define STOP 0
 #define FORWARD 2
 #define BACKWARD 1
+#define DATA_SPACE_SIZE 1000000
 
 #define PWM_RANGE 100
 #define PWM_MOTOR_MAX 100 
@@ -25,6 +26,7 @@
 #define PWM_MODE2_STEP 20
 #define PWM_MODE2_TURN_DELAY 60000
 #define PWM_MODE2_OFF_DELAY 500
+
 
 //#define DEBUG
 
@@ -303,8 +305,6 @@ void *ThreadData( void * arg  )
     printf("DATA: sem_wait\n");
     #endif
 
-    #define DEBUG
-
     pthread_mutex_lock( &(parameter->data_signal->lock) );
     // Check if recording  
     if (parameter->data_signal->recording)
@@ -318,7 +318,7 @@ void *ThreadData( void * arg  )
         #endif
        
         ////// SAMPLE ///////
-        read_accelerometer_gyroscope( parameter->calibration_accelerometer, parameter->calibration_gyroscope, parameter->bsc );
+        read_accelerometer_gyroscope( parameter->calibration_accelerometer, parameter->calibration_gyroscope, parameter->bsc, parameter->data_samples, parameter->sample_count );
         ////// SAMPLE ///////
 
         #ifdef DEBUG
@@ -332,15 +332,15 @@ void *ThreadData( void * arg  )
           parameter->data_signal->recording = false;
           parameter->data_signal->m0 = false;
           //pthread_mutex_unlock( &(parameter->data_signal->lock) );
+          print_samples(parameter->data_samples, parameter->sample_count);
+          *(parameter->sample_count) = 0;
           printf("MODE 0: Sampling complete");
         }
       } 
       else 
       {
-        
-        
         ////// SAMPLE ///////
-        read_accelerometer_gyroscope( parameter->calibration_accelerometer, parameter->calibration_gyroscope, parameter->bsc );
+        read_accelerometer_gyroscope( parameter->calibration_accelerometer, parameter->calibration_gyroscope, parameter->bsc, parameter->data_samples, parameter->sample_count );
         ////// SAMPLE ///////
       }
     }
@@ -475,6 +475,12 @@ int main( void )
   #ifdef DEBUG
   printf("MAIN: queue addr: %lx", (unsigned long)queue);
   #endif
+
+  data_sample *data_space = calloc(DATA_SPACE_SIZE, sizeof(data_sample));
+  #ifdef DEBUG
+  printf("MAIN: queue addr: %lx", (unsigned long)queue);
+  #endif
+  int sample_count = 0;
 
   unsigned int queue_len = 0;
   char curr_cmd = 's';
@@ -622,6 +628,8 @@ int main( void )
     thread_data_parameter.done = &done;
     thread_data_parameter.data_signal = &data_signal;
     thread_data_parameter.data_thread_sem = &data_thread_sem;
+    thread_data_parameter.data_samples = data_space;
+    thread_data_parameter.sample_count = &sample_count;
     thread_data_parameter.calibration_accelerometer = &calibration_accelerometer;
     thread_data_parameter.calibration_gyroscope = &calibration_gyroscope;
     thread_data_parameter.calibration_magnetometer = &calibration_magnetometer;
@@ -1415,7 +1423,9 @@ void initialize_accelerometer_and_gyroscope(
 void read_accelerometer_gyroscope(
     struct calibration_data *     calibration_accelerometer,
     struct calibration_data *     calibration_gyroscope,
-    volatile struct bsc_register *bsc )
+    volatile struct bsc_register *bsc,
+    data_sample * data_samples,
+    unsigned int * sample_count )
 {
   uint8_t                   data_block[6+2+6];
   union uint16_to_2uint8    ACCEL_XOUT;
@@ -1424,6 +1434,8 @@ void read_accelerometer_gyroscope(
   union uint16_to_2uint8    GYRO_XOUT;
   union uint16_to_2uint8    GYRO_YOUT;
   union uint16_to_2uint8    GYRO_ZOUT;
+
+  data_sample sample;
 
   /*
    * poll the interrupt status register and it tells you when it is done
@@ -1451,15 +1463,44 @@ void read_accelerometer_gyroscope(
   GYRO_ZOUT.field.H   = data_block[12];
   GYRO_ZOUT.field.L   = data_block[13];
 
-  printf( "Gyro X: %.2f deg\ty=%.2f deg\tz=%.2f deg\n",
-      GYRO_XOUT.signed_value*calibration_gyroscope->scale - calibration_gyroscope->offset_x,
-      GYRO_YOUT.signed_value*calibration_gyroscope->scale - calibration_gyroscope->offset_y,
-      GYRO_ZOUT.signed_value*calibration_gyroscope->scale - calibration_gyroscope->offset_z );
+  // printf( "Gyro X: %.2f deg\ty=%.2f deg\tz=%.2f deg\n",
+  //     GYRO_XOUT.signed_value*calibration_gyroscope->scale - calibration_gyroscope->offset_x,
+  //     GYRO_YOUT.signed_value*calibration_gyroscope->scale - calibration_gyroscope->offset_y,
+  //     GYRO_ZOUT.signed_value*calibration_gyroscope->scale - calibration_gyroscope->offset_z );
 
-  printf( "Accel X: %.2f m/s^2\ty=%.2f m/s^2\tz=%.2f m/s^2\n",
-      (ACCEL_XOUT.signed_value*calibration_accelerometer->scale - calibration_accelerometer->offset_x)*9.81,
-      (ACCEL_YOUT.signed_value*calibration_accelerometer->scale - calibration_accelerometer->offset_y)*9.81,
-      (ACCEL_ZOUT.signed_value*calibration_accelerometer->scale - calibration_accelerometer->offset_z)*9.81 );
+  // printf( "Accel X: %.2f m/s^2\ty=%.2f m/s^2\tz=%.2f m/s^2\n",
+  //     (ACCEL_XOUT.signed_value*calibration_accelerometer->scale - calibration_accelerometer->offset_x)*9.81,
+  //     (ACCEL_YOUT.signed_value*calibration_accelerometer->scale - calibration_accelerometer->offset_y)*9.81,
+  //     (ACCEL_ZOUT.signed_value*calibration_accelerometer->scale - calibration_accelerometer->offset_z)*9.81 );
+
+  sample.accel_xout = (float)ACCEL_XOUT.signed_value*calibration_gyroscope->scale - calibration_gyroscope->offset_x;
+  sample.accel_yout = (float)ACCEL_YOUT.signed_value*calibration_gyroscope->scale - calibration_gyroscope->offset_x;
+  sample.accel_zout = (float)ACCEL_ZOUT.signed_value*calibration_gyroscope->scale - calibration_gyroscope->offset_x;
+  sample.gyro_xout = (float)GYRO_XOUT.signed_value*calibration_gyroscope->scale - calibration_gyroscope->offset_x;
+  sample.gyro_yout = (float)GYRO_YOUT.signed_value*calibration_gyroscope->scale - calibration_gyroscope->offset_x;
+  sample.gyro_zout = (float)GYRO_ZOUT.signed_value*calibration_gyroscope->scale - calibration_gyroscope->offset_x;
+
+  data_samples[*sample_count] = sample;
+  *sample_count += 1;
 
   return;
+}
+
+void print_samples(data_sample * data_samples, unsigned int * sample_count){
+
+  unsigned int i, samples = *sample_count;
+
+  for(i = 0; i < sample_count; i++){
+    printf( "Gyro X: %.2f deg\ty=%.2f deg\tz=%.2f deg\n",
+      data_samples[i].gyro_xout,
+      data_samples[i].gyro_yout,
+      data_samples[i].gyro_zout
+    );
+      
+    printf( "Accel X: %.2f m/s^2\ty=%.2f m/s^2\tz=%.2f m/s^2\n",
+      data_samples[i].accel_xout,
+      data_samples[i].accel_yout,
+      data_samples[i].accel_zout
+    );   
+  }
 }

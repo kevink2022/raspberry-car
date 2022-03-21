@@ -36,10 +36,19 @@ struct done_flag
 struct data_signal
 {
   pthread_mutex_t lock;
-  FILE            file;
   bool            recording;
   bool            m0;
 };
+
+typedef struct 
+{
+  float gyro_xout;
+  float gyro_yout;
+  float gyro_zout;
+  float accel_xout;
+  float accel_yout;
+  float accel_zout;
+} data_sample;
 
 typedef struct {
   volatile struct gpio_register * gpio;
@@ -125,6 +134,8 @@ struct data_thread_parameter
   struct done_flag              * done;
   sem_t                         * data_thread_sem;
   struct data_signal            * data_signal;
+  data_sample                   * data_samples;
+  unsigned int                  * sample_count;
   struct calibration_data       * calibration_accelerometer;
   struct calibration_data       * calibration_gyroscope;
   struct calibration_data       * calibration_magnetometer;
@@ -210,4 +221,6 @@ void initialize_accelerometer_and_gyroscope(
 void read_accelerometer_gyroscope(
     struct calibration_data *     calibration_accelerometer,
     struct calibration_data *     calibration_gyroscope,
-    volatile struct bsc_register *bsc );
+    volatile struct bsc_register *bsc,
+    data_sample * data_samples,
+    unsigned int * sample_count  );

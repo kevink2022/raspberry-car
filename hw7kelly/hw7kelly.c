@@ -333,7 +333,7 @@ void *ThreadData( void * arg  )
           parameter->data_signal->m0 = false;
           //pthread_mutex_unlock( &(parameter->data_signal->lock) );
 
-          print_samples(parameter->data_samples, parameter->sample_count);
+          m0_write_data(parameter->data_samples, parameter->sample_count);
           //average_sample(parameter->data_samples,  parameter->sample_count);
           
           *(parameter->sample_count) = 0;

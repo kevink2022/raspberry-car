@@ -1664,19 +1664,19 @@ void print_samples(data_sample * data_samples, unsigned int * sample_count){
   tenth.gyro_yout = (max.gyro_yout - min.gyro_yout)/10;
   tenth.gyro_zout = (max.gyro_zout - min.gyro_zout)/10;
 
-  printf( "\nAC |GY\n");
+  printf( "\nGY |AC\n");
   
   for(i = 0; i < samples; i++){
     printf( "%i%i%i|",
-      (int)(data_samples[i].gyro_xout / tenth.gyro_xout),
-      (int)(data_samples[i].gyro_yout / tenth.gyro_yout),
-      (int)(data_samples[i].gyro_zout / tenth.gyro_zout)
+      (long)(data_samples[i].gyro_xout / tenth.gyro_xout),
+      (long)(data_samples[i].gyro_yout / tenth.gyro_yout),
+      (long)(data_samples[i].gyro_zout / tenth.gyro_zout)
     );
       
     printf( "%i%i%i\n",
-      (int)(data_samples[i].accel_xout / tenth.accel_xout),
-      (int)(data_samples[i].accel_yout / tenth.accel_yout),
-      (int)(data_samples[i].accel_zout / tenth.accel_zout)
+      (long)(data_samples[i].accel_xout / tenth.accel_xout),
+      (long)(data_samples[i].accel_yout / tenth.accel_yout),
+      (long)(data_samples[i].accel_zout / tenth.accel_zout)
     );   
   }
 }

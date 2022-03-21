@@ -333,8 +333,8 @@ void *ThreadData( void * arg  )
           parameter->data_signal->m0 = false;
           //pthread_mutex_unlock( &(parameter->data_signal->lock) );
 
-          //print_samples(parameter->data_samples, average_sample(parameter->data_samples,  parameter->sample_count) ,parameter->sample_count);
-          average_sample(parameter->data_samples,  parameter->sample_count);
+          print_samples(parameter->data_samples, average_sample(parameter->data_samples,  parameter->sample_count) ,parameter->sample_count);
+          //average_sample(parameter->data_samples,  parameter->sample_count);
           
           *(parameter->sample_count) = 0;
           printf("MODE 0: Sampling complete");

@@ -255,7 +255,7 @@ void *ThreadMotor( void * arg  )
     if (parameter->pause->pause)
     {
       // Update params
-      update_command(&motor_pin_values, *(char*)parameter->current_command, &mode, parameter->data_signal);
+      update_command(&motor_pin_values, *(char*)parameter->current_command, &mode, parameter->data_signal, parameter->data_samples, parameter->sample_count);
       parameter->pause->pause = false;
     }
     pthread_mutex_unlock( &(parameter->pause->lock) );
@@ -333,7 +333,7 @@ void *ThreadData( void * arg  )
           parameter->data_signal->m0 = false;
           //pthread_mutex_unlock( &(parameter->data_signal->lock) );
 
-          m0_write_data(parameter->data_samples, parameter->sample_count);
+          write_to_file(0, parameter->data_samples, parameter->sample_count);
           //average_sample(parameter->data_samples,  parameter->sample_count);
           
           *(parameter->sample_count) = 0;
@@ -538,8 +538,8 @@ int main( void )
     io->gpio->GPFSEL2.field.FSEL3 = GPFSEL_INPUT;
     io->gpio->GPFSEL2.field.FSEL4 = GPFSEL_INPUT;
     io->gpio->GPFSEL2.field.FSEL5 = GPFSEL_INPUT;
-    io->gpio->GPFSEL0.field.FSEL2 = GPFSEL_ALTERNATE_FUNCTION0;
-    io->gpio->GPFSEL0.field.FSEL3 = GPFSEL_ALTERNATE_FUNCTION0;
+    io->gpio->GPFSEL0.field.FSEL2 = GPFSEL_INPUT;
+    io->gpio->GPFSEL0.field.FSEL3 = GPFSEL_INPUT;
 
     #ifdef DEBUG
     printf("MAIN: gpio cleared: \n");
@@ -624,6 +624,8 @@ int main( void )
     thread_motor_parameter.done = &done;
     thread_motor_parameter.pause = &pause_motor;
     thread_motor_parameter.data_signal = &data_signal;
+    thread_motor_parameter.data_samples = data_space;
+    thread_motor_parameter.sample_count = &sample_count;
     thread_motor_parameter.current_command = &curr_cmd;
     thread_motor_parameter.current_command_lock = &curr_cmd_lock;
     thread_motor_parameter.motor_pins = &motor_pins;
@@ -870,7 +872,7 @@ void update_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_value
 //#define DEBUG
 
 
-void update_command(motor_pin_values *motor_pin_values, char current_command, int *mode, struct data_signal * data_signal){
+void update_command(motor_pin_values *motor_pin_values, char current_command, int *mode, struct data_signal * data_signal, data_sample * data_samples, unsigned int * sample_count){
   // Update params
   switch (current_command)
   {
@@ -888,6 +890,7 @@ void update_command(motor_pin_values *motor_pin_values, char current_command, in
         pthread_mutex_lock( &(data_signal->lock) );
         data_signal->recording = false;
         data_signal->m0 = false;
+        write_to_file(*mode, data_samples, sample_count);
         pthread_mutex_unlock( &(data_signal->lock) );
       }
 
@@ -1003,7 +1006,28 @@ void update_command(motor_pin_values *motor_pin_values, char current_command, in
       printf("\nMOTOR: Recieved Command: MODE 2\n");
       #endif
       *mode = MODE_2;
+      break;
+
+    case 't':
+      #ifdef DEBUG
+      printf("\nMOTOR: Recieved Command: MODE 2\n");
+      #endif
+      printf("This feature will be available at a later date.");
       break;  
+
+    case 'n':
+      #ifdef DEBUG
+      printf("\nMOTOR: Recieved Command: MODE 2\n");
+      #endif
+      printf("This feature will be available at a later date.");
+      break;  
+
+    case 'p':
+      #ifdef DEBUG
+      printf("\nMOTOR: Recieved Command: MODE 2\n");
+      #endif
+      printf("This feature will be available at a later date.");
+      break;    
 
     default:
       break;
@@ -1582,11 +1606,22 @@ void print_samples(data_sample * data_samples, unsigned int * sample_count){
   // );  
 }
 
-void m0_write_data(data_sample * data_samples, unsigned int * sample_count){
+void write_to_file(int mode, data_sample * data_samples, unsigned int * sample_count){
 
   unsigned int i, samples = *sample_count;
+  FILE * file;
 
-  FILE * file = fopen("./hw7m0data.txt", "w");
+  switch (mode)
+  {
+    case 0:
+      file = fopen("./hw7m0data.txt", "w");
+      break;
+    case 1:
+      file = fopen("./hw7m1data.txt", "w");
+      break;
+    case 2:
+      file = fopen("./hw7m2data.txt", "w");
+      break;    
 
   fprintf(file, "Gyro X, Gyro Y, Gyro Z, Accel X, Accel Y, Accel Z\n");
 
@@ -1603,5 +1638,4 @@ void m0_write_data(data_sample * data_samples, unsigned int * sample_count){
   }
 
   fclose(file);
-
 }

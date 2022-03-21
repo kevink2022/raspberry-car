@@ -124,6 +124,8 @@ struct motor_thread_parameter
   struct done_flag    * done;
   struct pause_flag   * pause;
   struct data_signal  * data_signal;
+  data_sample         * data_samples;
+  unsigned int        * sample_count;
   char                * current_command;
   pthread_mutex_t     * current_command_lock;
   motor_pins          * motor_pins;
@@ -157,7 +159,7 @@ void turn(void);
 void set_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_values);
 void update_motor_pwm(motor_pins *motor_pins, motor_pin_values *motor_pin_values);
 void update_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_values);
-void update_command(motor_pin_values *motor_pin_values, char current_command, int *mode, struct data_signal * data_signal);
+void update_command(motor_pin_values *motor_pin_values, char current_command, int *mode, struct data_signal * data_signal, data_sample * data_samples, unsigned int * sample_count);
 
 
 // Key thread func
@@ -229,4 +231,4 @@ data_sample average_sample(data_sample * data_samples, unsigned int * sample_cou
 
 void print_samples(data_sample * data_samples, unsigned int * sample_count);
 
-void m0_write_data(data_sample * data_samples, unsigned int * sample_count);
+void write_to_file(int mode, data_sample * data_samples, unsigned int * sample_count);

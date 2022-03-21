@@ -227,4 +227,4 @@ void read_accelerometer_gyroscope(
 
 data_sample average_sample(data_sample * data_samples, unsigned int * sample_count);
 
-void print_samples(data_sample * data_samples, data_sample average_sample, unsigned int * sample_count);
+void print_samples(data_sample * data_samples, unsigned int * sample_count);

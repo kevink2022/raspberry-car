@@ -1492,12 +1492,12 @@ data_sample average_sample(data_sample * data_samples, unsigned int * sample_cou
   unsigned int i, samples = *sample_count;
   data_sample average_sample;
 
-  average_sample.accel_xout = 0;
-  average_sample.accel_yout = 0;
-  average_sample.accel_zout = 0;
-  average_sample.gyro_xout = 0;
-  average_sample.gyro_yout = 0;
-  average_sample.gyro_zout = 0;
+  average_sample.accel_xout = 1;
+  average_sample.accel_yout = 1;
+  average_sample.accel_zout = 1;
+  average_sample.gyro_xout = 1;
+  average_sample.gyro_yout = 1;
+  average_sample.gyro_zout = 1;
 
   for(i = 0; i < samples; i++){
     average_sample.accel_xout = (average_sample.accel_xout * i + data_samples[i].accel_xout) / (i + 1);

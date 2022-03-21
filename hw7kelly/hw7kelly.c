@@ -1508,6 +1508,7 @@ data_sample average_sample(data_sample * data_samples, unsigned int * sample_cou
     average_sample.gyro_zout = (average_sample.gyro_zout * i + data_samples[i].gyro_zout) / (i + 1);
 
   }
+
 }
 
 void print_samples(data_sample * data_samples, data_sample average_sample, unsigned int * sample_count){
@@ -1515,6 +1516,8 @@ void print_samples(data_sample * data_samples, data_sample average_sample, unsig
   unsigned int i, samples = *sample_count;
 
   for(i = 0; i < samples; i++){
+    printf( "Sample %i:\n", i);
+    
     printf( "Gyro X: %.2f deg\ty=%.2f deg\tz=%.2f deg\n",
       data_samples[i].gyro_xout - average_sample.gyro_xout,
       data_samples[i].gyro_yout - average_sample.gyro_yout,
@@ -1527,4 +1530,18 @@ void print_samples(data_sample * data_samples, data_sample average_sample, unsig
       data_samples[i].accel_zout - average_sample.accel_zout
     );   
   }
+
+  printf( "Average Sample:\n");
+    
+  printf( "Gyro X: %.2f deg\ty=%.2f deg\tz=%.2f deg\n",
+    average_sample.gyro_xout,
+    average_sample.gyro_yout,
+    average_sample.gyro_zout
+  );
+    
+  printf( "Accel X: %.2f m/s^2\ty=%.2f m/s^2\tz=%.2f m/s^2\n",
+    average_sample.accel_xout,
+    average_sample.accel_yout,
+    average_sample.accel_zout
+  );  
 }

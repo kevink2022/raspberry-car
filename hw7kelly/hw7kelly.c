@@ -333,7 +333,9 @@ void *ThreadData( void * arg  )
           parameter->data_signal->m0 = false;
           //pthread_mutex_unlock( &(parameter->data_signal->lock) );
 
-          print_samples(parameter->data_samples, average_sample(parameter->data_samples,  parameter->sample_count) ,parameter->sample_count);
+          //print_samples(parameter->data_samples, average_sample(parameter->data_samples,  parameter->sample_count) ,parameter->sample_count);
+          average_sample(parameter->data_samples,  parameter->sample_count);
+          
           *(parameter->sample_count) = 0;
           printf("MODE 0: Sampling complete");
         }
@@ -1499,6 +1501,20 @@ data_sample average_sample(data_sample * data_samples, unsigned int * sample_cou
   average_sample.gyro_yout = data_samples[i].gyro_yout;
   average_sample.gyro_zout = data_samples[i].gyro_zout;
 
+  printf( "Average Sample:\n");
+    
+  printf( "Gyro X: %.2f deg\ty=%.2f deg\tz=%.2f deg\n",
+    average_sample.gyro_xout,
+    average_sample.gyro_yout,
+    average_sample.gyro_zout
+  );
+    
+  printf( "Accel X: %.2f m/s^2\ty=%.2f m/s^2\tz=%.2f m/s^2\n",
+    average_sample.accel_xout,
+    average_sample.accel_yout,
+    average_sample.accel_zout
+  );  
+
   for(i = 1; i < samples; i++){
     average_sample.accel_xout = (average_sample.accel_xout * i + data_samples[i].accel_xout) / (i + 1);
     average_sample.accel_yout = (average_sample.accel_yout * i + data_samples[i].accel_yout) / (i + 1);
@@ -1506,8 +1522,21 @@ data_sample average_sample(data_sample * data_samples, unsigned int * sample_cou
     average_sample.gyro_xout = (average_sample.gyro_xout * i + data_samples[i].gyro_xout) / (i + 1);
     average_sample.gyro_yout = (average_sample.gyro_yout * i + data_samples[i].gyro_yout) / (i + 1);
     average_sample.gyro_zout = (average_sample.gyro_zout * i + data_samples[i].gyro_zout) / (i + 1);
-
   }
+
+  printf( "Average Sample:\n");
+    
+  printf( "Gyro X: %.2f deg\ty=%.2f deg\tz=%.2f deg\n",
+    average_sample.gyro_xout,
+    average_sample.gyro_yout,
+    average_sample.gyro_zout
+  );
+    
+  printf( "Accel X: %.2f m/s^2\ty=%.2f m/s^2\tz=%.2f m/s^2\n",
+    average_sample.accel_xout,
+    average_sample.accel_yout,
+    average_sample.accel_zout
+  );  
 
 }
 

@@ -1026,7 +1026,7 @@ void update_command(motor_pin_values *motor_pin_values, char current_command, in
       #ifdef DEBUG
       printf("\nMOTOR: Recieved Command: MODE 2\n");
       #endif
-      printf("This feature will be available at a later date.");
+      print_samples(data_samples, sample_count);
       break;    
 
     default:

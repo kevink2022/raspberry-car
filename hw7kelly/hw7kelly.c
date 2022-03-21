@@ -1490,7 +1490,7 @@ void print_samples(data_sample * data_samples, unsigned int * sample_count){
 
   unsigned int i, samples = *sample_count;
 
-  for(i = 0; i < sample_count; i++){
+  for(i = 0; i < samples; i++){
     printf( "Gyro X: %.2f deg\ty=%.2f deg\tz=%.2f deg\n",
       data_samples[i].gyro_xout,
       data_samples[i].gyro_yout,

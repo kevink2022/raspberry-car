@@ -224,3 +224,5 @@ void read_accelerometer_gyroscope(
     volatile struct bsc_register *bsc,
     data_sample * data_samples,
     unsigned int * sample_count  );
+
+void print_samples(data_sample * data_samples, unsigned int * sample_count);

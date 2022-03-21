@@ -1586,7 +1586,7 @@ void m0_write_data(data_sample * data_samples, unsigned int * sample_count){
 
   unsigned int i, samples = *sample_count;
 
-  FILE * file = fopen("./hw7m0data.txt", 2);
+  FILE * file = fopen("./hw7m0data.txt", "w");
 
   fprintf(file, "Gyro X, Gyro Y, Gyro Z, Accel X, Accel Y, Accel Z\n");
 

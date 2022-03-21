@@ -1500,12 +1500,12 @@ data_sample average_sample(data_sample * data_samples, unsigned int * sample_cou
   average_sample.gyro_zout = 0;
 
   for(i = 0; i < samples; i++){
-    average_sample.accel_xout = (average_sample.accel_xout * i + data_samples[i].gyro_xout) / (i + 1);
-    average_sample.accel_yout = (average_sample.accel_xout * i + data_samples[i].gyro_xout) / (i + 1);
-    average_sample.accel_zout = (average_sample.accel_xout * i + data_samples[i].gyro_xout) / (i + 1);
-    average_sample.gyro_xout = (average_sample.accel_xout * i + data_samples[i].gyro_xout) / (i + 1);
-    average_sample.gyro_yout = (average_sample.accel_xout * i + data_samples[i].gyro_xout) / (i + 1);
-    average_sample.gyro_zout = (average_sample.accel_xout * i + data_samples[i].gyro_xout) / (i + 1);
+    average_sample.accel_xout = (average_sample.accel_xout * i + data_samples[i].accel_xout) / (i + 1);
+    average_sample.accel_yout = (average_sample.accel_yout * i + data_samples[i].accel_yout) / (i + 1);
+    average_sample.accel_zout = (average_sample.accel_zout * i + data_samples[i].accel_zout) / (i + 1);
+    average_sample.gyro_xout = (average_sample.gyro_xout * i + data_samples[i].gyro_xout) / (i + 1);
+    average_sample.gyro_yout = (average_sample.gyro_yout * i + data_samples[i].gyro_yout) / (i + 1);
+    average_sample.gyro_zout = (average_sample.gyro_zout * i + data_samples[i].gyro_zout) / (i + 1);
 
   }
 }

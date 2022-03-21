@@ -1489,18 +1489,21 @@ void read_accelerometer_gyroscope(
   return;
 }
 
+#define DEBUG
+
 data_sample average_sample(data_sample * data_samples, unsigned int * sample_count){
   
   unsigned int i, samples = *sample_count;
   data_sample average_sample;
 
-  average_sample.accel_xout = data_samples[i].accel_xout;
-  average_sample.accel_yout = data_samples[i].accel_yout;
-  average_sample.accel_zout = data_samples[i].accel_zout;
-  average_sample.gyro_xout = data_samples[i].gyro_xout;
-  average_sample.gyro_yout = data_samples[i].gyro_yout;
-  average_sample.gyro_zout = data_samples[i].gyro_zout;
+  average_sample.accel_xout = data_samples[0].accel_xout;
+  average_sample.accel_yout = data_samples[0].accel_yout;
+  average_sample.accel_zout = data_samples[0].accel_zout;
+  average_sample.gyro_xout = data_samples[0].gyro_xout;
+  average_sample.gyro_yout = data_samples[0].gyro_yout;
+  average_sample.gyro_zout = data_samples[0].gyro_zout;
 
+  #ifdef DEBUG
   printf( "Average Sample:\n");
     
   printf( "Gyro X: %.2f deg\ty=%.2f deg\tz=%.2f deg\n",
@@ -1513,7 +1516,8 @@ data_sample average_sample(data_sample * data_samples, unsigned int * sample_cou
     average_sample.accel_xout,
     average_sample.accel_yout,
     average_sample.accel_zout
-  );  
+  );
+  #endif  
 
   for(i = 1; i < samples; i++){
     average_sample.accel_xout = (average_sample.accel_xout * i + data_samples[i].accel_xout) / (i + 1);
@@ -1524,6 +1528,7 @@ data_sample average_sample(data_sample * data_samples, unsigned int * sample_cou
     average_sample.gyro_zout = (average_sample.gyro_zout * i + data_samples[i].gyro_zout) / (i + 1);
   }
 
+  #ifdef DEBUG
   printf( "Average Sample:\n");
     
   printf( "Gyro X: %.2f deg\ty=%.2f deg\tz=%.2f deg\n",
@@ -1537,6 +1542,7 @@ data_sample average_sample(data_sample * data_samples, unsigned int * sample_cou
     average_sample.accel_yout,
     average_sample.accel_zout
   );  
+  #endif
 
 }
 

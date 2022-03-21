@@ -338,6 +338,7 @@ void *ThreadData( void * arg  )
           
           *(parameter->sample_count) = 0;
           printf("MODE 0: Sampling complete");
+          printf("\n");
         }
       } 
       else 
@@ -1579,4 +1580,28 @@ void print_samples(data_sample * data_samples, unsigned int * sample_count){
   //   average_sample.accel_yout,
   //   average_sample.accel_zout
   // );  
+}
+
+void m0_write_data(data_sample * data_samples, unsigned int * sample_count){
+
+  unsigned int i, samples = *sample_count;
+
+  FILE * file = fopen("./hw7m0data.txt", 2);
+
+  fprintf(file, "Gyro X, Gyro Y, Gyro Z, Accel X, Accel Y, Accel Z\n");
+
+  for(i = 0; i < samples; i++){
+    
+    fprintf( file, "%.2f, %.2f, %.2f, %.2f, %.2f, %.2f\n",
+      data_samples[i].gyro_xout,
+      data_samples[i].gyro_yout,
+      data_samples[i].gyro_zout,
+      data_samples[i].accel_xout,
+      data_samples[i].accel_yout,
+      data_samples[i].accel_zout 
+    );
+  }
+
+  fclose(file);
+
 }

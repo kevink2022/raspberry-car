@@ -1622,6 +1622,9 @@ void write_to_file(int mode, data_sample * data_samples, unsigned int * sample_c
     case 2:
       file = fopen("./hw7m2data.txt", "w");
       break;    
+    default:
+      break;
+  }
 
   fprintf(file, "Gyro X, Gyro Y, Gyro Z, Accel X, Accel Y, Accel Z\n");
 

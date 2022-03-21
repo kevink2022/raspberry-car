@@ -1501,11 +1501,11 @@ data_sample average_sample(data_sample * data_samples, unsigned int * sample_cou
 
   for(i = 0; i < samples; i++){
     average_sample.accel_xout = (average_sample.accel_xout * i + data_samples[i].gyro_xout) / (i + 1);
-    average_sample.accel_yout = 0;
-    average_sample.accel_zout = 0;
-    average_sample.gyro_xout = 0;
-    average_sample.gyro_yout = 0;
-    average_sample.gyro_zout = 0;
+    average_sample.accel_yout = (average_sample.accel_xout * i + data_samples[i].gyro_xout) / (i + 1);
+    average_sample.accel_zout = (average_sample.accel_xout * i + data_samples[i].gyro_xout) / (i + 1);
+    average_sample.gyro_xout = (average_sample.accel_xout * i + data_samples[i].gyro_xout) / (i + 1);
+    average_sample.gyro_yout = (average_sample.accel_xout * i + data_samples[i].gyro_xout) / (i + 1);
+    average_sample.gyro_zout = (average_sample.accel_xout * i + data_samples[i].gyro_xout) / (i + 1);
 
   }
 }

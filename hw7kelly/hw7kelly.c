@@ -1473,12 +1473,12 @@ void read_accelerometer_gyroscope(
   //     (ACCEL_YOUT.signed_value*calibration_accelerometer->scale - calibration_accelerometer->offset_y)*9.81,
   //     (ACCEL_ZOUT.signed_value*calibration_accelerometer->scale - calibration_accelerometer->offset_z)*9.81 );
 
-  sample.accel_xout = (float)ACCEL_XOUT.signed_value*calibration_gyroscope->scale - calibration_gyroscope->offset_x;
-  sample.accel_yout = (float)ACCEL_YOUT.signed_value*calibration_gyroscope->scale - calibration_gyroscope->offset_x;
-  sample.accel_zout = (float)ACCEL_ZOUT.signed_value*calibration_gyroscope->scale - calibration_gyroscope->offset_x;
-  sample.gyro_xout = (float)GYRO_XOUT.signed_value*calibration_gyroscope->scale - calibration_gyroscope->offset_x;
-  sample.gyro_yout = (float)GYRO_YOUT.signed_value*calibration_gyroscope->scale - calibration_gyroscope->offset_x;
-  sample.gyro_zout = (float)GYRO_ZOUT.signed_value*calibration_gyroscope->scale - calibration_gyroscope->offset_x;
+  sample.accel_xout = (float)(ACCEL_XOUT.signed_value*calibration_gyroscope->scale - calibration_gyroscope->offset_x);
+  sample.accel_yout = (float)(ACCEL_YOUT.signed_value*calibration_gyroscope->scale - calibration_gyroscope->offset_x);
+  sample.accel_zout = (float)(ACCEL_ZOUT.signed_value*calibration_gyroscope->scale - calibration_gyroscope->offset_x);
+  sample.gyro_xout = (float)(GYRO_XOUT.signed_value*calibration_gyroscope->scale - calibration_gyroscope->offset_x);
+  sample.gyro_yout = (float)(GYRO_YOUT.signed_value*calibration_gyroscope->scale - calibration_gyroscope->offset_x);
+  sample.gyro_zout = (float)(GYRO_ZOUT.signed_value*calibration_gyroscope->scale - calibration_gyroscope->offset_x);
 
   data_samples[*sample_count] = sample;
   *sample_count += 1;

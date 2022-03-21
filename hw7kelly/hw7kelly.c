@@ -332,7 +332,8 @@ void *ThreadData( void * arg  )
           parameter->data_signal->recording = false;
           parameter->data_signal->m0 = false;
           //pthread_mutex_unlock( &(parameter->data_signal->lock) );
-          print_samples(parameter->data_samples, parameter->sample_count);
+
+          print_samples(parameter->data_samples, average_sample(parameter->data_samples,  parameter->sample_count) ,parameter->sample_count);
           *(parameter->sample_count) = 0;
           printf("MODE 0: Sampling complete");
         }
@@ -1486,21 +1487,44 @@ void read_accelerometer_gyroscope(
   return;
 }
 
-void print_samples(data_sample * data_samples, unsigned int * sample_count){
+data_sample average_sample(data_sample * data_samples, unsigned int * sample_count){
+  
+  unsigned int i, samples = *sample_count;
+  data_sample average_sample;
+
+  average_sample.accel_xout = 0;
+  average_sample.accel_yout = 0;
+  average_sample.accel_zout = 0;
+  average_sample.gyro_xout = 0;
+  average_sample.gyro_yout = 0;
+  average_sample.gyro_zout = 0;
+
+  for(i = 0; i < samples; i++){
+    average_sample.accel_xout = (average_sample.accel_xout * i + data_samples[i].gyro_xout) / (i + 1);
+    average_sample.accel_yout = 0;
+    average_sample.accel_zout = 0;
+    average_sample.gyro_xout = 0;
+    average_sample.gyro_yout = 0;
+    average_sample.gyro_zout = 0;
+
+  }
+}
+
+void print_samples(data_sample * data_samples, data_sample average_sample, unsigned int * sample_count){
 
   unsigned int i, samples = *sample_count;
 
   for(i = 0; i < samples; i++){
     printf( "Gyro X: %.2f deg\ty=%.2f deg\tz=%.2f deg\n",
-      data_samples[i].gyro_xout,
-      data_samples[i].gyro_yout,
-      data_samples[i].gyro_zout
+      data_samples[i].gyro_xout - average_sample.gyro_xout,
+      data_samples[i].gyro_yout - average_sample.gyro_yout,
+      data_samples[i].gyro_zout - average_sample.gyro_zout
     );
       
     printf( "Accel X: %.2f m/s^2\ty=%.2f m/s^2\tz=%.2f m/s^2\n",
-      data_samples[i].accel_xout,
-      data_samples[i].accel_yout,
-      data_samples[i].accel_zout
+      data_samples[i].accel_xout - average_sample.accel_xout,
+      data_samples[i].accel_yout - average_sample.accel_yout,
+      data_samples[i].accel_zout - average_sample.accel_zout
     );   
   }
 }

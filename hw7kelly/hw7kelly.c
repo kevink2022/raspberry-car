@@ -1520,6 +1520,7 @@ data_sample average_sample(data_sample * data_samples, unsigned int * sample_cou
   
   unsigned int i, samples = *sample_count;
   data_sample average_sample;
+  int tenth;
 
   average_sample.accel_xout = data_samples[0].accel_xout;
   average_sample.accel_yout = data_samples[0].accel_yout;
@@ -1574,36 +1575,110 @@ data_sample average_sample(data_sample * data_samples, unsigned int * sample_cou
 void print_samples(data_sample * data_samples, unsigned int * sample_count){
 
   unsigned int i, samples = *sample_count;
+  data_sample max = data_samples[0], min = data_samples[0], tenth;
 
-  for(i = 0; i < samples; i++){
-    printf( "Sample %i:\n", i);
-    
-    printf( "Gyro X: %.2f deg\ty=%.2f deg\tz=%.2f deg\n",
-      data_samples[i].gyro_xout,
-      data_samples[i].gyro_yout,
-      data_samples[i].gyro_zout
-    );
-      
-    printf( "Accel X: %.2f m/s^2\ty=%.2f m/s^2\tz=%.2f m/s^2\n",
-      data_samples[i].accel_xout,
-      data_samples[i].accel_yout,
-      data_samples[i].accel_zout 
-    );   
+  for(i = 1; i < samples; i++){
+    if (data_samples[i].accel_xout < min.accel_xout) {
+      min.accel_xout = data_samples[i].accel_xout;
+    } else if (data_samples[i].accel_xout > max.accel_xout) {
+      max.accel_xout = data_samples[i].accel_xout;
+    }
+
+    if (data_samples[i].accel_yout < min.accel_yout) {
+      min.accel_yout = data_samples[i].accel_yout;
+    } else if (data_samples[i].accel_yout > max.accel_yout) {
+      max.accel_yout = data_samples[i].accel_yout;
+    }
+
+    if (data_samples[i].accel_zout < min.accel_zout) {
+      min.accel_zout = data_samples[i].accel_zout;
+    } else if (data_samples[i].accel_zout > max.accel_zout) {
+      max.accel_zout = data_samples[i].accel_zout;
+    }
+
+    if (data_samples[i].gyro_xout < min.gyro_xout) {
+      min.gyro_xout = data_samples[i].gyro_xout;
+    } else if (data_samples[i].gyro_xout > max.gyro_xout) {
+      max.gyro_xout = data_samples[i].gyro_xout;
+    }
+
+    if (data_samples[i].gyro_yout < min.gyro_yout) {
+      min.gyro_yout = data_samples[i].gyro_yout;
+    } else if (data_samples[i].gyro_yout > max.gyro_yout) {
+      max.gyro_yout = data_samples[i].gyro_yout;
+    }
+
+    if (data_samples[i].gyro_xout < min.gyro_xout) {
+      min.gyro_xout = data_samples[i].gyro_xout;
+    } else if (data_samples[i].gyro_xout > max.gyro_xout) {
+      max.gyro_xout = data_samples[i].gyro_xout;
+    }
   }
 
-  // printf( "Average Sample:\n");
+  printf( "\nMax:\n");
     
-  // printf( "Gyro X: %.2f deg\ty=%.2f deg\tz=%.2f deg\n",
-  //   average_sample.gyro_xout,
-  //   average_sample.gyro_yout,
-  //   average_sample.gyro_zout
-  // );
+  printf( "Gyro X: %.2f deg\ty=%.2f deg\tz=%.2f deg\n",
+    max.gyro_xout,
+    max.gyro_yout,
+    max.gyro_zout
+  );
     
-  // printf( "Accel X: %.2f m/s^2\ty=%.2f m/s^2\tz=%.2f m/s^2\n",
-  //   average_sample.accel_xout,
-  //   average_sample.accel_yout,
-  //   average_sample.accel_zout
-  // );  
+  printf( "Accel X: %.2f m/s^2\ty=%.2f m/s^2\tz=%.2f m/s^2\n",
+    max.accel_xout,
+    max.accel_yout,
+    max.accel_zout 
+  );
+
+  printf( "\nMin:\n");
+    
+  printf( "Gyro X: %.2f deg\ty=%.2f deg\tz=%.2f deg\n",
+    min.gyro_xout,
+    min.gyro_yout,
+    min.gyro_zout
+  );
+    
+  printf( "Accel X: %.2f m/s^2\ty=%.2f m/s^2\tz=%.2f m/s^2\n",
+    min.accel_xout,
+    min.accel_yout,
+    min.accel_zout 
+  );
+
+  printf( "\nRange:\n");
+    
+  printf( "Gyro X: %.2f deg\ty=%.2f deg\tz=%.2f deg\n",
+    max.gyro_xout - min.gyro_xout,
+    max.gyro_yout - min.gyro_yout,
+    max.gyro_zout - min.gyro_zout
+  );
+    
+  printf( "Accel X: %.2f m/s^2\ty=%.2f m/s^2\tz=%.2f m/s^2\n",
+    max.accel_xout - min.accel_xout,
+    max.accel_yout - min.accel_yout,
+    max.accel_zout - min.accel_zout 
+  );
+
+  tenth.accel_xout = (max.accel_xout - min.accel_xout)/10;
+  tenth.accel_yout = (max.accel_yout - min.accel_yout)/10;
+  tenth.accel_zout = (max.accel_zout - min.accel_zout)/10;
+  tenth.gyro_xout = (max.gyro_xout - min.gyro_xout)/10;
+  tenth.gyro_yout = (max.gyro_yout - min.gyro_yout)/10;
+  tenth.gyro_zout = (max.gyro_zout - min.gyro_zout)/10;
+  
+  for(i = 0; i < samples; i++){
+    printf( "\nAC |GY\n");
+    
+    printf( "Gyro X: %i deg\ty=%i deg\tz=%i deg\n",
+      (int)(data_samples[i].gyro_xout / tenth.gyro_xout),
+      (int)(data_samples[i].gyro_yout / tenth.gyro_yout),
+      (int)(data_samples[i].gyro_zout / tenth.gyro_zout)
+    );
+      
+    printf( "Accel X: %i m/s^2\ty=%i m/s^2\tz=%i m/s^2\n",
+      (int)(data_samples[i].accel_xout / tenth.accel_xout),
+      (int)(data_samples[i].accel_yout / tenth.accel_yout),
+      (int)(data_samples[i].accel_zout / tenth.accel_zout)
+    );   
+  }
 }
 
 void write_to_file(int mode, data_sample * data_samples, unsigned int * sample_count){
@@ -1642,3 +1717,4 @@ void write_to_file(int mode, data_sample * data_samples, unsigned int * sample_c
 
   fclose(file);
 }
+

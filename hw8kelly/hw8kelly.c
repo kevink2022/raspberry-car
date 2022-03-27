@@ -163,6 +163,7 @@ void *ThreadMotor( void * arg  )
     // Update command
     if (command != next_command) {
       update_command( parameter->motor_pins, &motor_pin_values, next_command, &command, &mode, &hw, parameter->data_signal, parameter->data_samples, parameter->sample_count);
+      next_command = command;
     }
 
     #ifdef DEBUG

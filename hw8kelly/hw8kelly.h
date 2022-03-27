@@ -73,14 +73,14 @@ typedef struct {
   int                             BI2;
   int                             BIR;
 
-  int                             A_PWM_next;
-  int                             AI1_next;
-  int                             AI2_next;
-  int                             AIR_next;
-  int                             B_PWM_next;
-  int                             BI1_next;
-  int                             BI2_next;
-  int                             BIR_next;
+  // int                             A_PWM_next;
+  // int                             AI1_next;
+  // int                             AI2_next;
+  // int                             AIR_next;
+  // int                             B_PWM_next;
+  // int                             BI1_next;
+  // int                             BI2_next;
+  // int                             BIR_next;
 } motor_pin_values;
 
 typedef struct {
@@ -144,6 +144,14 @@ struct data_thread_parameter
   volatile struct bsc_register  * bsc;
 };
 
+struct camera_thread_parameter
+{
+  struct done_flag              * done;
+  sem_t                         * camera_thread_sem;
+
+  
+};
+
 
 void *ThreadClock( void * arg  );
 void *ThreadControl( void * arg  );
@@ -159,7 +167,7 @@ void turn(void);
 void set_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_values);
 void update_motor_pwm(motor_pins *motor_pins, motor_pin_values *motor_pin_values);
 void update_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_values);
-void update_command(motor_pin_values *motor_pin_values, char current_command, int *mode, struct data_signal * data_signal, data_sample * data_samples, unsigned int * sample_count);
+void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, char next_command, int *mode, struct data_signal * data_signal, data_sample * data_samples, unsigned int * sample_count);
 
 
 // Key thread func

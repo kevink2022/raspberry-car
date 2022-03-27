@@ -162,7 +162,7 @@ void *ThreadMotor( void * arg  )
     
     // Update command
     if (command != next_command) {
-      update_command(&parameter->motor_pins, &motor_pin_values, next_command, &mode, &hw, parameter->data_signal, parameter->data_samples, parameter->sample_count);
+      update_command( parameter->motor_pins, &motor_pin_values, next_command, &mode, &hw, parameter->data_signal, parameter->data_samples, parameter->sample_count);
       command = next_command;
     }
 
@@ -257,7 +257,7 @@ void *ThreadMotor( void * arg  )
     if (parameter->pause->pause)
     {
       // Grab next command from shared memory
-      next_command = parameter->current_command;
+      next_command = *parameter->current_command;
       parameter->pause->pause = false;
     }
     pthread_mutex_unlock( &(parameter->pause->lock) );

@@ -162,8 +162,7 @@ void *ThreadMotor( void * arg  )
     
     // Update command
     if (command != next_command) {
-      update_command( parameter->motor_pins, &motor_pin_values, next_command, &mode, &hw, parameter->data_signal, parameter->data_samples, parameter->sample_count);
-      command = next_command;
+      update_command( parameter->motor_pins, &motor_pin_values, next_command, &command, &mode, &hw, parameter->data_signal, parameter->data_samples, parameter->sample_count);
     }
 
     #ifdef DEBUG
@@ -888,8 +887,7 @@ void update_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_value
 //#define DEBUG
 
 
-void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, char next_command, int *mode, int *hw, struct data_signal * data_signal, data_sample * data_samples, unsigned int * sample_count){
-
+void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, char next_command, char *command, int *mode, int *hw, struct data_signal * data_signal, data_sample * data_samples, unsigned int * sample_count){
   // Update params
   switch (next_command)
   {
@@ -903,6 +901,8 @@ void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, 
       motor_pin_values->BI1 = 0;
       motor_pin_values->BI2 = 0;
       update_motor_pins(motor_pins, motor_pin_values);
+
+      *command = 's';
       
       // Signal Data thread to start recording
       if (*hw == 7 && *mode != MODE_0){
@@ -924,6 +924,8 @@ void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, 
       motor_pin_values->BI1 = 1;
       motor_pin_values->BI2 = 0;
       update_motor_pins(motor_pins, motor_pin_values);
+
+      *command = 'w';
       
       // Signal Data thread to start recording
       if (*hw == 7 && *mode != MODE_0){
@@ -945,6 +947,8 @@ void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, 
       motor_pin_values->BI1 = 0;
       motor_pin_values->BI2 = 1;
       update_motor_pins(motor_pins, motor_pin_values);
+
+      *command = 'x';
       break;
 
     case 'i':

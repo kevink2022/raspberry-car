@@ -167,7 +167,7 @@ void turn(void);
 void set_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_values);
 void update_motor_pwm(motor_pins *motor_pins, motor_pin_values *motor_pin_values);
 void update_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_values);
-void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, char next_command, int *mode, struct data_signal * data_signal, data_sample * data_samples, unsigned int * sample_count);
+void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, char next_command, int *mode, int *hw, struct data_signal * data_signal, data_sample * data_samples, unsigned int * sample_count);
 
 
 // Key thread func

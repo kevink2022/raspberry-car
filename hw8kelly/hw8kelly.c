@@ -145,7 +145,7 @@ void *ThreadMotor( void * arg  )
 {
   struct motor_thread_parameter * parameter = (struct motor_thread_parameter *)arg;
   char command = '\0', next_command = '\0';
-  int mode = MODE_1;
+  int mode = MODE_1, hw = 8;
   bool off_course = false; // Used to exit thread if off course and stuck turing in mode 2
 
   motor_pin_values motor_pin_values;
@@ -162,7 +162,7 @@ void *ThreadMotor( void * arg  )
     
     // Update command
     if (command != next_command) {
-      update_command(&parameter->motor_pins, &motor_pin_values, next_command, &mode, parameter->data_signal, parameter->data_samples, parameter->sample_count);
+      update_command(&parameter->motor_pins, &motor_pin_values, next_command, &mode, &hw, parameter->data_signal, parameter->data_samples, parameter->sample_count);
       command = next_command;
     }
 
@@ -170,77 +170,81 @@ void *ThreadMotor( void * arg  )
     printf("MOTOR: Updated PWM\n");
     #endif
 
-    // If going forward in mode 2, check IR sensors
-    if ( (motor_pin_values.AI1 && motor_pin_values.BI1) && (mode == MODE_2)) {
+    if(hw != 8){
+      // If going forward in mode 2, check IR sensors
+      if ( (motor_pin_values.AI1 && motor_pin_values.BI1) && (mode == MODE_2)) {
 
-      // Check IR sensor A
-      if(GPIO_READ(parameter->motor_pins->gpio, parameter->motor_pins->AIR_pin) != 0 && !off_course){
-        int i = 0;
-        #ifdef DEBUG
-        printf("MOTOR: Auto turn A \n");
-        #endif
+        // Check IR sensor A
+        if(GPIO_READ(parameter->motor_pins->gpio, parameter->motor_pins->AIR_pin) != 0 && !off_course){
+          int i = 0;
+          #ifdef DEBUG
+          printf("MOTOR: Auto turn A \n");
+          #endif
 
-        while(GPIO_READ(parameter->motor_pins->gpio, parameter->motor_pins->AIR_pin) != 0) {
-          parameter->motor_pins->pwm->DAT1 = PWM_MOTOR_MAX;
-          parameter->motor_pins->pwm->DAT2 = PWM_MOTOR_MAX;
-          GPIO_CLR( parameter->motor_pins->gpio, parameter->motor_pins->AI1_pin );
-          GPIO_SET( parameter->motor_pins->gpio, parameter->motor_pins->AI2_pin );
-          usleep(PWM_MODE2_TURN_DELAY); 
-          if(i == PWM_MODE2_OFF_DELAY){
-            off_course = true;
-            #ifdef DEBUG
-            printf("MOTOR: Auto A off course\n");
-            #endif
-            break; // If off course, will never break out of loop
+          while(GPIO_READ(parameter->motor_pins->gpio, parameter->motor_pins->AIR_pin) != 0) {
+            parameter->motor_pins->pwm->DAT1 = PWM_MOTOR_MAX;
+            parameter->motor_pins->pwm->DAT2 = PWM_MOTOR_MAX;
+            GPIO_CLR( parameter->motor_pins->gpio, parameter->motor_pins->AI1_pin );
+            GPIO_SET( parameter->motor_pins->gpio, parameter->motor_pins->AI2_pin );
+            usleep(PWM_MODE2_TURN_DELAY); 
+            if(i == PWM_MODE2_OFF_DELAY){
+              off_course = true;
+              #ifdef DEBUG
+              printf("MOTOR: Auto A off course\n");
+              #endif
+              break; // If off course, will never break out of loop
+            }
+            i++;
           }
-          i++;
-        }
-        #ifdef DEBUG
-        printf("MOTOR: Auto A done\n");
-        #endif
+          #ifdef DEBUG
+          printf("MOTOR: Auto A done\n");
+          #endif
 
-        set_motor_pins(parameter->motor_pins, &motor_pin_values);
+          set_motor_pins(parameter->motor_pins, &motor_pin_values);
 
-        #ifdef DEBUG
-        printf("MOTOR: Auto A set pins\n");
-        #endif
-      } 
+          #ifdef DEBUG
+          printf("MOTOR: Auto A set pins\n");
+          #endif
+        } 
 
-      // Check IR sensor B
-      else if(GPIO_READ(parameter->motor_pins->gpio, parameter->motor_pins->BIR_pin) != 0 && !off_course){
-        int i = 0;
-        #ifdef DEBUG
-        printf("MOTOR: Auto turn B \n");
-        #endif
+        // Check IR sensor B
+        else if(GPIO_READ(parameter->motor_pins->gpio, parameter->motor_pins->BIR_pin) != 0 && !off_course){
+          int i = 0;
+          #ifdef DEBUG
+          printf("MOTOR: Auto turn B \n");
+          #endif
 
-        while(GPIO_READ(parameter->motor_pins->gpio, parameter->motor_pins->BIR_pin) != 0 && !off_course) {
-          parameter->motor_pins->pwm->DAT1 = PWM_MOTOR_MAX;
-          parameter->motor_pins->pwm->DAT2 = PWM_MOTOR_MAX;
-          GPIO_CLR( parameter->motor_pins->gpio, parameter->motor_pins->BI1_pin );
-          GPIO_SET( parameter->motor_pins->gpio, parameter->motor_pins->BI2_pin ); 
-          usleep(PWM_MODE2_TURN_DELAY);
-          if(i == PWM_MODE2_OFF_DELAY){
-            off_course = true;
-            #ifdef DEBUG
-            printf("MOTOR: Auto A off course\n");
-            #endif
-            break; // If off course, will never break out of loop
+          while(GPIO_READ(parameter->motor_pins->gpio, parameter->motor_pins->BIR_pin) != 0 && !off_course) {
+            parameter->motor_pins->pwm->DAT1 = PWM_MOTOR_MAX;
+            parameter->motor_pins->pwm->DAT2 = PWM_MOTOR_MAX;
+            GPIO_CLR( parameter->motor_pins->gpio, parameter->motor_pins->BI1_pin );
+            GPIO_SET( parameter->motor_pins->gpio, parameter->motor_pins->BI2_pin ); 
+            usleep(PWM_MODE2_TURN_DELAY);
+            if(i == PWM_MODE2_OFF_DELAY){
+              off_course = true;
+              #ifdef DEBUG
+              printf("MOTOR: Auto A off course\n");
+              #endif
+              break; // If off course, will never break out of loop
+            }
+            i++;
           }
-          i++;
+
+          #ifdef DEBUG
+          printf("MOTOR: Auto B done\n");
+          #endif
+
+          set_motor_pins(parameter->motor_pins, &motor_pin_values);
+
+          #ifdef DEBUG
+          printf("MOTOR: Auto B set pins\n");
+          #endif
         }
-
-        #ifdef DEBUG
-        printf("MOTOR: Auto B done\n");
-        #endif
-
-        set_motor_pins(parameter->motor_pins, &motor_pin_values);
-
-        #ifdef DEBUG
-        printf("MOTOR: Auto B set pins\n");
-        #endif
       }
-    }
 
+    } else {
+      // Camera Stuff
+    }
     #undef DEBUG
 
     
@@ -421,6 +425,7 @@ void *ThreadKey( void * arg )
   bool done = false;
   char mode = '1';
   char input = 's';
+  char hw = '8';
 
   #ifdef DEBUG
   printf("KEY: init\n");
@@ -428,7 +433,7 @@ void *ThreadKey( void * arg )
 
   do
   {
-    printf("\nHw6m%c> ", mode);
+    printf("\nHw%cm%c> ", hw, mode);
     input = get_pressed_key();
 
     #ifdef DEBUG
@@ -449,7 +454,14 @@ void *ThreadKey( void * arg )
       mode = input;
       printf(" %c\n", input);
       add_to_queue(thread_key_parameter->control_queue, input);
-    } 
+    }
+    else if (input == 'h'){
+      printf(" hw");
+      input = get_pressed_key();
+      hw = input;
+      printf(" %c\n", input);
+      add_to_queue(thread_key_parameter->control_queue, input);
+    }  
     else {
       printf(" %c\n", input);
       #ifdef DEBUG
@@ -876,7 +888,8 @@ void update_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_value
 //#define DEBUG
 
 
-void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, char next_command, int *mode, struct data_signal * data_signal, data_sample * data_samples, unsigned int * sample_count){
+void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, char next_command, int *mode, int *hw, struct data_signal * data_signal, data_sample * data_samples, unsigned int * sample_count){
+
   // Update params
   switch (next_command)
   {
@@ -892,7 +905,7 @@ void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, 
       update_motor_pins(motor_pins, motor_pin_values);
       
       // Signal Data thread to start recording
-      if (mode != MODE_0){
+      if (*hw == 7 && *mode != MODE_0){
         pthread_mutex_lock( &(data_signal->lock) );
         data_signal->recording = false;
         data_signal->m0 = false;
@@ -913,7 +926,7 @@ void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, 
       update_motor_pins(motor_pins, motor_pin_values);
       
       // Signal Data thread to start recording
-      if (mode != MODE_0){
+      if (*hw == 7 && *mode != MODE_0){
         pthread_mutex_lock( &(data_signal->lock) );
         data_signal->recording = true;
         data_signal->m0 = false;
@@ -1005,10 +1018,12 @@ void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, 
       *mode = MODE_0;
 
       // Start m0 data sampling
-      pthread_mutex_lock( &(data_signal->lock) );
-      data_signal->recording = true;
-      data_signal->m0 = true;
-      pthread_mutex_unlock( &(data_signal->lock) );
+      if (*hw == 7){
+        pthread_mutex_lock( &(data_signal->lock) );
+        data_signal->recording = true;
+        data_signal->m0 = true;
+        pthread_mutex_unlock( &(data_signal->lock) );
+      }
 
       break;
 
@@ -1051,6 +1066,27 @@ void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, 
       }
       break;    
 
+    case '6':
+      #ifdef DEBUG
+      printf("\nMOTOR: Recieved Command: MODE 2\n");
+      #endif
+      *hw = 6;
+      break;   
+
+    case '7':
+      #ifdef DEBUG
+      printf("\nMOTOR: Recieved Command: MODE 2\n");
+      #endif
+      *hw = 7;
+      break;
+
+    case '8':
+      #ifdef DEBUG
+      printf("\nMOTOR: Recieved Command: MODE 2\n");
+      #endif
+      *hw = 8;
+      break;    
+    
     default:
       break;
   }

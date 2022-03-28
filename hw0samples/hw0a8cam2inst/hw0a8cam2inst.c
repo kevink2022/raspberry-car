@@ -105,9 +105,9 @@ int main( int argc, char *argv[] )
                 pixel[pixel_index].B = 255;
               }
               
-              pixel[pixel_index].R = pixel_value;  // same intensity for all three color
-              pixel[pixel_index].G = pixel_value;
-              pixel[pixel_index].B = pixel_value;
+              // pixel[pixel_index].R = pixel_value;  // same intensity for all three color
+              // pixel[pixel_index].G = pixel_value;
+              // pixel[pixel_index].B = pixel_value;
               pixel_value++;
               if (pixel_value == 255){
                 pixel_value = 0;

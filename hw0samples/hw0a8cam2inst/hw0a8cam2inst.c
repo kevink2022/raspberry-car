@@ -83,15 +83,27 @@ int main( int argc, char *argv[] )
             unsigned int      pixel_index;
             unsigned char     pixel_value;
 
+            printf("Height: %d, Width: %d", raspicam_wrapper_getWidth( Camera ), raspicam_wrapper_getHeight( Camera ));
+
             pixel = (struct RGB_pixel *)data; // view data as R-byte, G-byte, and B-byte per pixel
             pixel_count = raspicam_wrapper_getHeight( Camera ) * raspicam_wrapper_getWidth( Camera );
             pixel_value = 0;
             for (pixel_index = 0; pixel_index < pixel_count; pixel_index++)
             {
               // gray scale => average of R color, G color, and B color intensity
-              // pixel_value = (((unsigned int)(pixel[pixel_index].R)) +
-              //                ((unsigned int)(pixel[pixel_index].G)) +
-              //                ((unsigned int)(pixel[pixel_index].B))) / 3; // do not worry about rounding
+              pixel_value = (((unsigned int)(pixel[pixel_index].R)) +
+                             ((unsigned int)(pixel[pixel_index].G)) +
+                             ((unsigned int)(pixel[pixel_index].B))) / 3; // do not worry about rounding
+
+              if (pixel_value < 30){
+                pixel[pixel_index].R = 0;  // same intensity for all three color
+                pixel[pixel_index].G = 0;
+                pixel[pixel_index].B = 0;
+              } else {
+                pixel[pixel_index].R = 255;  // same intensity for all three color
+                pixel[pixel_index].G = 255;
+                pixel[pixel_index].B = 255;
+              }
               
               pixel[pixel_index].R = pixel_value;  // same intensity for all three color
               pixel[pixel_index].G = pixel_value;

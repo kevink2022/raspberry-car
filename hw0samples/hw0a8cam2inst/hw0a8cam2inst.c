@@ -85,15 +85,21 @@ int main( int argc, char *argv[] )
 
             pixel = (struct RGB_pixel *)data; // view data as R-byte, G-byte, and B-byte per pixel
             pixel_count = raspicam_wrapper_getHeight( Camera ) * raspicam_wrapper_getWidth( Camera );
+            pixel_value = 0;
             for (pixel_index = 0; pixel_index < pixel_count; pixel_index++)
             {
               // gray scale => average of R color, G color, and B color intensity
-              pixel_value = (((unsigned int)(pixel[pixel_index].R)) +
-                             ((unsigned int)(pixel[pixel_index].G)) +
-                             ((unsigned int)(pixel[pixel_index].B))) / 3; // do not worry about rounding
+              // pixel_value = (((unsigned int)(pixel[pixel_index].R)) +
+              //                ((unsigned int)(pixel[pixel_index].G)) +
+              //                ((unsigned int)(pixel[pixel_index].B))) / 3; // do not worry about rounding
+              
               pixel[pixel_index].R = pixel_value;  // same intensity for all three color
               pixel[pixel_index].G = pixel_value;
               pixel[pixel_index].B = pixel_value;
+              pixel_value++;
+              if (pixel_value == 255){
+                pixel_value = 0;
+              }
             }
             
             // save the image as picture file, .ppm format file

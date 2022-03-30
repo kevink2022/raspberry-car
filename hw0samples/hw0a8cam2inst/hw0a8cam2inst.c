@@ -85,7 +85,7 @@ int main( int argc, char *argv[] )
             struct RGB_pixel* pixel;
             //unsigned char   * pixel;
             unsigned int      pixel_count;
-            unsigned int      pixel_index;
+            unsigned long     pixel_index;
             unsigned char     pixel_value;
             unsigned int      by, bx, iy, ix;
             unsigned long     block_value;
@@ -105,7 +105,7 @@ int main( int argc, char *argv[] )
             for(bx = 0; bx < 80; bx++){
               for(by = 0; by < 60; by++){
                 block_value = 0;
-                pixel_index = ix + 1280*iy + (79-bx)*16 + by*16*1280;
+                pixel_index = (ix + 1280*iy + (bx)*16 + by*16*1280);
                 printf("bx %i", (79-bx));
 
                 for(iy = 0; iy < 16; iy++){

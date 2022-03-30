@@ -165,10 +165,11 @@ int main( int argc, char *argv[] )
                   left += 1;
                 }
               }
+              printf(" : ");
 
               offsets[bx] = offsets[bx]/left;
 
-              printf(" : %i\n", offsets[bx]);
+              printf("%i\n", offsets[bx]);
               
             }
               

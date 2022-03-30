@@ -89,7 +89,11 @@ int main( int argc, char *argv[] )
             unsigned char     pixel_value;
             unsigned int      by, bx, iy, ix;
             unsigned long     block_value;
-            unsigned long     cutoff = 10;
+            unsigned long     cutoff = 30;
+            bool              set_cutoff;
+            bool              image_map[60][80];
+            unsigned int      average[80];
+            unsigned char     left, right, center;
             int block = 0;
 
             printf("Height: %d, Width: %d", raspicam_wrapper_getWidth( Camera ), raspicam_wrapper_getHeight( Camera ));
@@ -125,6 +129,7 @@ int main( int argc, char *argv[] )
                       ((pixel[pixel_index].R)) = 0;
                       ((pixel[pixel_index].G)) = 0;
                       ((pixel[pixel_index].B)) = 0; // do not worry about rounding
+                      image_map[by][(79-bx)] = 1;
                     }
                   }
                 } else {
@@ -133,10 +138,27 @@ int main( int argc, char *argv[] )
                       ((pixel[pixel_index].R)) = 255;
                       ((pixel[pixel_index].G)) = 255;
                       ((pixel[pixel_index].B)) = 255; // do not worry about rounding
+
+                      image_map[by][(79-bx)] = 0;
                     }
                   }
                 }
-                if(1){ printf("%i\n", bx); }
+
+                left = 0;
+                center = 30;
+                while(image_map[by][center] != 0){
+                  center--;
+                  left++;
+                }
+                right = 0;
+                center = 30;
+                while(image_map[by][center] != 0){
+                  center++;
+                  right++;
+                }
+
+                average[79-bx] = right - left;
+                
               }
               
             }
@@ -150,7 +172,9 @@ int main( int argc, char *argv[] )
             // }
             //}
 
-            printf("Image Processed");
+            for(bx = 0; bx < 80; bx++){
+              printf("bx %i : %i\n", (79-bx), average[79-bx]);
+            }
         
             // save the image as picture file, .ppm format file
             fprintf( outFile, "P6\n" );  // write .ppm file header

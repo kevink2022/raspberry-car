@@ -85,23 +85,22 @@ int main( int argc, char *argv[] )
             struct RGB_pixel* pixel;
             //unsigned char   * pixel;
             unsigned int      pixel_count;
-            unsigned long     pixel_index;
+            unsigned int      pixel_index;
             unsigned char     pixel_value;
             unsigned int      by, bx, iy, ix;
             unsigned long     block_value;
-            unsigned long     cutoff = 30;
-            bool              set_cutoff;
-            bool              image_map[60][80];
-            unsigned int      average[80];
-            unsigned char     left = 0, right = 0, center = 0;
+            unsigned long     cutoff = 10;
             int block = 0;
 
-            printf("Height: %d, Width: %d\n", raspicam_wrapper_getWidth( Camera ), raspicam_wrapper_getHeight( Camera ));
+            printf("Height: %d, Width: %d", raspicam_wrapper_getWidth( Camera ), raspicam_wrapper_getHeight( Camera ));
 
+            sleep(1);
+
+            printf("Starting processing\n");
 
             pixel = (struct RGB_pixel*)data; // view data as R-byte, G-byte, and B-byte per pixel
-            //pixel_count = raspicam_wrapper_getHeight( Camera ) * raspicam_wrapper_getWidth( Camera );
-            //pixel_value = 0;
+            pixel_count = raspicam_wrapper_getHeight( Camera ) * raspicam_wrapper_getWidth( Camera );
+            pixel_value = 0;
             for(bx = 0; bx < 80; bx++){
               for(by = 0; by < 60; by++){
                 block_value = 0;
@@ -116,6 +115,9 @@ int main( int argc, char *argv[] )
                     //block_value += (pixel.R[ix + 1280*iy + bx*16 + by*16*1280]);
                   }
                 }
+
+                // printf("Block %i value: %lu\n", block, block_value);
+                // printf("  Adjusted %lu : Cutoff %lu\n", block_value/256, cutoff);
 
                 if (block_value/256 > cutoff) {
                   for(iy = 0; iy < 16; iy++){
@@ -136,26 +138,6 @@ int main( int argc, char *argv[] )
                 }
                 if(1){ printf("%i\n", bx); }
               }
-
-                
-                // printf(" ");
-
-                // left = 0;
-                // center = 30;  // calibrated center
-                // while(image_map[by][center] != 0){
-                //   center--;
-                //   left++;
-                // }
-                // right = 0;
-                // center = 30;  // calibrated center
-                // while(image_map[by][center] != 0){
-                //   center++;
-                //   right++;
-                // }
-
-                // average[79-bx] = right - left;
-                // printf(": %i\n", average[79-bx]);
-                
               
             }
               
@@ -168,6 +150,7 @@ int main( int argc, char *argv[] )
             // }
             //}
 
+            printf("Image Processed");
         
             // save the image as picture file, .ppm format file
             fprintf( outFile, "P6\n" );  // write .ppm file header

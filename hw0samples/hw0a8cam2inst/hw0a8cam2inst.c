@@ -145,19 +145,20 @@ int main( int argc, char *argv[] )
                 }
 
                 left = 0;
-                center = 30;
+                center = 30;  // calibrated center
                 while(image_map[by][center] != 0){
                   center--;
                   left++;
                 }
                 right = 0;
-                center = 30;
+                center = 30;  // calibrated center
                 while(image_map[by][center] != 0){
                   center++;
                   right++;
                 }
 
                 average[79-bx] = right - left;
+                printf("bx %i : %i\n", (79-bx), average[79-bx]);
                 
               }
               
@@ -172,9 +173,6 @@ int main( int argc, char *argv[] )
             // }
             //}
 
-            for(bx = 0; bx < 80; bx++){
-              printf("bx %i : %i\n", (79-bx), average[79-bx]);
-            }
         
             // save the image as picture file, .ppm format file
             fprintf( outFile, "P6\n" );  // write .ppm file header

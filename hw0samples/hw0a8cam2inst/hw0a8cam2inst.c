@@ -91,7 +91,8 @@ int main( int argc, char *argv[] )
             unsigned long     block_value;
             unsigned long     cutoff = 10;
             bool              image_map[80][60];
-            int block = 0;
+            unsigned int      offsets[80];
+            int block = 0, left = 0, right = 0, center = 30;
 
             printf("Height: %d, Width: %d", raspicam_wrapper_getWidth( Camera ), raspicam_wrapper_getHeight( Camera ));
 
@@ -143,6 +144,23 @@ int main( int argc, char *argv[] )
                 }
               }
               printf("bx %i\n", (bx));
+
+              left = 0;
+              center = 30;
+              while(image_map[bx][center] == 1){
+                left++;
+                center++;
+              }
+              right = 0;
+              center = 30;
+              while(image_map[bx][center] == 1){
+                right++;
+                center--;
+              }
+
+              offsets[bx] = right - left;
+
+              printf(" : %i\n", offsets[bx]);
               
             }
               

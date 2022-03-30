@@ -102,7 +102,7 @@ int main( int argc, char *argv[] )
             pixel_count = raspicam_wrapper_getHeight( Camera ) * raspicam_wrapper_getWidth( Camera );
             pixel_value = 0;
             for(by = 0; by < 60; by++){
-              for(bx = 0; by < 80; bx++){
+              for(bx = 0; bx < 80; bx++){
                 block_value = 0;
 
                 for(iy = 0; iy < 16; iy++){

@@ -115,8 +115,8 @@ int main( int argc, char *argv[] )
                   }
                 }
 
-                printf("Block %i value: %lu\n", block, block_value);
-                printf("  Adjusted %lu : Cutoff %lu\n", block_value/256, cutoff);
+                // printf("Block %i value: %lu\n", block, block_value);
+                // printf("  Adjusted %lu : Cutoff %lu\n", block_value/256, cutoff);
 
                 if (block_value/256 > cutoff) {
                   for(iy = 0; iy < 16; iy++){
@@ -146,6 +146,8 @@ int main( int argc, char *argv[] )
             //   pixel_value = 0;
             // }
             //}
+
+            printf("Image Processed");
         
             // save the image as picture file, .ppm format file
             fprintf( outFile, "P6\n" );  // write .ppm file header

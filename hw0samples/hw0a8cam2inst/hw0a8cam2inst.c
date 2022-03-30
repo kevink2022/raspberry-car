@@ -135,8 +135,8 @@ int main( int argc, char *argv[] )
                     }
                   }
                 }
-                printf(".");
               }
+              if(by%10 == 0){ printf("%i", by); }
             }
               
             // pixel[pixel_index].R = pixel_value;  // same intensity for all three color

@@ -93,7 +93,7 @@ int main( int argc, char *argv[] )
             bool              set_cutoff;
             bool              image_map[60][80];
             unsigned int      average[80];
-            unsigned char     left, right, center;
+            unsigned char     left = 0, right = 0, center = 0;
             int block = 0;
 
             printf("Height: %d, Width: %d\n", raspicam_wrapper_getWidth( Camera ), raspicam_wrapper_getHeight( Camera ));
@@ -105,8 +105,7 @@ int main( int argc, char *argv[] )
             for(bx = 0; bx < 80; bx++){
               for(by = 0; by < 60; by++){
                 block_value = 0;
-                pixel_index = (ix + 1280*iy + (bx)*16 + by*16*1280);
-                printf("bx %i", (bx));
+                pixel_index = ix + 1280*iy + (79-bx)*16 + by*16*1280;
 
                 for(iy = 0; iy < 16; iy++){
                   for(ix = 0; ix < 16; ix++){
@@ -114,11 +113,9 @@ int main( int argc, char *argv[] )
                                   ((unsigned int)(pixel[pixel_index].G)) +
                                   ((unsigned int)(pixel[pixel_index].B))) / 3; // do not worry about rounding
 
+                    //block_value += (pixel.R[ix + 1280*iy + bx*16 + by*16*1280]);
                   }
                 }
-
-                
-                
 
                 if (block_value/256 > cutoff) {
                   for(iy = 0; iy < 16; iy++){
@@ -126,8 +123,6 @@ int main( int argc, char *argv[] )
                       ((pixel[pixel_index].R)) = 0;
                       ((pixel[pixel_index].G)) = 0;
                       ((pixel[pixel_index].B)) = 0; // do not worry about rounding
-                      
-                      //image_map[by][(79-bx)] = 1;
                     }
                   }
                 } else {
@@ -136,11 +131,11 @@ int main( int argc, char *argv[] )
                       ((pixel[pixel_index].R)) = 255;
                       ((pixel[pixel_index].G)) = 255;
                       ((pixel[pixel_index].B)) = 255; // do not worry about rounding
-
-                      //image_map[by][(79-bx)] = 0;
                     }
                   }
                 }
+                if(1){ printf("%i\n", bx); }
+              }
 
                 
                 // printf(" ");
@@ -161,7 +156,6 @@ int main( int argc, char *argv[] )
                 // average[79-bx] = right - left;
                 // printf(": %i\n", average[79-bx]);
                 
-              }
               
             }
               

@@ -90,8 +90,13 @@ int main( int argc, char *argv[] )
             unsigned int      by, bx, iy, ix;
             unsigned long     block_value;
             unsigned long     cutoff = 10;
+            int block = 0;
 
             printf("Height: %d, Width: %d", raspicam_wrapper_getWidth( Camera ), raspicam_wrapper_getHeight( Camera ));
+
+            sleep(1);
+
+            printf("Starting processing\n");
 
             pixel = (struct RGB_pixel*)data; // view data as R-byte, G-byte, and B-byte per pixel
             pixel_count = raspicam_wrapper_getHeight( Camera ) * raspicam_wrapper_getWidth( Camera );
@@ -109,6 +114,9 @@ int main( int argc, char *argv[] )
                     //block_value += (pixel.R[ix + 1280*iy + bx*16 + by*16*1280]);
                   }
                 }
+
+                printf("Block %i value: %lu\n", block, block_value);
+                printf("  Adjusted %lu : Cutoff %lu\n", block_value/256, cutoff);
 
                 if (block_value/256 > cutoff) {
                   for(iy = 0; iy < 16; iy++){

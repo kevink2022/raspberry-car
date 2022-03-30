@@ -96,11 +96,10 @@ int main( int argc, char *argv[] )
             unsigned char     left, right, center;
             int block = 0;
 
-            printf("Height: %d, Width: %d", raspicam_wrapper_getWidth( Camera ), raspicam_wrapper_getHeight( Camera ));
+            printf("Height: %d, Width: %d\n", raspicam_wrapper_getWidth( Camera ), raspicam_wrapper_getHeight( Camera ));
 
             sleep(1);
 
-            printf("Starting processing\n");
 
             pixel = (struct RGB_pixel*)data; // view data as R-byte, G-byte, and B-byte per pixel
             pixel_count = raspicam_wrapper_getHeight( Camera ) * raspicam_wrapper_getWidth( Camera );
@@ -144,6 +143,9 @@ int main( int argc, char *argv[] )
                   }
                 }
 
+                printf("bx %i", (79-bx));
+                printf(" ");
+
                 left = 0;
                 center = 30;  // calibrated center
                 while(image_map[by][center] != 0){
@@ -158,7 +160,7 @@ int main( int argc, char *argv[] )
                 }
 
                 average[79-bx] = right - left;
-                printf("bx %i : %i\n", (79-bx), average[79-bx]);
+                printf(": %i\n", average[79-bx]);
                 
               }
               

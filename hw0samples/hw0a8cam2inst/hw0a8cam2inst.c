@@ -45,14 +45,14 @@ int main( int argc, char *argv[] )
         raspicam_wrapper_grab( Camera );
 
         // allocate memory to obtain the image data of picture
-        image_size = raspicam_wrapper_getImageTypeSize( Camera, RASPICAM_WRAPPER_FORMAT_RGB );
+        image_size = raspicam_wrapper_getImageTypeSize( Camera, RASPICAM_WRAPPER_FORMAT_GRAY );
         // find image size first, then allocate the memory of the image size
         // image data treated as 1 dimensional string
         unsigned char *data = (unsigned char *)malloc( image_size );
 
         // extract the image in rgb format
         // transfer camera image to 'data'
-        raspicam_wrapper_retrieve( Camera, data, RASPICAM_WRAPPER_FORMAT_RGB );
+        raspicam_wrapper_retrieve( Camera, data, RASPICAM_WRAPPER_FORMAT_GRAY );
 
         // save the image as picture file, .ppm format file
         FILE * outFile = fopen( "pic1.ppm", "wb" );
@@ -61,7 +61,7 @@ int main( int argc, char *argv[] )
           fprintf( outFile, "P6\n" );  // write .ppm file header
           fprintf( outFile, "%d %d 255\n", raspicam_wrapper_getWidth( Camera ), raspicam_wrapper_getHeight( Camera ) );
           // write the image data
-          fwrite( data, 1, raspicam_wrapper_getImageTypeSize( Camera, RASPICAM_WRAPPER_FORMAT_RGB ), outFile );
+          fwrite( data, 1, raspicam_wrapper_getImageTypeSize( Camera, RASPICAM_WRAPPER_FORMAT_GRAY ), outFile );
           fclose( outFile );
           printf( "Image, picture saved as pic1.ppm\n" );
 
@@ -72,56 +72,69 @@ int main( int argc, char *argv[] )
           {
             // convert to gray-scale picture, and
             // now read data as RGB pixel
-            struct RGB_pixel
-            {
-                unsigned char R;
-                unsigned char G;
-                unsigned char B;
-            };
-            struct RGB_pixel* pixel;
+            // struct RGB_pixel
+            // {
+            //     unsigned char R;
+            //     unsigned char G;
+            //     unsigned char B;
+            // };
+            // struct RGB_pixel* pixel;
+            unsigned char   * pixel;
             unsigned int      pixel_count;
             unsigned int      pixel_index;
             unsigned char     pixel_value;
+            unsigned int      by, bx, iy, ix;
+            unsigned long     block_value;
+            unsigned long     cutoff = 10;
 
             printf("Height: %d, Width: %d", raspicam_wrapper_getWidth( Camera ), raspicam_wrapper_getHeight( Camera ));
 
-            pixel = (struct RGB_pixel *)data; // view data as R-byte, G-byte, and B-byte per pixel
+            pixel = (unsigned char *)data; // view data as R-byte, G-byte, and B-byte per pixel
             pixel_count = raspicam_wrapper_getHeight( Camera ) * raspicam_wrapper_getWidth( Camera );
             pixel_value = 0;
-            for (pixel_index = 0; pixel_index < pixel_count; pixel_index++)
-            {
-              // gray scale => average of R color, G color, and B color intensity
-              pixel_value = (((unsigned int)(pixel[pixel_index].R)) +
-                             ((unsigned int)(pixel[pixel_index].G)) +
-                             ((unsigned int)(pixel[pixel_index].B))) / 3; // do not worry about rounding
+            for(by = 0; by < 60; by++){
+              for(bx = 0; by < 80; bx++){
+                block_value = 0;
 
-              if (pixel_value < 30){
-                pixel[pixel_index].R = 0;  // same intensity for all three color
-                pixel[pixel_index].G = 0;
-                pixel[pixel_index].B = 0;
-              } else {
-                pixel[pixel_index].R = 255;  // same intensity for all three color
-                pixel[pixel_index].G = 255;
-                pixel[pixel_index].B = 255;
-              }
-              
-              // pixel[pixel_index].R = pixel_value;  // same intensity for all three color
-              // pixel[pixel_index].G = pixel_value;
-              // pixel[pixel_index].B = pixel_value;
-              pixel_value++;
-              if (pixel_value == 255){
-                pixel_value = 0;
+                for(iy = 0; iy < 16; iy++){
+                  for(ix = 0; ix < 16; ix++){
+                    block_value += (pixel[ix + 1280*iy + bx*16 + by*16*1280]);
+                  }
+                }
+
+                if (block_value/256 > cutoff) {
+                  for(iy = 0; iy < 16; iy++){
+                    for(ix = 0; ix < 16; ix++){
+                      (pixel[ix + 1280*iy + bx*16 + by*16*1280]) = 0;
+                    }
+                  }
+                } else {
+                  for(iy = 0; iy < 16; iy++){
+                    for(ix = 0; ix < 16; ix++){
+                      (pixel[ix + 1280*iy + bx*16 + by*16*1280]) = 255;
+                    }
+                  }
+                }
               }
             }
-            
+              
+            // pixel[pixel_index].R = pixel_value;  // same intensity for all three color
+            // pixel[pixel_index].G = pixel_value;
+            // pixel[pixel_index].B = pixel_value;
+            // pixel_value++;
+            // if (pixel_value == 255){
+            //   pixel_value = 0;
+            // }
+            //}
+        
             // save the image as picture file, .ppm format file
             fprintf( outFile, "P6\n" );  // write .ppm file header
             fprintf( outFile, "%d %d 255\n", raspicam_wrapper_getWidth( Camera ), raspicam_wrapper_getHeight( Camera ) );
             // write the image data
-            fwrite( data, 1, raspicam_wrapper_getImageTypeSize( Camera, RASPICAM_WRAPPER_FORMAT_RGB ), outFile );
+            fwrite( data, 1, raspicam_wrapper_getImageTypeSize( Camera, RASPICAM_WRAPPER_FORMAT_GRAY ), outFile );
             fclose( outFile );
             printf( "Image, picture saved as pic1g.ppm\n" );
-            
+      
             return_value = 0;
           }
           else

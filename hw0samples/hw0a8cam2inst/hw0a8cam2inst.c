@@ -136,8 +136,8 @@ int main( int argc, char *argv[] )
                     }
                   }
                 }
-                if(1){ printf("%i\n", bx); }
               }
+              printf("bx %i\n", (79-bx));
               
             }
               

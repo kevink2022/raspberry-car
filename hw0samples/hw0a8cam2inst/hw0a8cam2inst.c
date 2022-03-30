@@ -106,7 +106,7 @@ int main( int argc, char *argv[] )
               for(by = 0; by < 60; by++){
                 block_value = 0;
                 pixel_index = (ix + 1280*iy + (bx)*16 + by*16*1280);
-                //printf("bx %i", (79-bx));
+                printf("bx %i", (bx));
 
                 for(iy = 0; iy < 16; iy++){
                   for(ix = 0; ix < 16; ix++){

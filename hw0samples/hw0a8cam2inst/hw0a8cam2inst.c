@@ -145,20 +145,28 @@ int main( int argc, char *argv[] )
               }
               printf("bx %i\n", (bx));
 
-              left = 0;
-              center = 35;
-              while(image_map[bx][center] == 1){
-                left++;
-                center++;
-              }
-              right = 0;
-              center = 35;
-              while(image_map[bx][center] == 1){
-                right++;
-                center--;
+              
+              // while(image_map[bx][center] == 1){
+              //   left++;
+              //   center++;
+              // }
+              // right = 0;
+              // center = 35;
+              // while(image_map[bx][center] == 1){
+              //   right++;
+              //   center--;
+              // }
+              offsets[bx] = 0;  // average position
+              left = 0;         // track width
+              center = 10;      // start searching
+              for(center = 10; center < 50; center++){
+                if(image_map[bx][center] == 1){
+                  offsets[bx] += center;
+                  left += 1;
+                }
               }
 
-              offsets[bx] = right - left;
+              offsets[bx] = offsets[bx]/left;
 
               printf(" : %i\n", offsets[bx]);
               

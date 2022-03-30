@@ -146,13 +146,13 @@ int main( int argc, char *argv[] )
               printf("bx %i\n", (bx));
 
               left = 0;
-              center = 30;
+              center = 35;
               while(image_map[bx][center] == 1){
                 left++;
                 center++;
               }
               right = 0;
-              center = 30;
+              center = 35;
               while(image_map[bx][center] == 1){
                 right++;
                 center--;

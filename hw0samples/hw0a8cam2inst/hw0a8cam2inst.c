@@ -101,8 +101,8 @@ int main( int argc, char *argv[] )
             pixel = (struct RGB_pixel*)data; // view data as R-byte, G-byte, and B-byte per pixel
             pixel_count = raspicam_wrapper_getHeight( Camera ) * raspicam_wrapper_getWidth( Camera );
             pixel_value = 0;
-            for(by = 0; by < 60; by++){
-              for(bx = 0; bx < 80; bx++){
+            for(bx = 0; bx < 80; bx++){
+              for(by = 0; by < 60; by++){
                 block_value = 0;
 
                 for(iy = 0; iy < 16; iy++){

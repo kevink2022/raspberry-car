@@ -65,6 +65,10 @@ int main( int argc, char *argv[] )
           fclose( outFile );
           printf( "Image, picture saved as pic1.ppm\n" );
 
+          printf( "Image size: %lu\n", image_size );
+
+          printf( "Max pixel: %lu\n", 15 + 1280*15 + 79*16 + 59*16*1280 );
+
 
           // change the image as gray scale picture and save as another file
           FILE * outFile = fopen( "pic1g.ppm", "wb" );

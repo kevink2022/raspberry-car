@@ -135,7 +135,7 @@ int main( int argc, char *argv[] )
                     }
                   }
                 }
-                if(bx%10 == 0){ printf("%i", by); }
+                if(1){ printf("%i", bx); }
               }
               
             }

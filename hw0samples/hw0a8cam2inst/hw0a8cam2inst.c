@@ -100,12 +100,13 @@ int main( int argc, char *argv[] )
 
 
             pixel = (struct RGB_pixel*)data; // view data as R-byte, G-byte, and B-byte per pixel
-            pixel_count = raspicam_wrapper_getHeight( Camera ) * raspicam_wrapper_getWidth( Camera );
-            pixel_value = 0;
+            //pixel_count = raspicam_wrapper_getHeight( Camera ) * raspicam_wrapper_getWidth( Camera );
+            //pixel_value = 0;
             for(bx = 0; bx < 80; bx++){
               for(by = 0; by < 60; by++){
                 block_value = 0;
                 pixel_index = ix + 1280*iy + (79-bx)*16 + by*16*1280;
+                printf("bx %i", (79-bx));
 
                 for(iy = 0; iy < 16; iy++){
                   for(ix = 0; ix < 16; ix++){
@@ -113,12 +114,11 @@ int main( int argc, char *argv[] )
                                   ((unsigned int)(pixel[pixel_index].G)) +
                                   ((unsigned int)(pixel[pixel_index].B))) / 3; // do not worry about rounding
 
-                    //block_value += (pixel.R[ix + 1280*iy + bx*16 + by*16*1280]);
                   }
                 }
 
                 
-                //printf("bx %i", (79-bx));
+                
 
                 if (block_value/256 > cutoff) {
                   for(iy = 0; iy < 16; iy++){

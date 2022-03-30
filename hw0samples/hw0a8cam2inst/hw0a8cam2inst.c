@@ -52,7 +52,7 @@ int main( int argc, char *argv[] )
 
         // extract the image in rgb format
         // transfer camera image to 'data'
-        raspicam_wrapper_retrieve( Camera, data, RASPICAM_WRAPPER_FORMAT_IGNORE );
+        raspicam_wrapper_retrieve( Camera, data, RASPICAM_WRAPPER_FORMAT_RGB );
 
         // save the image as picture file, .ppm format file
         FILE * outFile = fopen( "pic1.ppm", "wb" );
@@ -139,7 +139,7 @@ int main( int argc, char *argv[] )
             fprintf( outFile, "P6\n" );  // write .ppm file header
             fprintf( outFile, "%d %d 255\n", raspicam_wrapper_getWidth( Camera ), raspicam_wrapper_getHeight( Camera ) );
             // write the image data
-            fwrite( data, 1, raspicam_wrapper_getImageTypeSize( Camera, RASPICAM_WRAPPER_FORMAT_GRAY ), outFile );
+            fwrite( data, 1, raspicam_wrapper_getImageTypeSize( Camera, RASPICAM_WRAPPER_FORMAT_RGB ), outFile );
             fclose( outFile );
             printf( "Image, picture saved as pic1g.ppm\n" );
       

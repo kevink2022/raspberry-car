@@ -121,6 +121,7 @@ int main( int argc, char *argv[] )
 
                 // printf("Block %i value: %lu\n", block, block_value);
                 // printf("  Adjusted %lu : Cutoff %lu\n", block_value/256, cutoff);
+                printf("bx %i", (79-bx));
 
                 if (block_value/256 > cutoff) {
                   for(iy = 0; iy < 16; iy++){
@@ -143,7 +144,7 @@ int main( int argc, char *argv[] )
                   }
                 }
 
-                printf("bx %i", (79-bx));
+                
                 printf(" ");
 
                 left = 0;

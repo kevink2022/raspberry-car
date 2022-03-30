@@ -98,8 +98,6 @@ int main( int argc, char *argv[] )
 
             printf("Height: %d, Width: %d\n", raspicam_wrapper_getWidth( Camera ), raspicam_wrapper_getHeight( Camera ));
 
-            sleep(1);
-
 
             pixel = (struct RGB_pixel*)data; // view data as R-byte, G-byte, and B-byte per pixel
             pixel_count = raspicam_wrapper_getHeight( Camera ) * raspicam_wrapper_getWidth( Camera );
@@ -119,9 +117,8 @@ int main( int argc, char *argv[] )
                   }
                 }
 
-                // printf("Block %i value: %lu\n", block, block_value);
-                // printf("  Adjusted %lu : Cutoff %lu\n", block_value/256, cutoff);
-                printf("bx %i", (79-bx));
+                
+                //printf("bx %i", (79-bx));
 
                 if (block_value/256 > cutoff) {
                   for(iy = 0; iy < 16; iy++){
@@ -129,7 +126,8 @@ int main( int argc, char *argv[] )
                       ((pixel[pixel_index].R)) = 0;
                       ((pixel[pixel_index].G)) = 0;
                       ((pixel[pixel_index].B)) = 0; // do not worry about rounding
-                      image_map[by][(79-bx)] = 1;
+                      
+                      //image_map[by][(79-bx)] = 1;
                     }
                   }
                 } else {
@@ -139,29 +137,29 @@ int main( int argc, char *argv[] )
                       ((pixel[pixel_index].G)) = 255;
                       ((pixel[pixel_index].B)) = 255; // do not worry about rounding
 
-                      image_map[by][(79-bx)] = 0;
+                      //image_map[by][(79-bx)] = 0;
                     }
                   }
                 }
 
                 
-                printf(" ");
+                // printf(" ");
 
-                left = 0;
-                center = 30;  // calibrated center
-                while(image_map[by][center] != 0){
-                  center--;
-                  left++;
-                }
-                right = 0;
-                center = 30;  // calibrated center
-                while(image_map[by][center] != 0){
-                  center++;
-                  right++;
-                }
+                // left = 0;
+                // center = 30;  // calibrated center
+                // while(image_map[by][center] != 0){
+                //   center--;
+                //   left++;
+                // }
+                // right = 0;
+                // center = 30;  // calibrated center
+                // while(image_map[by][center] != 0){
+                //   center++;
+                //   right++;
+                // }
 
-                average[79-bx] = right - left;
-                printf(": %i\n", average[79-bx]);
+                // average[79-bx] = right - left;
+                // printf(": %i\n", average[79-bx]);
                 
               }
               

@@ -159,15 +159,16 @@ int main( int argc, char *argv[] )
               offsets[bx] = 0;  // average position
               left = 0;         // track width
               center = 10;      // start searching
+              right = 0;        // accumilating offset
               for(center = 10; center < 50; center++){
                 if(image_map[bx][center] == 1){
-                  offsets[bx] += center;
+                  right += center;
                   left += 1;
                 }
               }
               printf(" : ");
 
-              offsets[bx] = (int)offsets[bx]/(int)left;
+              offsets[bx] = right/left;
 
               printf("%i\n", offsets[bx]);
               

@@ -45,14 +45,14 @@ int main( int argc, char *argv[] )
         raspicam_wrapper_grab( Camera );
 
         // allocate memory to obtain the image data of picture
-        image_size = raspicam_wrapper_getImageTypeSize( Camera, RASPICAM_WRAPPER_FORMAT_GRAY );
+        image_size = raspicam_wrapper_getImageTypeSize( Camera, RASPICAM_WRAPPER_FORMAT_RGB );
         // find image size first, then allocate the memory of the image size
         // image data treated as 1 dimensional string
         unsigned char *data = (unsigned char *)malloc( image_size );
 
         // extract the image in rgb format
         // transfer camera image to 'data'
-        raspicam_wrapper_retrieve( Camera, data, RASPICAM_WRAPPER_FORMAT_GRAY );
+        raspicam_wrapper_retrieve( Camera, data, RASPICAM_WRAPPER_FORMAT_RGB );
 
         // save the image as picture file, .ppm format file
         FILE * outFile = fopen( "pic1.ppm", "wb" );
@@ -61,7 +61,7 @@ int main( int argc, char *argv[] )
           fprintf( outFile, "P6\n" );  // write .ppm file header
           fprintf( outFile, "%d %d 255\n", raspicam_wrapper_getWidth( Camera ), raspicam_wrapper_getHeight( Camera ) );
           // write the image data
-          fwrite( data, 1, raspicam_wrapper_getImageTypeSize( Camera, RASPICAM_WRAPPER_FORMAT_GRAY ), outFile );
+          fwrite( data, 1, raspicam_wrapper_getImageTypeSize( Camera, RASPICAM_WRAPPER_FORMAT_RGB ), outFile );
           fclose( outFile );
           printf( "Image, picture saved as pic1.ppm\n" );
 
@@ -72,14 +72,14 @@ int main( int argc, char *argv[] )
           {
             // convert to gray-scale picture, and
             // now read data as RGB pixel
-            // struct RGB_pixel
-            // {
-            //     unsigned char R;
-            //     unsigned char G;
-            //     unsigned char B;
-            // };
-            // struct RGB_pixel* pixel;
-            unsigned char   * pixel;
+            struct RGB_pixel
+            {
+                unsigned char R;
+                unsigned char G;
+                unsigned char B;
+            };
+            struct RGB_pixel* pixel;
+            //unsigned char   * pixel;
             unsigned int      pixel_count;
             unsigned int      pixel_index;
             unsigned char     pixel_value;
@@ -89,7 +89,7 @@ int main( int argc, char *argv[] )
 
             printf("Height: %d, Width: %d", raspicam_wrapper_getWidth( Camera ), raspicam_wrapper_getHeight( Camera ));
 
-            pixel = (unsigned char *)data; // view data as R-byte, G-byte, and B-byte per pixel
+            pixel = (struct RGB_pixel*)data; // view data as R-byte, G-byte, and B-byte per pixel
             pixel_count = raspicam_wrapper_getHeight( Camera ) * raspicam_wrapper_getWidth( Camera );
             pixel_value = 0;
             for(by = 0; by < 60; by++){
@@ -98,20 +98,28 @@ int main( int argc, char *argv[] )
 
                 for(iy = 0; iy < 16; iy++){
                   for(ix = 0; ix < 16; ix++){
-                    block_value += (pixel[ix + 1280*iy + bx*16 + by*16*1280]);
+                    block_value += (((unsigned int)(pixel[ix + 1280*iy + bx*16 + by*16*1280].R)) +
+                                  ((unsigned int)(pixel[ix + 1280*iy + bx*16 + by*16*1280].G)) +
+                                  ((unsigned int)(pixel[ix + 1280*iy + bx*16 + by*16*1280].B))) / 3; // do not worry about rounding
+
+                    //block_value += (pixel.R[ix + 1280*iy + bx*16 + by*16*1280]);
                   }
                 }
 
                 if (block_value/256 > cutoff) {
                   for(iy = 0; iy < 16; iy++){
                     for(ix = 0; ix < 16; ix++){
-                      (pixel[ix + 1280*iy + bx*16 + by*16*1280]) = 0;
+                      ((pixel[ix + 1280*iy + bx*16 + by*16*1280].R)) = 0;
+                      ((pixel[ix + 1280*iy + bx*16 + by*16*1280].G)) = 0;
+                      ((pixel[ix + 1280*iy + bx*16 + by*16*1280].B)) = 0; // do not worry about rounding
                     }
                   }
                 } else {
                   for(iy = 0; iy < 16; iy++){
                     for(ix = 0; ix < 16; ix++){
-                      (pixel[ix + 1280*iy + bx*16 + by*16*1280]) = 255;
+                      ((pixel[ix + 1280*iy + bx*16 + by*16*1280].R)) = 255;
+                      ((pixel[ix + 1280*iy + bx*16 + by*16*1280].G)) = 255;
+                      ((pixel[ix + 1280*iy + bx*16 + by*16*1280].B)) = 255; // do not worry about rounding
                     }
                   }
                 }

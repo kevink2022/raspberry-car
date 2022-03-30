@@ -90,6 +90,7 @@ int main( int argc, char *argv[] )
             unsigned int      by, bx, iy, ix;
             unsigned long     block_value;
             unsigned long     cutoff = 10;
+            bool              image_map[80][60];
             int block = 0;
 
             printf("Height: %d, Width: %d", raspicam_wrapper_getWidth( Camera ), raspicam_wrapper_getHeight( Camera ));
@@ -125,8 +126,11 @@ int main( int argc, char *argv[] )
                       ((pixel[ix + 1280*iy + (79-bx)*16 + by*16*1280].R)) = 0;
                       ((pixel[ix + 1280*iy + (79-bx)*16 + by*16*1280].G)) = 0;
                       ((pixel[ix + 1280*iy + (79-bx)*16 + by*16*1280].B)) = 0; // do not worry about rounding
+                      
+
                     }
                   }
+                  image_map[bx][by] = 0;
                 } else {
                   for(iy = 0; iy < 16; iy++){
                     for(ix = 0; ix < 16; ix++){
@@ -135,9 +139,10 @@ int main( int argc, char *argv[] )
                       ((pixel[ix + 1280*iy + (79-bx)*16 + by*16*1280].B)) = 255; // do not worry about rounding
                     }
                   }
+                  image_map[bx][by] = 1;
                 }
               }
-              printf("bx %i\n", (79-bx));
+              printf("bx %i\n", (bx));
               
             }
               

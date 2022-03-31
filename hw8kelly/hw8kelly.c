@@ -420,13 +420,25 @@ void *ThreadCamera( void * arg  )
 
       raspicam_wrapper_grab( Camera );
 
+      #ifdef DEBUG
+      printf("\nCAMERA: Calibrate grab \n");
+      #endif
+
       image_size = raspicam_wrapper_getImageTypeSize( Camera, RASPICAM_WRAPPER_FORMAT_GRAY );
 
       data = (unsigned char *)malloc( image_size );
 
       raspicam_wrapper_retrieve( Camera, data, RASPICAM_WRAPPER_FORMAT_GRAY );
 
+      #ifdef DEBUG
+      printf("\nCAMERA: Calibrate retreive \n");
+      #endif
+
       calibrate_camera(data, &cutoff, averages);
+
+      #ifdef DEBUG
+      printf("\nCAMERA: Calibrate function \n");
+      #endif
 
       parameter->calibrate->pause = false;
     }

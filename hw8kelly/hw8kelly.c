@@ -500,6 +500,9 @@ void *ThreadCamera( void * arg  )
             local_pin_values.A_PWM = PWM_MOTOR_MAX;
             local_pin_values.B_PWM = PWM_MOTOR_MAX;
           }
+        } else {
+          local_pin_values.A_PWM = PWM_MOTOR_MAX;
+          local_pin_values.B_PWM = PWM_MOTOR_MAX;
         }
       }
       pthread_mutex_lock( &(parameter->camera_signal->lock) );

@@ -2161,7 +2161,7 @@ void get_offsets(unsigned char * data, unsigned int* cutoff, int* averages, int*
 
     #define DEBUG
     #ifdef DEBUG
-    printf("%i, %i, %i | ", offsets[bx], track_instances, track_blocks);
+    printf("%i, %i | ", offsets[bx], averages[bx]);
     #endif
     #undef DEBUG
 

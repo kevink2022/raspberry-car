@@ -2064,7 +2064,7 @@ void calibrate_camera(unsigned char * data, unsigned int* cutoff, int* averages)
       }
 
       // If brightness is less then the cutoff, it is likely the track, so mark it
-      printf("| %i, %i, |", block_value , *cutoff);
+      // printf("| %i, %i, |", block_value , *cutoff);
       if( (block_value/256 < *cutoff) ) {
         image_map[bx][by] = 1;
       } else {

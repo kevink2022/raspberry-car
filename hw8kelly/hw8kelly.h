@@ -249,6 +249,6 @@ void print_samples(data_sample * data_samples, unsigned int * sample_count);
 
 void write_to_file(int mode, data_sample * data_samples, unsigned int * sample_count);
 
-void calibrate_camera(void* data, unsigned int* cutoff, int* averages);
+void calibrate_camera(unsigned char * data, unsigned int* cutoff, int* averages);
 
-void get_offsets(void* data, unsigned int* cutoff, int* averages, int* offsets);
+void get_offsets(unsigned char * data, unsigned int* cutoff, int* averages, int* offsets);

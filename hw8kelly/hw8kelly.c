@@ -396,7 +396,7 @@ void *ThreadCamera( void * arg  )
   unsigned long                     block_value;
   unsigned int                      cutoff = 90;
   unsigned int                      by, bx, iy, ix;
-  struct RGB_pixel               *  data;
+  unsigned char                  *  data;
   motor_pin_values                  local_pin_values;
   bool                              change = false;
   #define DEBUG
@@ -443,7 +443,7 @@ void *ThreadCamera( void * arg  )
 
       image_size = raspicam_wrapper_getImageTypeSize( Camera, RASPICAM_WRAPPER_FORMAT_RGB );
 
-      data = (struct RGB_pixel *)malloc( image_size );
+      data = (unsigned char *)malloc( image_size );
 
       raspicam_wrapper_retrieve( Camera, data, RASPICAM_WRAPPER_FORMAT_RGB );
 
@@ -1990,7 +1990,7 @@ void write_to_file(int mode, data_sample * data_samples, unsigned int * sample_c
 
 #undef DEBUG
 
-void calibrate_camera(void* data, unsigned int* cutoff, int* averages){
+void calibrate_camera(unsigned char * data, unsigned int* cutoff, int* averages){
 
   unsigned int        by, bx, iy, ix;
   unsigned long       block_value;
@@ -2106,7 +2106,7 @@ void calibrate_camera(void* data, unsigned int* cutoff, int* averages){
   #endif
 }
 
-void get_offsets(void* data, unsigned int* cutoff, int* averages, int* offsets){
+void get_offsets(unsigned char * data, unsigned int* cutoff, int* averages, int* offsets){
 
   unsigned int        by, bx, iy, ix;
   unsigned long       block_value;

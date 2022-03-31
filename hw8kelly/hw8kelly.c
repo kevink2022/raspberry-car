@@ -376,7 +376,7 @@ void *ThreadData( void * arg  )
   printf( "DATA: Exit\n" );
 }
 
-#define DIVERGE_CUTOFF 40
+#define DIVERGE_CUTOFF 12
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //  ThreadCamera()
@@ -419,8 +419,6 @@ void *ThreadCamera( void * arg  )
   {
     pthread_mutex_unlock( &(parameter->done->lock) );
 
-    
-  
     sem_wait(parameter->camera_thread_sem);
   
     // Check for calibration
@@ -1968,7 +1966,7 @@ void write_to_file(int mode, data_sample * data_samples, unsigned int * sample_c
   fclose(file);
 }
 
-#define CUTOFF_DIVIDER 5
+#define CUTOFF_DIVIDER 2
 
 #undef DEBUG
 

@@ -1970,6 +1970,9 @@ void calibrate_camera(void* data, unsigned int* cutoff, int* averages){
     for(by = 0; by < 60; by++){
       block_value = 0;
       
+      #ifdef DEBUG
+      printf("bx: %i | by: %i \n", bx, by);
+      #endif
       // Get the pixel values for a 16x16 block
       for(iy = 0; iy < 16; iy++){
         for(ix = 0; ix < 16; ix++){

@@ -413,6 +413,9 @@ void *ThreadCamera( void * arg  )
 
   Camera = raspicam_wrapper_create();
   if (Camera == NULL){
+    printf("\nCAMERA: Camera couldn't create\n");
+  }
+  if(raspicam_wrapper_open( Camera )){
     printf("\nCAMERA: Camera couldn't open\n");
   }
 

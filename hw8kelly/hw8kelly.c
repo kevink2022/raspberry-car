@@ -474,19 +474,19 @@ void *ThreadCamera( void * arg  )
       get_offsets(data, &cutoff, averages, offsets);
 
       for (bx = 1; bx < DIVERGE_CUTOFF; bx++){
-        if (abs(offsets[bx]) > 5){
+        if (abs(offsets[bx]) > 10){
           diverge_point = bx;
           
-          if (diverge_point < 3){
+          if (diverge_point < 4){
             turn = (PWM_MOTOR_MIN + (offsets[diverge_point]/5)*10);
 
             if(turn > PWM_MOTOR_MAX){turn = PWM_MOTOR_MAX;}
 
             if(offsets[diverge_point] < 0){
-              local_pin_values.A_PWM = turn;
+              local_pin_values.A_PWM = PWM_MOTOR_MAX;
               local_pin_values.B_PWM = PWM_MOTOR_MIN;
             } else {
-              local_pin_values.B_PWM = turn;
+              local_pin_values.B_PWM = PWM_MOTOR_MAX;
               local_pin_values.A_PWM = PWM_MOTOR_MIN;
             }
           }

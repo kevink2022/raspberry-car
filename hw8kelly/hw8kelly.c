@@ -15,9 +15,9 @@
 #define CLOCK_PERIOD 0.01
 
 // HW8 CAMERA PARAMS
-#define CLOCK_CAMERA_MULTIPLIER 3
-#define CAMERA_TURN_DELAY 1
-#define JUICE 15
+#define CLOCK_CAMERA_MULTIPLIER 2
+#define CAMERA_TURN_DELAY 4
+#define JUICE 8
 
 
 #define QUEUE_SIZE 100
@@ -564,10 +564,11 @@ void *ThreadCamera( void * arg  )
   
   }
 
+  free(data);
+
   #ifdef DEBUG
   printf("CAMERA: Exit\n");
   #endif
-
 }
 
 

@@ -450,7 +450,7 @@ void *ThreadCamera( void * arg  )
       calibrate_camera(data, &cutoff, averages);
 
       #ifdef DEBUG
-      printf("\nCAMERA: Calibrate function \n");
+      printf("\nCAMERA: Calibrate function\n cutoff: %i\n", cutoff);
       #endif
 
       parameter->calibrate->pause = false;

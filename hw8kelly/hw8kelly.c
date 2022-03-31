@@ -2090,7 +2090,7 @@ void calibrate_camera(unsigned char * data, unsigned int* cutoff, int* averages)
 
     #define DEBUG
     #ifdef DEBUG
-    printf("%i, %i, %i | ",track_instances, track_blocks, averages[bx]);
+    printf("%i | ", averages[bx]);
     #endif
     #undef DEBUG
   }
@@ -2159,15 +2159,11 @@ void get_offsets(unsigned char * data, unsigned int* cutoff, int* averages, int*
     // Creates average of where the track is, to calibrate for being slightly off center
     if (track_instances) {offsets[bx] = track_blocks/track_instances - averages[bx];}
 
-  #define DEBUG
-  #ifdef DEBUG
-  printf("\n");
-  for(bx = 0; bx < CAMERA_HORIZONTAL_READ; bx++){
-    printf("%i | ", offsets[bx]);
-  }
-  printf("\n");
-  #endif
-  #undef DEBUG
+    #define DEBUG
+    #ifdef DEBUG
+    printf("%i, %i, %i | ", offsets[bx], track_instances, track_blocks);
+    #endif
+    #undef DEBUG
 
   }
 

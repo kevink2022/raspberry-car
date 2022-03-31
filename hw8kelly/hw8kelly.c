@@ -386,21 +386,37 @@ void *ThreadCamera( void * arg  )
   unsigned char                  *  data;
   motor_pin_values                  local_pin_values;
 
+  #define DEBUG
+
+  #ifdef DEBUG
+  printf("\nCAMERA: Init 2\n");
+  #endif
+
   Camera = raspicam_wrapper_create();
   if (Camera == NULL){
     printf("\nCAMERA: Camera couldn't open\n");
   }
 
+  #ifdef DEBUG
+  printf("\nCAMERA: Open Camera 2\n");
+  #endif
+
   pthread_mutex_lock( &(parameter->done->lock) );
   while (!(parameter->done->done))
   {
     pthread_mutex_unlock( &(parameter->done->lock) );
+
+    
   
     sem_wait(parameter->camera_thread_sem);
   
     // Check for calibration
     pthread_mutex_lock( &(parameter->calibrate->lock) );
     if(parameter->calibrate->pause){
+
+      #ifdef DEBUG
+      printf("\nCAMERA: Calibrating \n");
+      #endif
 
       raspicam_wrapper_grab( Camera );
 
@@ -420,6 +436,10 @@ void *ThreadCamera( void * arg  )
     pthread_mutex_lock( &(parameter->camera_signal->lock) );
     if(parameter->camera_signal->recording){
       pthread_mutex_unlock( &(parameter->camera_signal->lock) );
+
+      #ifdef DEBUG
+      printf("\nCAMERA: Recording \n");
+      #endif
     
       // Take photo
       raspicam_wrapper_grab( Camera );
@@ -1567,8 +1587,8 @@ void initialize_accelerometer_and_gyroscope(
   union MPU6050_transaction_field_data  transaction;
 
   /* print WHO_AM_I */
-  printf( "accel WHOAMI (0x68) = 0x%2.2X\n",
-      read_MPU6050_register( MPU6050_ADDRESS, MPU6050_REGISTER_WHO_AM_I, bsc ).WHO_AM_I.WHOAMI );
+  //printf( "accel WHOAMI (0x68) = 0x%2.2X\n",
+  //    read_MPU6050_register( MPU6050_ADDRESS, MPU6050_REGISTER_WHO_AM_I, bsc ).WHO_AM_I.WHOAMI );
 
   // based off https://github.com/brianc118/MPU9250/blob/master/MPU9250.cpp
 

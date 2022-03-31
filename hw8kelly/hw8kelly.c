@@ -13,9 +13,12 @@
 #include "raspicam_wrapper.h"
 
 #define CLOCK_PERIOD 0.01
-#define CLOCK_CAMERA_MULTIPLIER 2
 
-#define CAMERA_TURN_DELAY 2
+// HW8 CAMERA PARAMS
+#define CLOCK_CAMERA_MULTIPLIER 3
+#define CAMERA_TURN_DELAY 1
+#define JUICE 15
+
 
 #define QUEUE_SIZE 100
 #define STOP 0
@@ -512,7 +515,6 @@ void *ThreadCamera( void * arg  )
         } 
       }
 
-      #define JUICE 5
       if (diverge_point < 3){
             turn = (PWM_MOTOR_MIN + (offsets[diverge_point]/5)*10);
 

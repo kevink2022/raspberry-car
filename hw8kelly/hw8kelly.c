@@ -2152,7 +2152,7 @@ void get_offsets(unsigned char * data, unsigned int* cutoff, int* averages, int*
       image_map[bx][by] = (block_value/256 < *cutoff);  
     }
     
-    offsets[bx] = averages[bx];      // average position
+    offsets[bx] = 0;      // average position
     track_instances = 0;  // track width
     track_blocks = 0;     // accumilating offset
 
@@ -2178,7 +2178,7 @@ void get_offsets(unsigned char * data, unsigned int* cutoff, int* averages, int*
 
     #define DEBUG
     #ifdef DEBUG
-    printf("%i, %i | ", offsets[bx], track_instances ? track_blocks/track_instances : 0);
+    printf("%i, %i | ", offsets[bx], track_instances ? track_blocks/track_instances : 99);
     #endif
     #undef DEBUG
 

@@ -1,0 +1,58 @@
+cd cmpen473/
+sudo rm -r cmpen473kelly/
+git clone git@github.com:kevink2023/cmpen473kelly.git
+cd cmpen473kelly/hw6kelly/
+make
+sudo ./hw6kelly
+
+git add hw6kelly.c
+git commit -m "
+git push
+
+ssh pi@172.16.95.133
+
+make clean
+git pull
+make
+sudo ./hw6kelly
+
+
+RPi4 pin GPIO12 <-> Motor Driver Board pin PWMA = left motor speed control
+    blue - x
+RPi4 pin GPIO13 <-> Motor Driver Board pin PWMB = right motor speed control
+    red
+
+RPi4 pin GPIO05 <-> Motor Driver Board pin AI1 = left motor direction control
+    purple
+RPi4 pin GPIO06 <-> Motor Driver Board pin AI2 = left motor direction control
+    purple
+(AI1, AI2: 10=>forward, 01=>backward, 00=>stop, 11=>short break)
+
+
+RPi4 pin GPIO22 <-> Motor Driver Board pin BI1 = right motor direction control
+    brown
+RPi4 pin GPIO23 <-> Motor Driver Board pin BI2 = right motor direction control
+    brown
+
+(BI1, BI2: 10=>forward, 01=>backward, 00=>stop, 11=>short break)
+
+
+RPi4 pin GND, Ground <-> Motor Driver Board pin GND, all three pins
+    black
+    gray
+
+RPi4 pin 3.3V, Logic level DC Power <-> Motor Driver Board pin VCC
+    yellow
+
+RPi4 pin 5V, DC Power <-> Motor Driver Board pin VM, motor power
+    white
+
+Motor Driver Board pin AO1 <-> Left motor upper pin = left motor plus (+) terminal
+    red
+Motor Driver Board pin AO2 <-> Left motor lower pin = left motor minus (-) terminal
+    black
+
+Motor Driver Board pin BO1 <-> Right motor upper pin = right motor minus (-) terminal
+    red
+Motor Driver Board pin BO2 <-> Right motor lower pin = right motor plus (+) terminal
+    black

@@ -165,7 +165,7 @@ void *ThreadMotor( void * arg  )
     
     // Update command
     if (command != next_command) {
-      update_command( parameter->motor_pins, &motor_pin_values, next_command, &command, &mode, &hw, parameter->data_signal, parameter->data_samples, parameter->sample_count);
+      update_command( parameter->motor_pins, &motor_pin_values, next_command, &command, &mode, &hw, parameter->data_signal, parameter->data_samples, parameter->sample_count, parameter->camera_signal, parameter->calibrate);
       next_command = command;
     }
 
@@ -246,7 +246,11 @@ void *ThreadMotor( void * arg  )
       }
 
     } else {
-      // Camera Stuff
+      // Grab pin values calculated in camera thread
+      pthread_mutex_lock(&parameter->camera_signal->lock);
+      motor_pin_values = *parameter->camera_signal->camera_set_pins;
+      pthread_mutex_unlock(&parameter->camera_signal->lock);
+      set_motor_pins(parameter->motor_pins, &motor_pin_values);
     }
     #undef DEBUG
 
@@ -400,13 +404,11 @@ void *ThreadCamera( void * arg  )
 
       image_size = raspicam_wrapper_getImageTypeSize( Camera, RASPICAM_WRAPPER_FORMAT_GRAY );
 
-      *data = (unsigned char *)malloc( image_size );
+      data = (unsigned char *)malloc( image_size );
 
       raspicam_wrapper_retrieve( Camera, data, RASPICAM_WRAPPER_FORMAT_GRAY );
 
       calibrate_camera(data, &cutoff, averages);
-
-
 
       parameter->calibrate->pause = false;
     }
@@ -424,30 +426,34 @@ void *ThreadCamera( void * arg  )
 
       get_offsets(data, &cutoff, averages, offsets);
 
-      // 
       for (bx = 1; bx < DIVERGE_CUTOFF; bx++){
         if (abs(offsets[bx]) > 5){
           diverge_point = bx;
           if (diverge_point < 2){
-            turn = ((PWM_MOTOR_MIN + offsets[diverge_point]/5)*10) > PWM_MOTOR_MAX) ? PWM_MOTOR_MAX : (PWM_MOTOR_MIN + offsets[diverge_point]/5)*10);
+            turn = (PWM_MOTOR_MIN + (offsets[diverge_point]/5)*10);
+
+            if(turn > PWM_MOTOR_MAX){turn = PWM_MOTOR_MAX;}
+
             if(offsets[diverge_point] < 0){
-              local_pin_values.B_PWM = turn;
-            } else {
               local_pin_values.A_PWM = turn;
+              local_pin_values.B_PWM = PWM_MOTOR_MIN;
+            } else {
+              local_pin_values.B_PWM = turn;
+              local_pin_values.A_PWM = PWM_MOTOR_MIN;
             }
           }
           else if (diverge_point < 12){
             local_pin_values.A_PWM = PWM_MOTOR_MIN + (diverge_point/2)*10;
             local_pin_values.B_PWM = PWM_MOTOR_MIN + (diverge_point/2)*10;
           } else {
-
+            local_pin_values.A_PWM = PWM_MOTOR_MAX;
+            local_pin_values.B_PWM = PWM_MOTOR_MAX;
           }
-
         }
-
       }
       pthread_mutex_lock( &(parameter->camera_signal->lock) );
       // Send data to motor  
+      parameter->camera_signal->camera_set_pins = &local_pin_values;
     }
     pthread_mutex_unlock( &(parameter->camera_signal->lock) );
   
@@ -549,6 +555,7 @@ void *ThreadKey( void * arg )
 #undef DEBUG
 #define DEBUG
 #undef DEBUG
+
 int main( void )
 {
   struct io_peripherals * io;
@@ -573,9 +580,10 @@ int main( void )
 
   struct pause_flag               pause_motor   = {PTHREAD_MUTEX_INITIALIZER, false};
   struct pause_flag               set_motors    = {PTHREAD_MUTEX_INITIALIZER, false};
+  struct pause_flag               calibrate     = {PTHREAD_MUTEX_INITIALIZER, true};
   struct done_flag                done          = {PTHREAD_MUTEX_INITIALIZER, false};
   struct data_signal              data_signal   = {PTHREAD_MUTEX_INITIALIZER, false, false};
-  struct camera_signal            camera_signal = {PTHREAD_MUTEX_INITIALIZER, false};
+  camera_signal                   camera_signal;
 
   pthread_mutex_t                 queue_lock = PTHREAD_MUTEX_INITIALIZER;
   pthread_mutex_t                 curr_cmd_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -586,6 +594,12 @@ int main( void )
   sem_init(&control_thread_sem, 0, 1);
   sem_init(&data_thread_sem, 0, 1);
   sem_init(&camera_thread_sem, 0, 1);
+  
+  pthread_mutex_init( &camera_signal.lock, NULL );
+  camera_signal.recording = false;
+  motor_pin_values camera_set_pins;
+  init_motor_pin_values(&camera_set_pins);
+  camera_signal.camera_set_pins = &camera_set_pins;
 
   #ifdef DEBUG
   printf("MAIN: created sem: %lx", (unsigned long)&control_thread_sem);
@@ -623,6 +637,7 @@ int main( void )
   motor_pins.BI1_pin = 22;
   motor_pins.BI2_pin = 23;
   motor_pins.BIR_pin = 25;
+  
 
   #ifdef DEBUG
   printf("MAIN: created motor_pins: %lx", (unsigned long)&motor_pins);
@@ -745,6 +760,8 @@ int main( void )
     thread_motor_parameter.current_command = &curr_cmd;
     thread_motor_parameter.current_command_lock = &curr_cmd_lock;
     thread_motor_parameter.motor_pins = &motor_pins;
+    thread_motor_parameter.calibrate = &calibrate;
+    thread_motor_parameter.camera_signal = &camera_signal;
 
     // DATA
     thread_data_parameter.done = &done;
@@ -756,6 +773,11 @@ int main( void )
     thread_data_parameter.calibration_gyroscope = &calibration_gyroscope;
     thread_data_parameter.calibration_magnetometer = &calibration_magnetometer;
     thread_data_parameter.bsc = (io->bsc);
+
+    thread_camera_parameter.done = &done;
+    thread_camera_parameter.calibrate = &calibrate;
+    thread_camera_parameter.camera_signal = &camera_signal;
+    thread_camera_parameter.camera_thread_sem = &camera_thread_sem;
 
     #ifdef DEBUG
     printf("MAIN: threads ready: \n");
@@ -779,6 +801,8 @@ int main( void )
 
     pthread_create( &thread_data_handle, 0, ThreadData, (void *)&thread_data_parameter);
 
+    pthread_create( &thread_camera_handle, 0, ThreadCamera, (void *)&thread_camera_parameter);
+
     #ifdef DEBUG
     printf("MAIN: threads created\n");
     #endif
@@ -788,6 +812,9 @@ int main( void )
     pthread_join( thread_motor_handle, 0 );
     pthread_join( thread_clock_handle, 0 );
     pthread_join( thread_control_handle, 0);
+    pthread_join( thread_data_handle, 0);
+    pthread_join( thread_camera_handle, 0);
+
     io->gpio->GPFSEL1.field.FSEL2 = GPFSEL_INPUT;
     io->gpio->GPFSEL1.field.FSEL3 = GPFSEL_INPUT;
     io->gpio->GPFSEL0.field.FSEL5 = GPFSEL_INPUT;
@@ -963,7 +990,7 @@ void update_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_value
 //#define DEBUG
 
 
-void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, char next_command, char *command, int *mode, int *hw, struct data_signal * data_signal, data_sample * data_samples, unsigned int * sample_count){
+void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, char next_command, char *command, int *mode, int *hw, struct data_signal * data_signal, data_sample * data_samples, unsigned int * sample_count, camera_signal * camera_signal, struct pause_flag * calibrate){
   // Update params
   switch (next_command)
   {
@@ -987,6 +1014,10 @@ void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, 
         data_signal->m0 = false;
         write_to_file(*mode, data_samples, sample_count); // Need to move, slowing down stops
         pthread_mutex_unlock( &(data_signal->lock) );
+      } else if (*hw == 8) {
+        pthread_mutex_lock( &(camera_signal->lock) );
+        camera_signal->recording = false;
+        pthread_mutex_unlock( &(camera_signal->lock) );
       }
       break;
 
@@ -994,11 +1025,18 @@ void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, 
       #ifdef DEBUG
       printf("\nMOTOR: Recieved Command: FORWARD\n");
       #endif
-
-      motor_pin_values->AI1 = 1;
-      motor_pin_values->AI2 = 0;
-      motor_pin_values->BI1 = 1;
-      motor_pin_values->BI2 = 0;
+      if(*hw < 8){
+        motor_pin_values->AI1 = 1;
+        motor_pin_values->AI2 = 0;
+        motor_pin_values->BI1 = 1;
+        motor_pin_values->BI2 = 0;
+      } else {
+        motor_pin_values->AI1 = 0;
+        motor_pin_values->AI2 = 1;
+        motor_pin_values->BI1 = 0;
+        motor_pin_values->BI2 = 1;
+      }
+      
       update_motor_pins(motor_pins, motor_pin_values);
 
       *command = 'w';
@@ -1009,19 +1047,29 @@ void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, 
         data_signal->recording = true;
         data_signal->m0 = false;
         pthread_mutex_unlock( &(data_signal->lock) );
+      } else if (*hw == 8 && *mode == MODE_2) {
+        pthread_mutex_lock( &(camera_signal->lock) );
+        camera_signal->recording = true;
+        pthread_mutex_unlock( &(camera_signal->lock) );
       }
-
       break;
 
     case 'x':
       #ifdef DEBUG
       printf("\nMOTOR: Recieved Command: BACKWARD\n");
       #endif
-
-      motor_pin_values->AI1 = 0;
-      motor_pin_values->AI2 = 1;
-      motor_pin_values->BI1 = 0;
-      motor_pin_values->BI2 = 1;
+      
+       if(*hw < 8){
+        motor_pin_values->AI1 = 0;
+        motor_pin_values->AI2 = 1;
+        motor_pin_values->BI1 = 0;
+        motor_pin_values->BI2 = 1;
+      } else {
+        motor_pin_values->AI1 = 1;
+        motor_pin_values->AI2 = 0;
+        motor_pin_values->BI1 = 1;
+        motor_pin_values->BI2 = 0;
+      }
       update_motor_pins(motor_pins, motor_pin_values);
 
       *command = 'x';
@@ -1120,9 +1168,6 @@ void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, 
       #endif
       *mode = MODE_2;
 
-      if(*hw == 8){
-        // Signal camera to start capturing
-      }
       break;
 
     case 't':
@@ -1177,6 +1222,9 @@ void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, 
       #endif
       printf("\n Calibrating Camera");
       // Calibrate the camera
+      pthread_mutex_lock( &calibrate->lock );
+      calibrate->pause = true;
+      pthread_mutex_unlock( &calibrate->lock );
       break;   
 
     default:

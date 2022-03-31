@@ -42,11 +42,22 @@ struct data_signal
   bool            m0;
 };
 
+typedef struct {
+  int                             A_PWM;
+  int                             AI1;
+  int                             AI2;
+  int                             AIR;
+  int                             B_PWM;
+  int                             BI1;
+  int                             BI2;
+  int                             BIR;
+} motor_pin_values;
+
 typedef struct 
 {
   pthread_mutex_t     lock;
   bool                recording;
-  motor_pin_values    camera_set_pins;
+  motor_pin_values  * camera_set_pins;
 } camera_signal;
 
 struct RGB_pixel
@@ -78,17 +89,7 @@ typedef struct {
   int                             BI2_pin;
   int                             BIR_pin;
 } motor_pins;
-  
-typedef struct {
-  int                             A_PWM;
-  int                             AI1;
-  int                             AI2;
-  int                             AIR;
-  int                             B_PWM;
-  int                             BI1;
-  int                             BI2;
-  int                             BIR;
-} motor_pin_values;
+
 
 typedef struct {
   char              * control_queue;
@@ -132,6 +133,7 @@ struct motor_thread_parameter
   struct pause_flag   * pause;
   struct pause_flag   * calibrate;
   struct data_signal  * data_signal;
+  camera_signal       * camera_signal;
   data_sample         * data_samples;
   unsigned int        * sample_count;
   char                * current_command;
@@ -175,9 +177,7 @@ void turn(void);
 void set_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_values);
 void update_motor_pwm(motor_pins *motor_pins, motor_pin_values *motor_pin_values);
 void update_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_values);
-void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, char next_command, char *command, int *mode, int *hw, struct data_signal * data_signal, data_sample * data_samples, unsigned int * sample_count);
-
-
+void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, char next_command, char *command, int *mode, int *hw, struct data_signal * data_signal, data_sample * data_samples, unsigned int * sample_count, camera_signal * camera_signal, struct pause_flag * calibrate);
 // Key thread func
 void add_to_queue(control_queue *control_queue, char command);
 

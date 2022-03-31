@@ -13,7 +13,9 @@
 #include "raspicam_wrapper.h"
 
 #define CLOCK_PERIOD 0.01
-#define CLOCK_CAMERA_MULTIPLIER 3
+#define CLOCK_CAMERA_MULTIPLIER 2
+
+#define CAMERA_TURN_DELAY 2
 
 #define QUEUE_SIZE 100
 #define STOP 0
@@ -524,7 +526,7 @@ void *ThreadCamera( void * arg  )
               local_pin_values.AI2 = 0;
               local_pin_values.BI1 = 0;
               local_pin_values.BI2 = 1;
-              usleep(1000);
+              usleep(CAMERA_TURN_DELAY*1000);
             } else {
               printf("**********RIGHT*********\n offset:   %i\n", offsets[diverge_point]);
               local_pin_values.A_PWM = PWM_MOTOR_MIN + JUICE;// + 2*abs(offsets[diverge_point]);
@@ -533,13 +535,13 @@ void *ThreadCamera( void * arg  )
               local_pin_values.AI2 = 1;
               local_pin_values.BI1 = 1;
               local_pin_values.BI2 = 0;
-              usleep(1000);
+              usleep(CAMERA_TURN_DELAY*1000);
             }
           }
           else if (diverge_point < DIVERGE_CUTOFF){
             printf("\n**********SLOW**********\n");
-            local_pin_values.A_PWM = PWM_MOTOR_MIN;// + diverge_point/2;//+ (diverge_point/2)*10;
-            local_pin_values.B_PWM = PWM_MOTOR_MIN;// + diverge_point/2;//+ (diverge_point/2)*10;
+            local_pin_values.A_PWM = PWM_MOTOR_MIN + diverge_point/4;//+ (diverge_point/2)*10;
+            local_pin_values.B_PWM = PWM_MOTOR_MIN + diverge_point/4;//+ (diverge_point/2)*10;
             local_pin_values.AI1 = 0;
             local_pin_values.AI2 = 1;
             local_pin_values.BI1 = 0;

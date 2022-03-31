@@ -1989,7 +1989,7 @@ void write_to_file(int mode, data_sample * data_samples, unsigned int * sample_c
   fclose(file);
 }
 
-#define CUTOFF_DIVIDER 2
+#define CUTOFF_DIVIDER 3
 
 #undef DEBUG
 
@@ -2006,49 +2006,49 @@ void calibrate_camera(unsigned char * data, unsigned int* cutoff, int* averages)
   printf("\nCAMERA-CALIBRATE: init \n");
   #endif
 
-  // for(bx = 0; bx < CAMERA_HORIZONTAL_READ; bx++){
-  //   for(by = 0; by < 60; by++){
-  //     block_value = 0;
+  for(bx = 0; bx < CAMERA_HORIZONTAL_READ; bx++){
+    for(by = 0; by < 60; by++){
+      block_value = 0;
       
-  //     #ifdef DEBUG
-  //     printf("bx: %i | by: %i \n", bx, by);
-  //     #endif
-  //     // Get the pixel values for a 16x16 block
-  //     for(iy = 0; iy < 16; iy++){
-  //       for(ix = 0; ix < 16; ix++){
-  //         block_value += (((unsigned int)(pixel[ix + 1280*iy + (79-bx)*16 + by*16*1280].R)) +
-  //                         ((unsigned int)(pixel[ix + 1280*iy + (79-bx)*16 + by*16*1280].G)) +
-  //                         ((unsigned int)(pixel[ix + 1280*iy + (79-bx)*16 + by*16*1280].B))) / 3; // do not worry about rounding
-  //       }
-  //     }
+      #ifdef DEBUG
+      printf("bx: %i | by: %i \n", bx, by);
+      #endif
+      // Get the pixel values for a 16x16 block
+      for(iy = 0; iy < 16; iy++){
+        for(ix = 0; ix < 16; ix++){
+          block_value += (((unsigned int)(pixel[ix + 1280*iy + (79-bx)*16 + by*16*1280].R)) +
+                          ((unsigned int)(pixel[ix + 1280*iy + (79-bx)*16 + by*16*1280].G)) +
+                          ((unsigned int)(pixel[ix + 1280*iy + (79-bx)*16 + by*16*1280].B))) / 3; // do not worry about rounding
+        }
+      }
 
-  //     // Add average brightness value to brightness map
-  //     brightness_map[bx][by] = block_value/256;
-  //   }
-  //   #ifdef DEBUG
-  //   printf("\nCAMERA-CALIBRATE: Brightness bx: %i \n", bx);
-  //   #endif
-  // }
+      // Add average brightness value to brightness map
+      brightness_map[bx][by] = block_value/256;
+    }
+    #ifdef DEBUG
+    printf("\nCAMERA-CALIBRATE: Brightness bx: %i \n", bx);
+    #endif
+  }
 
-  // #ifdef DEBUG
-  // printf("\nCAMERA-CALIBRATE: brightness map \n");
-  // #endif
+  #ifdef DEBUG
+  printf("\nCAMERA-CALIBRATE: brightness map \n");
+  #endif
 
-  // block_value = 0;    // Being used for brightness average
-  // // Calculate average brightness, and use it to calculate the cutoff
-  // for(bx = 0; bx < CAMERA_HORIZONTAL_READ; bx++){
-  //   for(by = 0; by < 60; by++){
-  //     block_value += brightness_map[bx][by];    
-  //   }
-  // }
-  // printf("\nCAMERA-CALIBRATE: cutoff calc\n block_value:  %lu\n cutoff:       %i\n", block_value, *cutoff);
-  // *cutoff = (block_value/(60*CAMERA_HORIZONTAL_READ))/CUTOFF_DIVIDER;
+  block_value = 0;    // Being used for brightness average
+  // Calculate average brightness, and use it to calculate the cutoff
+  for(bx = 0; bx < CAMERA_HORIZONTAL_READ; bx++){
+    for(by = 0; by < 60; by++){
+      block_value += brightness_map[bx][by];    
+    }
+  }
+  printf("\nCAMERA-CALIBRATE: cutoff calc\n block_value:  %lu\n cutoff:       %i\n", block_value, *cutoff);
+  *cutoff = (block_value/(60*CAMERA_HORIZONTAL_READ))/CUTOFF_DIVIDER;
 
   #ifdef DEBUG
   printf("\nCAMERA-CALIBRATE: cutoff \n");
   #endif
 
-  *cutoff = 90;
+  //*cutoff = 90;
 
   for(bx = 0; bx < CAMERA_HORIZONTAL_READ; bx++){
     for(by = 0; by < 60; by++){

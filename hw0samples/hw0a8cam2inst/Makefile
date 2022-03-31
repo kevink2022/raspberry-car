@@ -1,16 +1,18 @@
-TARGET=hw8kelly
+TARGET=hw0a8cam2inst
 
-SOURCES=import_registers.c \
-        enable_pwm_clock.c \
-        hw8kelly.c
+SOURCES=raspicam_wrapper.cpp \
+        hw0a8cam2inst.c
 
-OBJECTS=$(patsubst %.c,%.o,$(SOURCES))
+OBJECTS=$(patsubst %.cpp,%.o,$(patsubst %.c,%.o,$(SOURCES)))
 
 all: $(OBJECTS)
-	gcc $(OBJECTS) -lpthread -o $(TARGET)
+	g++ $(OBJECTS) -lraspicam -o $(TARGET)
 
 clean:
 	rm -f $(OBJECTS) $(TARGET)
 
 %.o:%.c
 	gcc -c $< -o $@
+
+%.o:%.cpp
+	g++ -c $< -o $@

@@ -461,10 +461,6 @@ void *ThreadCamera( void * arg  )
     pthread_mutex_lock( &(parameter->camera_signal->lock) );
     if(parameter->camera_signal->recording){
       pthread_mutex_unlock( &(parameter->camera_signal->lock) );
-
-      #ifdef DEBUG
-      printf("\nCAMERA: Recording \n");
-      #endif
     
       // Take photo
       raspicam_wrapper_grab( Camera );
@@ -476,6 +472,9 @@ void *ThreadCamera( void * arg  )
       for (bx = 1; bx < DIVERGE_CUTOFF; bx++){
         if (abs(offsets[bx]) > 5){
           diverge_point = bx;
+          #ifdef DEBUG
+          printf("\nCAMERA: Diverge = %i \n", bx);
+          #endif
           if (diverge_point < 2){
             turn = (PWM_MOTOR_MIN + (offsets[diverge_point]/5)*10);
 

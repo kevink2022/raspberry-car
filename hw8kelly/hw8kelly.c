@@ -67,7 +67,13 @@ void *ThreadClock( void * arg  )
 
     // Wake the data aquisition thread 
     sem_post(parameter->data_thread_sem);
+
+    // Wake the camera thread
+    sem_post(parameter->camera_thread_sem);
+
   }
+
+  printf( "CLOCK: Exit\n" );
 }
 #undef DEBUG
 
@@ -134,6 +140,8 @@ void *ThreadControl( void * arg  )
     pthread_mutex_unlock( parameter->control_queue->control_queue_lock );
   
   }
+
+  printf( "CONTROL: Exit\n" );
 }
 
 // A == LEFT  == DAT2
@@ -275,6 +283,8 @@ void *ThreadMotor( void * arg  )
     printf("MOTOR: updated commands\n");
     #endif
   }
+
+  printf( "MOTOR: Exit\n" );
 }
 #undef DEBUG
 
@@ -361,6 +371,7 @@ void *ThreadData( void * arg  )
     }
     pthread_mutex_unlock( &(parameter->data_signal->lock) );
   }
+  printf( "DATA: Exit\n" );
 }
 
 #define DIVERGE_CUTOFF 40
@@ -493,6 +504,10 @@ void *ThreadCamera( void * arg  )
   
   }
 
+  #ifdef DEBUG
+  printf("\nCAMERA: Exit 2\n");
+  #endif
+
 }
 
 
@@ -582,7 +597,7 @@ void *ThreadKey( void * arg )
       add_to_queue(thread_key_parameter->control_queue, input);
     }
   } while (!done);
-  printf( "KEY_THREAD: Exiting...\n" );
+  printf( "KEY: Exit\n" );
 
   return (void *)0;
 }
@@ -772,6 +787,7 @@ int main( void )
     thread_clock_parameter.done = &done;
     thread_clock_parameter.control_thread_sem = &control_thread_sem;
     thread_clock_parameter.data_thread_sem = &data_thread_sem;
+    thread_clock_parameter.camera_thread_sem = &camera_thread_sem;
 
     // CONTROL
     thread_control_parameter.done = &done;

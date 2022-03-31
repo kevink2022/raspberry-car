@@ -108,6 +108,7 @@ struct clock_thread_parameter
   int                 period;
   sem_t             * control_thread_sem;
   sem_t             * data_thread_sem;
+  sem_t             * camera_thread_sem;
 };
 
 struct key_thread_parameter

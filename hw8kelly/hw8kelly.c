@@ -493,7 +493,10 @@ void *ThreadCamera( void * arg  )
           #ifdef DEBUG
           printf("\n diverge: %i\n", diverge_point);
           #endif
-          if (diverge_point < 4){
+          break;
+        } 
+      }
+      if (diverge_point < 4){
             turn = (PWM_MOTOR_MIN + (offsets[diverge_point]/5)*10);
 
             if(turn > PWM_MOTOR_MAX){turn = PWM_MOTOR_MAX;}
@@ -515,12 +518,6 @@ void *ThreadCamera( void * arg  )
             local_pin_values.A_PWM = PWM_MOTOR_MAX;
             local_pin_values.B_PWM = PWM_MOTOR_MAX;
           }
-          break;
-        } else {
-          local_pin_values.A_PWM = PWM_MOTOR_MAX;
-          local_pin_values.B_PWM = PWM_MOTOR_MAX;
-        }
-      }
       pthread_mutex_lock( &(parameter->camera_signal->lock) );
       // Send data to motor  
       parameter->camera_signal->camera_set_pins = &local_pin_values;

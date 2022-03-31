@@ -2102,7 +2102,7 @@ void get_offsets(void* data, unsigned int* cutoff, int* averages, int* offsets){
     track_blocks = 0;     // accumilating offset
 
     // If using previous offsets to shift checked area so turns are tracked
-    if (bx) {
+    if (0) {
       for(block = averages[bx] + offsets[bx - 1] - 10; block < averages[bx] + offsets[bx - 1] + 10; block++){   // Only blocks surrounding average
         if(image_map[bx][block] == 1){
           track_blocks += block;

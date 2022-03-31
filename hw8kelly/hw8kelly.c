@@ -48,6 +48,7 @@ void *ThreadClock( void * arg  )
   printf("CLOCK: thread started\n"); 
   #endif
   struct clock_thread_parameter * parameter = (struct clock_thread_parameter *)arg;
+  int i = 0;
 
   pthread_mutex_lock( &(parameter->done->lock) );
   while (!(parameter->done->done))
@@ -71,7 +72,12 @@ void *ThreadClock( void * arg  )
     sem_post(parameter->data_thread_sem);
 
     // Wake the camera thread
-    sem_post(parameter->camera_thread_sem);
+    if(i == 4){
+      sem_post(parameter->camera_thread_sem);
+      i = 0;
+    } else {
+      i++;
+    }
 
   }
 

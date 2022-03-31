@@ -2018,6 +2018,7 @@ void calibrate_camera(void* data, unsigned int* cutoff, int* averages){
       block_value += brightness_map[bx][by];    
     }
   }
+  printf("\nCAMERA-CALIBRATE: cutoff calc\n block_value:  %lu\n cutoff:       %i\n", block_value, *cutoff);
   *cutoff = (block_value/(60*CAMERA_HORIZONTAL_READ))/CUTOFF_DIVIDER;
 
   #ifdef DEBUG

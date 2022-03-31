@@ -398,7 +398,7 @@ void *ThreadCamera( void * arg  )
   unsigned int                      by, bx, iy, ix;
   unsigned char                  *  data;
   motor_pin_values                  local_pin_values;
-
+  bool                              change = false;
   #define DEBUG
 
   #ifdef DEBUG
@@ -473,10 +473,13 @@ void *ThreadCamera( void * arg  )
 
       get_offsets(data, &cutoff, averages, offsets);
 
+      diverge_point = 13;
       for (bx = 1; bx < DIVERGE_CUTOFF; bx++){
         if (abs(offsets[bx]) > 10){
           diverge_point = bx;
-          
+          #ifdef DEBUG
+          printf("\n diverge: %i\n", diverge_point);
+          #endif
           if (diverge_point < 4){
             turn = (PWM_MOTOR_MIN + (offsets[diverge_point]/5)*10);
 

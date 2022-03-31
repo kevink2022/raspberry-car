@@ -10,6 +10,8 @@
 * 
 ***************************************************/
 #include "hw8kelly.h"
+#include "raspicam_wrapper.h"
+
 
 #define QUEUE_SIZE 100
 #define STOP 0

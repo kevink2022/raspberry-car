@@ -1982,6 +1982,9 @@ void calibrate_camera(void* data, unsigned int* cutoff, int* averages){
       // Add average brightness value to brightness map
       brightness_map[bx][by] = block_value/256;
     }
+    #ifdef DEBUG
+    printf("\nCAMERA-CALIBRATE: Brightness bx: %i \n", bx);
+    #endif
   }
 
   #ifdef DEBUG

@@ -257,10 +257,12 @@ void *ThreadMotor( void * arg  )
 
     } else {
       // Grab pin values calculated in camera thread
-      pthread_mutex_lock(&parameter->camera_signal->lock);
-      motor_pin_values = *parameter->camera_signal->camera_set_pins;
-      pthread_mutex_unlock(&parameter->camera_signal->lock);
-      set_motor_pins(parameter->motor_pins, &motor_pin_values);
+      if (mode == MODE_2){
+        pthread_mutex_lock(&parameter->camera_signal->lock);
+        motor_pin_values = *parameter->camera_signal->camera_set_pins;
+        pthread_mutex_unlock(&parameter->camera_signal->lock);
+        set_motor_pins(parameter->motor_pins, &motor_pin_values);
+      }
     }
     #undef DEBUG
 
@@ -505,7 +507,7 @@ void *ThreadCamera( void * arg  )
   }
 
   #ifdef DEBUG
-  printf("\nCAMERA: Exit 2\n");
+  printf("CAMERA: Exit\n");
   #endif
 
 }

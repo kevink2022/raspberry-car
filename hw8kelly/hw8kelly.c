@@ -12,6 +12,7 @@
 #include "hw8kelly.h"
 #include "raspicam_wrapper.h"
 
+#define CLOCK_PERIOD 0.1
 
 #define QUEUE_SIZE 100
 #define STOP 0
@@ -100,9 +101,6 @@ void *ThreadControl( void * arg  )
   while (!(parameter->done->done))  // Check done
   {
     pthread_mutex_unlock( &(parameter->done->lock) );
-  
-    // Wait for signal from clock thread
-    sem_wait(parameter->control_thread_sem);
 
     // Check for commands in the queue
     pthread_mutex_lock( parameter->control_queue->control_queue_lock );
@@ -141,6 +139,9 @@ void *ThreadControl( void * arg  )
       #ifdef DEBUG
       printf("CONTROL: exit update\n");
       #endif
+
+      // Wait for signal from clock thread
+      sem_wait(parameter->control_thread_sem);
     }
     pthread_mutex_unlock( parameter->control_queue->control_queue_lock );
   
@@ -507,7 +508,7 @@ void *ThreadCamera( void * arg  )
             if(turn > PWM_MOTOR_MAX){turn = PWM_MOTOR_MAX;}
 
             if(offsets[diverge_point] > 0){
-              printf("**********LEFT**********\n");
+              printf("**********LEFT**********\n offset:   %i\n", offsets[diverge_point]);
               local_pin_values.B_PWM = PWM_MOTOR_MAX;
               local_pin_values.A_PWM = PWM_MOTOR_MAX;
               local_pin_values.AI1 = 1;
@@ -515,7 +516,7 @@ void *ThreadCamera( void * arg  )
               local_pin_values.BI1 = 0;
               local_pin_values.BI2 = 1;
             } else {
-              printf("**********RIGHT*********\n");
+              printf("**********RIGHT*********\n offset:   %i\n", offsets[diverge_point]);
               local_pin_values.A_PWM = PWM_MOTOR_MAX;
               local_pin_values.B_PWM = PWM_MOTOR_MAX;
               local_pin_values.AI1 = 0;
@@ -827,7 +828,7 @@ int main( void )
     motor_pins.pwm = (io->pwm);
     
     // CLOCK
-    thread_clock_parameter.period = .01;
+    thread_clock_parameter.period = CLOCK_PERIOD;
     thread_clock_parameter.done = &done;
     thread_clock_parameter.control_thread_sem = &control_thread_sem;
     thread_clock_parameter.data_thread_sem = &data_thread_sem;

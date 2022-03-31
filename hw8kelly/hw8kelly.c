@@ -31,7 +31,7 @@
 
 
 #define CAMERA_HORIZONTAL_READ 20
-#define CUTOFF 60
+#define CUTOFF 90
 
 //#define DEBUG
 
@@ -394,7 +394,7 @@ void *ThreadCamera( void * arg  )
   int                               diverge_degree[5];
   int                               turn;
   unsigned long                     block_value;
-  unsigned int                      cutoff = 10;
+  unsigned int                      cutoff = 90;
   unsigned int                      by, bx, iy, ix;
   unsigned char                  *  data;
   motor_pin_values                  local_pin_values;
@@ -404,6 +404,12 @@ void *ThreadCamera( void * arg  )
   #ifdef DEBUG
   printf("\nCAMERA: Init 2\n");
   #endif
+
+  init_motor_pin_values(&local_pin_values);
+  local_pin_values.AI1 = 0;
+  local_pin_values.AI2 = 1;
+  local_pin_values.BI1 = 0;
+  local_pin_values.BI2 = 1;
 
   Camera = raspicam_wrapper_create();
   if (Camera == NULL){
@@ -470,9 +476,7 @@ void *ThreadCamera( void * arg  )
       for (bx = 1; bx < DIVERGE_CUTOFF; bx++){
         if (abs(offsets[bx]) > 5){
           diverge_point = bx;
-          #ifdef DEBUG
-          printf("\nCAMERA: Diverge = %i \n", bx);
-          #endif
+          
           if (diverge_point < 2){
             turn = (PWM_MOTOR_MIN + (offsets[diverge_point]/5)*10);
 

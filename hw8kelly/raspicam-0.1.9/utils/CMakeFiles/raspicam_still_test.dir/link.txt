@@ -1,0 +1,1 @@
+/usr/bin/c++   -mcpu=cortex-a8 -mfpu=neon -mfloat-abi=hard   -O3 -g0  -DNDEBUG -rdynamic CMakeFiles/raspicam_still_test.dir/raspicam_still_test.cpp.o -o raspicam_still_test  -Wl,-rpath,/home/pi/cmpen473/cmpen473kelly/hw8kelly/raspicam-0.1.9/src: ../src/libraspicam.so.0.1.9 -lpthread -lmmal_core -lmmal_util -lmmal 

@@ -1,0 +1,10 @@
+/usr/local/share/raspicam/raspicamConfig.cmake
+/usr/local/lib/libraspicam.so.0.1.9
+/usr/local/lib/libraspicam.so.0.1
+/usr/local/lib/libraspicam.so
+/usr/local/include/raspicam/raspicamtypes.h
+/usr/local/include/raspicam/raspicam.h
+/usr/local/include/raspicam/raspicam_still.h
+/usr/local/include/raspicam/cvversioning.h
+/usr/local/bin/raspicam_test
+/usr/local/bin/raspicam_still_test

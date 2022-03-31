@@ -2035,7 +2035,7 @@ void calibrate_camera(void* data, unsigned int* cutoff, int* averages){
   printf("\nCAMERA-CALIBRATE: cutoff \n");
   #endif
 
-  *cutoff = CUTOFF;
+  *cutoff = 90;
 
   for(bx = 0; bx < CAMERA_HORIZONTAL_READ; bx++){
     for(by = 0; by < 60; by++){
@@ -2051,7 +2051,12 @@ void calibrate_camera(void* data, unsigned int* cutoff, int* averages){
       }
 
       // If brightness is less then the cutoff, it is likely the track, so mark it
-      image_map[bx][by] = (block_value/256 < *cutoff);  
+      printf("| %i, %i, |", block_value , *cutoff);
+      if( (block_value/256 < *cutoff) ) {
+        image_map[bx][by] = 1;
+      } else {
+        image_map[bx][by] = 0;
+      }  
     }
 
     averages[bx] = 0;     // average position
@@ -2067,9 +2072,16 @@ void calibrate_camera(void* data, unsigned int* cutoff, int* averages){
 
     // Creates average of where the track is, to calibrate for being slightly off center
     if (track_instances) {averages[bx] = track_blocks/track_instances;}
-  }
+    
+    
 
-  #define DEBUG
+    #define DEBUG
+    #ifdef DEBUG
+    printf("%i, %i, %i | ",track_instances, track_blocks, averages[bx]);
+    #endif
+    #undef DEBUG
+  }
+  
   #ifdef DEBUG
   printf("\n");
   for(bx = 0; bx < CAMERA_HORIZONTAL_READ; bx++){
@@ -2077,7 +2089,7 @@ void calibrate_camera(void* data, unsigned int* cutoff, int* averages){
   }
   printf("\n");
   #endif
-  #undef DEBUG
+  
 
   #ifdef DEBUG
   printf("\nCAMERA-CALIBRATE: exit \n");

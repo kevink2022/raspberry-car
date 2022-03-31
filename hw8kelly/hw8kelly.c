@@ -496,27 +496,44 @@ void *ThreadCamera( void * arg  )
           break;
         } 
       }
-      if (diverge_point < 4){
+      if (diverge_point < 3){
             turn = (PWM_MOTOR_MIN + (offsets[diverge_point]/5)*10);
 
             if(turn > PWM_MOTOR_MAX){turn = PWM_MOTOR_MAX;}
 
             if(offsets[diverge_point] < 0){
-              printf("LEFT\n");
+              printf("**********LEFT**********\n");
               local_pin_values.B_PWM = PWM_MOTOR_MAX;
-              local_pin_values.A_PWM = PWM_MOTOR_MIN;
-            } else {
-              printf("RIGHT\n");
               local_pin_values.A_PWM = PWM_MOTOR_MAX;
-              local_pin_values.B_PWM = PWM_MOTOR_MIN;
+              local_pin_values.AI1 = 1;
+              local_pin_values.AI2 = 0;
+              local_pin_values.BI1 = 0;
+              local_pin_values.BI2 = 1;
+            } else {
+              printf("**********RIGHT*********\n");
+              local_pin_values.A_PWM = PWM_MOTOR_MAX;
+              local_pin_values.B_PWM = PWM_MOTOR_MAX;
+              local_pin_values.AI1 = 0;
+              local_pin_values.AI2 = 1;
+              local_pin_values.BI1 = 1;
+              local_pin_values.BI2 = 0;
             }
           }
           else if (diverge_point < 12){
+            printf("\n**********SLOW**********\n");
             local_pin_values.A_PWM = PWM_MOTOR_MIN + (diverge_point/2)*10;
             local_pin_values.B_PWM = PWM_MOTOR_MIN + (diverge_point/2)*10;
+            local_pin_values.AI1 = 0;
+            local_pin_values.AI2 = 1;
+            local_pin_values.BI1 = 0;
+            local_pin_values.BI2 = 1;
           } else {
             local_pin_values.A_PWM = PWM_MOTOR_MAX;
             local_pin_values.B_PWM = PWM_MOTOR_MAX;
+            local_pin_values.AI1 = 0;
+            local_pin_values.AI2 = 1;
+            local_pin_values.BI1 = 0;
+            local_pin_values.BI2 = 1;
           }
       pthread_mutex_lock( &(parameter->camera_signal->lock) );
       // Send data to motor  

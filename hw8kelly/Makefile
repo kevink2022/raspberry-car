@@ -2,7 +2,7 @@ TARGET=hw8kelly
 
 SOURCES=raspicam_wrapper.cpp \
 		import_registers.c \
-		enable_pwm_clock.c
+		enable_pwm_clock.c \
         hw8kelly.c
 
 OBJECTS=$(patsubst %.cpp,%.o,$(patsubst %.c,%.o,$(SOURCES)))

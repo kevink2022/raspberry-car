@@ -1969,6 +1969,8 @@ void write_to_file(int mode, data_sample * data_samples, unsigned int * sample_c
 
 #define CUTOFF_DIVIDER 5
 
+#undef DEBUG
+
 void calibrate_camera(void* data, unsigned int* cutoff, int* averages){
 
   unsigned int        by, bx, iy, ix;

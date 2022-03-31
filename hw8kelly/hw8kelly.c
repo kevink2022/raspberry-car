@@ -22,7 +22,7 @@
 
 #define PWM_RANGE 100
 #define PWM_MOTOR_MAX 100 
-#define PWM_MOTOR_MIN 40
+#define PWM_MOTOR_MIN 60
 #define PWM_SPEED_STEP 5
 #define PWM_TURN_STEP 15
 #define PWM_ORIENTATION 1
@@ -509,16 +509,16 @@ void *ThreadCamera( void * arg  )
 
             if(offsets[diverge_point] > 0){
               printf("**********LEFT**********\n offset:   %i\n", offsets[diverge_point]);
-              local_pin_values.B_PWM = PWM_MOTOR_MAX;
-              local_pin_values.A_PWM = PWM_MOTOR_MAX;
+              local_pin_values.B_PWM = PWM_MOTOR_MIN;
+              local_pin_values.A_PWM = PWM_MOTOR_MIN;
               local_pin_values.AI1 = 1;
               local_pin_values.AI2 = 0;
               local_pin_values.BI1 = 0;
               local_pin_values.BI2 = 1;
             } else {
               printf("**********RIGHT*********\n offset:   %i\n", offsets[diverge_point]);
-              local_pin_values.A_PWM = PWM_MOTOR_MAX;
-              local_pin_values.B_PWM = PWM_MOTOR_MAX;
+              local_pin_values.A_PWM = PWM_MOTOR_MIN;
+              local_pin_values.B_PWM = PWM_MOTOR_MIN;
               local_pin_values.AI1 = 0;
               local_pin_values.AI2 = 1;
               local_pin_values.BI1 = 1;
@@ -2182,13 +2182,13 @@ void get_offsets(unsigned char * data, unsigned int* cutoff, int* averages, int*
     // Creates average of where the track is, to calibrate for being slightly off center
     if (track_instances) {offsets[bx] = track_blocks/track_instances - averages[bx];}
 
-    #define DEBUG
+    //#define DEBUG
     #ifdef DEBUG
     printf("%i, %i | ", offsets[bx], track_instances ? track_blocks/track_instances : 99);
     #endif
     #undef DEBUG
 
   }
-  printf("\n\n");
+  //printf("\n\n");
 
 }

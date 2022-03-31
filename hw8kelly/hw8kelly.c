@@ -503,12 +503,12 @@ void *ThreadCamera( void * arg  )
 
             if(offsets[diverge_point] < 0){
               printf("LEFT\n");
-              local_pin_values.A_PWM = PWM_MOTOR_MAX;
-              local_pin_values.B_PWM = PWM_MOTOR_MIN;
-            } else {
-              printf("RIGHT\n");
               local_pin_values.B_PWM = PWM_MOTOR_MAX;
               local_pin_values.A_PWM = PWM_MOTOR_MIN;
+            } else {
+              printf("RIGHT\n");
+              local_pin_values.A_PWM = PWM_MOTOR_MAX;
+              local_pin_values.B_PWM = PWM_MOTOR_MIN;
             }
           }
           else if (diverge_point < 12){
@@ -2135,7 +2135,7 @@ void get_offsets(unsigned char * data, unsigned int* cutoff, int* averages, int*
       image_map[bx][by] = (block_value/256 < *cutoff);  
     }
     
-    offsets[bx] = 0;      // average position
+    offsets[bx] = averages[bx];      // average position
     track_instances = 0;  // track width
     track_blocks = 0;     // accumilating offset
 
@@ -2161,7 +2161,7 @@ void get_offsets(unsigned char * data, unsigned int* cutoff, int* averages, int*
 
     #define DEBUG
     #ifdef DEBUG
-    printf("%i, %i | ", offsets[bx], averages[bx]);
+    printf("%i, %i | ", offsets[bx], track_instances ? track_blocks/track_instances : 0);
     #endif
     #undef DEBUG
 

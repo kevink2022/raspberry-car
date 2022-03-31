@@ -5,13 +5,16 @@ SOURCES=raspicam_wrapper.cpp \
         enable_pwm_clock.c \
         hw8kelly.c
 
-OBJECTS=$(patsubst %.c,%.o,$(SOURCES))
+OBJECTS=$(patsubst %.cpp,%.o,$(patsubst %.c,%.o,$(SOURCES)))
 
 all: $(OBJECTS)
-	gcc $(OBJECTS) -lpthread -o $(TARGET)
+        g++ $(OBJECTS) -lraspicam -lpthread -o $(TARGET)
 
 clean:
-	rm -f $(OBJECTS) $(TARGET)
+        rm -f $(OBJECTS) $(TARGET)
 
 %.o:%.c
-	gcc -c $< -o $@
+        gcc -c $< -o $@
+
+%.o:%.cpp
+        g++ -c $< -o $@

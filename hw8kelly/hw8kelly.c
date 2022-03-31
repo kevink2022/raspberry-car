@@ -2102,7 +2102,7 @@ void get_offsets(void* data, unsigned int* cutoff, int* averages, int* offsets){
     track_blocks = 0;     // accumilating offset
 
     // If using previous offsets to shift checked area so turns are tracked
-    if (0) {
+    if (bx) {
       for(block = averages[bx] + offsets[bx - 1] - 10; block < averages[bx] + offsets[bx - 1] + 10; block++){   // Only blocks surrounding average
         if(image_map[bx][block] == 1){
           track_blocks += block;
@@ -2120,6 +2120,15 @@ void get_offsets(void* data, unsigned int* cutoff, int* averages, int* offsets){
     
     // Creates average of where the track is, to calibrate for being slightly off center
     if (track_instances) {offsets[bx] = track_blocks/track_instances - averages[bx];}
+
+    #define DEBUG
+    #ifdef DEBUG
+    printf("\n");
+    for(bx = 0; bx < CAMERA_HORIZONTAL_READ; bx++){
+      printf("%i | ", averages[bx]);
+    }
+    printf("\n");
+    #endif
 
   }
 

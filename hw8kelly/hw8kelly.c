@@ -12,7 +12,7 @@
 #include "hw8kelly.h"
 #include "raspicam_wrapper.h"
 
-#define CLOCK_PERIOD 0.1
+#define CLOCK_PERIOD 0.01
 
 #define QUEUE_SIZE 100
 #define STOP 0
@@ -31,7 +31,8 @@
 #define PWM_MODE2_OFF_DELAY 500
 
 
-#define CAMERA_HORIZONTAL_READ 15
+#define CAMERA_HORIZONTAL_READ 40
+#define DIVERGE_CUTOFF 35
 #define CUTOFF 90
 
 //#define DEBUG
@@ -382,7 +383,6 @@ void *ThreadData( void * arg  )
   printf( "DATA: Exit\n" );
 }
 
-#define DIVERGE_CUTOFF 12
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //  ThreadCamera()
@@ -492,7 +492,7 @@ void *ThreadCamera( void * arg  )
 
       get_offsets(data, &cutoff, averages, offsets);
 
-      diverge_point = 13;
+      diverge_point = DIVERGE_CUTOFF + 1;
       for (bx = 1; bx < DIVERGE_CUTOFF; bx++){
         if (abs(offsets[bx]) > 5){
           diverge_point = bx;
@@ -525,7 +525,7 @@ void *ThreadCamera( void * arg  )
               local_pin_values.BI2 = 0;
             }
           }
-          else if (diverge_point < 12){
+          else if (diverge_point < DIVERGE_CUTOFF){
             printf("\n**********SLOW**********\n");
             local_pin_values.A_PWM = PWM_MOTOR_MIN ;//+ (diverge_point/2)*10;
             local_pin_values.B_PWM = PWM_MOTOR_MIN ;//+ (diverge_point/2)*10;

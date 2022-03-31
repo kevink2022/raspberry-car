@@ -527,8 +527,8 @@ void *ThreadCamera( void * arg  )
           }
           else if (diverge_point < 12){
             printf("\n**********SLOW**********\n");
-            local_pin_values.A_PWM = PWM_MOTOR_MIN + (diverge_point/2)*10;
-            local_pin_values.B_PWM = PWM_MOTOR_MIN + (diverge_point/2)*10;
+            local_pin_values.A_PWM = PWM_MOTOR_MIN ;//+ (diverge_point/2)*10;
+            local_pin_values.B_PWM = PWM_MOTOR_MIN ;//+ (diverge_point/2)*10;
             local_pin_values.AI1 = 0;
             local_pin_values.AI2 = 1;
             local_pin_values.BI1 = 0;

@@ -424,11 +424,11 @@ void *ThreadCamera( void * arg  )
       printf("\nCAMERA: Calibrate grab \n");
       #endif
 
-      image_size = raspicam_wrapper_getImageTypeSize( Camera, RASPICAM_WRAPPER_FORMAT_GRAY );
+      image_size = raspicam_wrapper_getImageTypeSize( Camera, RASPICAM_WRAPPER_FORMAT_RGB );
 
       data = (unsigned char *)malloc( image_size );
 
-      raspicam_wrapper_retrieve( Camera, data, RASPICAM_WRAPPER_FORMAT_GRAY );
+      raspicam_wrapper_retrieve( Camera, data, RASPICAM_WRAPPER_FORMAT_RGB );
 
       #ifdef DEBUG
       printf("\nCAMERA: Calibrate retreive \n");
@@ -456,7 +456,7 @@ void *ThreadCamera( void * arg  )
       // Take photo
       raspicam_wrapper_grab( Camera );
 
-      raspicam_wrapper_retrieve( Camera, data, RASPICAM_WRAPPER_FORMAT_GRAY );
+      raspicam_wrapper_retrieve( Camera, data, RASPICAM_WRAPPER_FORMAT_RGB );
 
       get_offsets(data, &cutoff, averages, offsets);
 

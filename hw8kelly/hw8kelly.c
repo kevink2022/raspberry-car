@@ -451,6 +451,16 @@ void *ThreadCamera( void * arg  )
       printf("\nCAMERA: Calibrate retreive \n");
       #endif
 
+      FILE * outFile = fopen( "calibrate.ppm", "wb" );
+      if (outFile != NULL)
+      {
+        fprintf( outFile, "P6\n" );  // write .ppm file header
+        fprintf( outFile, "%d %d 255\n", raspicam_wrapper_getWidth( Camera ), raspicam_wrapper_getHeight( Camera ) );
+        // write the image data
+        fwrite( data, 1, raspicam_wrapper_getImageTypeSize( Camera, RASPICAM_WRAPPER_FORMAT_RGB ), outFile );
+        fclose( outFile );
+      }
+
       calibrate_camera(data, &cutoff, averages);
 
       #ifdef DEBUG

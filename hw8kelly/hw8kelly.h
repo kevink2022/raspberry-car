@@ -19,6 +19,8 @@
 #include "bsc.h"
 #include "MPU6050.h"
 #include "MPU9250.h"
+#include "raspicam_wrapper.h"
+
 
 
 struct pause_flag
@@ -38,6 +40,20 @@ struct data_signal
   pthread_mutex_t lock;
   bool            recording;
   bool            m0;
+};
+
+typedef struct 
+{
+  pthread_mutex_t     lock;
+  bool                recording;
+  motor_pin_values    camera_set_pins;
+} camera_signal;
+
+struct RGB_pixel
+{
+    unsigned char R;
+    unsigned char G;
+    unsigned char B;
 };
 
 typedef struct 
@@ -72,15 +88,6 @@ typedef struct {
   int                             BI1;
   int                             BI2;
   int                             BIR;
-
-  // int                             A_PWM_next;
-  // int                             AI1_next;
-  // int                             AI2_next;
-  // int                             AIR_next;
-  // int                             B_PWM_next;
-  // int                             BI1_next;
-  // int                             BI2_next;
-  // int                             BIR_next;
 } motor_pin_values;
 
 typedef struct {
@@ -123,6 +130,7 @@ struct motor_thread_parameter
 {
   struct done_flag    * done;
   struct pause_flag   * pause;
+  struct pause_flag   * calibrate;
   struct data_signal  * data_signal;
   data_sample         * data_samples;
   unsigned int        * sample_count;
@@ -147,9 +155,9 @@ struct data_thread_parameter
 struct camera_thread_parameter
 {
   struct done_flag              * done;
+  struct pause_flag             * calibrate;
   sem_t                         * camera_thread_sem;
-
-  
+  camera_signal                 * camera_signal;
 };
 
 
@@ -240,3 +248,7 @@ data_sample average_sample(data_sample * data_samples, unsigned int * sample_cou
 void print_samples(data_sample * data_samples, unsigned int * sample_count);
 
 void write_to_file(int mode, data_sample * data_samples, unsigned int * sample_count);
+
+void calibrate_camera(void* data, unsigned int* cutoff, int* averages);
+
+void get_offsets(void* data, unsigned int* cutoff, int* averages, int* offsets);

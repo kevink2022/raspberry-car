@@ -19,13 +19,16 @@
 
 #define PWM_RANGE 100
 #define PWM_MOTOR_MAX 100 
-#define PWM_MOTOR_MIN 20
+#define PWM_MOTOR_MIN 40
 #define PWM_SPEED_STEP 5
 #define PWM_TURN_STEP 15
 #define PWM_ORIENTATION 1
 #define PWM_MODE2_STEP 20
 #define PWM_MODE2_TURN_DELAY 60000
 #define PWM_MODE2_OFF_DELAY 500
+
+
+#define CAMERA_HORIZONTAL_READ 20
 
 
 //#define DEBUG
@@ -354,13 +357,33 @@ void *ThreadData( void * arg  )
   }
 }
 
+#define DIVERGE_CUTOFF 40
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //  ThreadCamera()
 //
 //  Takes photos and processes data, sending it to motor thread to update
 void *ThreadCamera( void * arg  )
 {
-  struct camera_thread_parameter * parameter = (struct camera_thread_parameter *)arg;
+  struct camera_thread_parameter *  parameter = (struct camera_thread_parameter *)arg;
+  struct raspicam_wrapper_handle *  Camera;
+  size_t                            image_size;
+  bool                              image_map[80][60];
+  int                               block, offset, diverge_point;
+  int                               offsets[80];
+  int                               averages[80];
+  int                               diverge_degree[5];
+  int                               turn;
+  unsigned long                     block_value;
+  unsigned int                      cutoff = 10;
+  unsigned int                      by, bx, iy, ix;
+  unsigned char                  *  data;
+  motor_pin_values                  local_pin_values;
+
+  Camera = raspicam_wrapper_create();
+  if (Camera == NULL){
+    printf("\nCAMERA: Camera couldn't open\n");
+  }
 
   pthread_mutex_lock( &(parameter->done->lock) );
   while (!(parameter->done->done))
@@ -369,16 +392,64 @@ void *ThreadCamera( void * arg  )
   
     sem_wait(parameter->camera_thread_sem);
   
+    // Check for calibration
+    pthread_mutex_lock( &(parameter->calibrate->lock) );
+    if(parameter->calibrate->pause){
+
+      raspicam_wrapper_grab( Camera );
+
+      image_size = raspicam_wrapper_getImageTypeSize( Camera, RASPICAM_WRAPPER_FORMAT_GRAY );
+
+      *data = (unsigned char *)malloc( image_size );
+
+      raspicam_wrapper_retrieve( Camera, data, RASPICAM_WRAPPER_FORMAT_GRAY );
+
+      calibrate_camera(data, &cutoff, averages);
+
+
+
+      parameter->calibrate->pause = false;
+    }
+    pthread_mutex_unlock( &(parameter->calibrate->lock) );
+    
     // Check mode 
-
-
+    pthread_mutex_lock( &(parameter->camera_signal->lock) );
+    if(parameter->camera_signal->recording){
+      pthread_mutex_unlock( &(parameter->camera_signal->lock) );
+    
       // Take photo
+      raspicam_wrapper_grab( Camera );
 
-      // Process into B/W
+      raspicam_wrapper_retrieve( Camera, data, RASPICAM_WRAPPER_FORMAT_GRAY );
 
-      // Calculate averages
+      get_offsets(data, &cutoff, averages, offsets);
 
+      // 
+      for (bx = 1; bx < DIVERGE_CUTOFF; bx++){
+        if (abs(offsets[bx]) > 5){
+          diverge_point = bx;
+          if (diverge_point < 2){
+            turn = ((PWM_MOTOR_MIN + offsets[diverge_point]/5)*10) > PWM_MOTOR_MAX) ? PWM_MOTOR_MAX : (PWM_MOTOR_MIN + offsets[diverge_point]/5)*10);
+            if(offsets[diverge_point] < 0){
+              local_pin_values.B_PWM = turn;
+            } else {
+              local_pin_values.A_PWM = turn;
+            }
+          }
+          else if (diverge_point < 12){
+            local_pin_values.A_PWM = PWM_MOTOR_MIN + (diverge_point/2)*10;
+            local_pin_values.B_PWM = PWM_MOTOR_MIN + (diverge_point/2)*10;
+          } else {
+
+          }
+
+        }
+
+      }
+      pthread_mutex_lock( &(parameter->camera_signal->lock) );
       // Send data to motor  
+    }
+    pthread_mutex_unlock( &(parameter->camera_signal->lock) );
   
   }
 
@@ -492,25 +563,29 @@ int main( void )
   pthread_t                       thread_clock_handle;
   pthread_t                       thread_control_handle;
   pthread_t                       thread_data_handle;
+  pthread_t                       thread_camera_handle;
 
   struct motor_thread_parameter   thread_motor_parameter;
   struct clock_thread_parameter   thread_clock_parameter;
   struct control_thread_parameter thread_control_parameter;
   struct data_thread_parameter    thread_data_parameter;
+  struct camera_thread_parameter  thread_camera_parameter;
 
-  struct pause_flag               pause_motor = {PTHREAD_MUTEX_INITIALIZER, false};
-  struct pause_flag               set_motors  = {PTHREAD_MUTEX_INITIALIZER, false};
-  struct done_flag                done        = {PTHREAD_MUTEX_INITIALIZER, false};
-  struct data_signal              data_signal = {PTHREAD_MUTEX_INITIALIZER, false, false};
-
+  struct pause_flag               pause_motor   = {PTHREAD_MUTEX_INITIALIZER, false};
+  struct pause_flag               set_motors    = {PTHREAD_MUTEX_INITIALIZER, false};
+  struct done_flag                done          = {PTHREAD_MUTEX_INITIALIZER, false};
+  struct data_signal              data_signal   = {PTHREAD_MUTEX_INITIALIZER, false, false};
+  struct camera_signal            camera_signal = {PTHREAD_MUTEX_INITIALIZER, false};
 
   pthread_mutex_t                 queue_lock = PTHREAD_MUTEX_INITIALIZER;
   pthread_mutex_t                 curr_cmd_lock = PTHREAD_MUTEX_INITIALIZER;
   sem_t                           control_thread_sem;
   sem_t                           data_thread_sem;
+  sem_t                           camera_thread_sem;
   
   sem_init(&control_thread_sem, 0, 1);
   sem_init(&data_thread_sem, 0, 1);
+  sem_init(&camera_thread_sem, 0, 1);
 
   #ifdef DEBUG
   printf("MAIN: created sem: %lx", (unsigned long)&control_thread_sem);
@@ -1044,6 +1119,10 @@ void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, 
       printf("\nMOTOR: Recieved Command: MODE 2\n");
       #endif
       *mode = MODE_2;
+
+      if(*hw == 8){
+        // Signal camera to start capturing
+      }
       break;
 
     case 't':
@@ -1092,6 +1171,14 @@ void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, 
       *hw = 8;
       break;    
     
+    case 'c':
+      #ifdef DEBUG
+      printf("\nMOTOR: Recieved Command: MODE 2\n");
+      #endif
+      printf("\n Calibrating Camera");
+      // Calibrate the camera
+      break;   
+
     default:
       break;
   }
@@ -1782,3 +1869,126 @@ void write_to_file(int mode, data_sample * data_samples, unsigned int * sample_c
   fclose(file);
 }
 
+#define CUTOFF_DIVIDER 5
+
+void calibrate_camera(void* data, unsigned int* cutoff, int* averages){
+
+  unsigned int        by, bx, iy, ix;
+  unsigned long       block_value;
+  struct RGB_pixel  * pixel = (struct RGB_pixel*)data;
+  unsigned char       brightness_map[CAMERA_HORIZONTAL_READ][60];
+  bool                image_map[CAMERA_HORIZONTAL_READ][60];
+  int                 track_blocks, track_instances, block;
+
+  for(bx = 0; bx < CAMERA_HORIZONTAL_READ; bx++){
+    for(by = 0; by < 60; by++){
+      block_value = 0;
+      
+      // Get the pixel values for a 16x16 block
+      for(iy = 0; iy < 16; iy++){
+        for(ix = 0; ix < 16; ix++){
+          block_value += (((unsigned int)(pixel[ix + 1280*iy + (79-bx)*16 + by*16*1280].R)) +
+                          ((unsigned int)(pixel[ix + 1280*iy + (79-bx)*16 + by*16*1280].G)) +
+                          ((unsigned int)(pixel[ix + 1280*iy + (79-bx)*16 + by*16*1280].B))) / 3; // do not worry about rounding
+        }
+      }
+
+      // Add average brightness value to brightness map
+      brightness_map[bx][by] = block_value/256;
+    }
+  }
+
+  block_value = 0;    // Being used for brightness average
+  // Calculate average brightness, and use it to calculate the cutoff
+  for(bx = 0; bx < CAMERA_HORIZONTAL_READ; bx++){
+    for(by = 0; by < 60; by++){
+      block_value += brightness_map[bx][by];    
+    }
+  }
+  *cutoff = (block_value/(60*CAMERA_HORIZONTAL_READ))/CUTOFF_DIVIDER;
+
+  for(bx = 0; bx < CAMERA_HORIZONTAL_READ; bx++){
+    for(by = 0; by < 60; by++){
+      block_value = 0;
+      
+      // Get the pixel values for a 16x16 block
+      for(iy = 0; iy < 16; iy++){
+        for(ix = 0; ix < 16; ix++){
+          block_value += (((unsigned int)(pixel[ix + 1280*iy + (79-bx)*16 + by*16*1280].R)) +
+                          ((unsigned int)(pixel[ix + 1280*iy + (79-bx)*16 + by*16*1280].G)) +
+                          ((unsigned int)(pixel[ix + 1280*iy + (79-bx)*16 + by*16*1280].B))) / 3; // do not worry about rounding
+        }
+      }
+
+      // If brightness is less then the cutoff, it is likely the track, so mark it
+      image_map[bx][by] = (block_value/256 < *cutoff);  
+    }
+    
+
+    averages[bx] = 0;     // average position
+    track_instances = 0;  // track width
+    track_blocks = 0;     // accumilating offset
+    
+    for(block = 10; block < 50; block++){ // 10-50 as edges of picture likely to have noise
+      if(image_map[bx][block] == 1){
+        track_blocks += block;
+        track_instances += 1;
+      }
+    }
+
+    // Creates average of where the track is, to calibrate for being slightly off center
+    if (track_instances) {averages[bx] = track_blocks/track_instances;}
+  }
+}
+
+void get_offsets(void* data, unsigned int* cutoff, int* averages, int* offsets){
+
+  unsigned int        by, bx, iy, ix;
+  unsigned long       block_value;
+  struct RGB_pixel  * pixel = (struct RGB_pixel*)data;
+  bool                image_map[CAMERA_HORIZONTAL_READ][60];
+  int                 track_blocks, track_instances, block;
+
+
+  for(bx = 0; bx < CAMERA_HORIZONTAL_READ; bx++){
+    for(by = 0; by < 60; by++){
+      block_value = 0;
+      
+      // Get the pixel values for a 16x16 block
+      for(iy = 0; iy < 16; iy++){
+        for(ix = 0; ix < 16; ix++){
+          block_value += (((unsigned int)(pixel[ix + 1280*iy + (79-bx)*16 + by*16*1280].R)) +
+                          ((unsigned int)(pixel[ix + 1280*iy + (79-bx)*16 + by*16*1280].G)) +
+                          ((unsigned int)(pixel[ix + 1280*iy + (79-bx)*16 + by*16*1280].B))) / 3; // do not worry about rounding
+        }
+      }
+
+      // If brightness is less then the cutoff, it is likely the track, so mark it
+      image_map[bx][by] = (block_value/256 < *cutoff);  
+    }
+    
+    offsets[bx] = 0;      // average position
+    track_instances = 0;  // track width
+    track_blocks = 0;     // accumilating offset
+
+    // If using previous offsets to shift checked area so turns are tracked
+    if (bx) {
+      for(block = averages[bx] + offsets[bx - 1] - 10; block < averages[bx] + offsets[bx - 1] + 10; block++){   // Only blocks surrounding average
+        if(image_map[bx][block] == 1){
+          track_blocks += block;
+          track_instances += 1;
+        }
+      }
+    } else {
+      for(block = averages[bx] - 10; block < averages[bx] + 10; block++){   // Only blocks surrounding average
+        if(image_map[bx][block] == 1){
+          track_blocks += block;
+          track_instances += 1;
+        }
+      }
+    }
+    
+    // Creates average of where the track is, to calibrate for being slightly off center
+    if (track_instances) {offsets[bx] = track_blocks/track_instances - averages[bx];}
+
+}

@@ -2131,7 +2131,15 @@ void get_offsets(void* data, unsigned int* cutoff, int* averages, int* offsets){
     // Creates average of where the track is, to calibrate for being slightly off center
     if (track_instances) {offsets[bx] = track_blocks/track_instances - averages[bx];}
 
-    
+  #define DEBUG
+  #ifdef DEBUG
+  printf("\n");
+  for(bx = 0; bx < CAMERA_HORIZONTAL_READ; bx++){
+    printf("%i | ", offsets[bx]);
+  }
+  printf("\n");
+  #endif
+  #undef DEBUG
 
   }
 

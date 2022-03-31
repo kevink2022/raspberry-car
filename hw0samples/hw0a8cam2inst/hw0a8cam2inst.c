@@ -91,12 +91,12 @@ int main( int argc, char *argv[] )
             unsigned long     block_value;
             unsigned long     cutoff = 10;
             bool              image_map[80][60];
-            int      offsets[80];
+            int               offsets[80];
             int block = 0, left = 0, right = 0, center = 30;
 
-            printf("Height: %d, Width: %d", raspicam_wrapper_getWidth( Camera ), raspicam_wrapper_getHeight( Camera ));
+            printf("Height: %d, Width: %d\n", raspicam_wrapper_getWidth( Camera ), raspicam_wrapper_getHeight( Camera ));
 
-            sleep(1);
+            //sleep(1);
 
             printf("Starting processing\n");
 

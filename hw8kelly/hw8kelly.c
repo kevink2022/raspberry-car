@@ -477,7 +477,7 @@ void *ThreadCamera( void * arg  )
         if (abs(offsets[bx]) > 5){
           diverge_point = bx;
           
-          if (diverge_point < 2){
+          if (diverge_point < 3){
             turn = (PWM_MOTOR_MIN + (offsets[diverge_point]/5)*10);
 
             if(turn > PWM_MOTOR_MAX){turn = PWM_MOTOR_MAX;}

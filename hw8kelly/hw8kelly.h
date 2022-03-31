@@ -19,7 +19,6 @@
 #include "bsc.h"
 #include "MPU6050.h"
 #include "MPU9250.h"
-#include "raspicam_wrapper.h"
 
 
 

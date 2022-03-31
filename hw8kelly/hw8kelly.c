@@ -499,9 +499,11 @@ void *ThreadCamera( void * arg  )
             if(turn > PWM_MOTOR_MAX){turn = PWM_MOTOR_MAX;}
 
             if(offsets[diverge_point] < 0){
+              printf("LEFT\n");
               local_pin_values.A_PWM = PWM_MOTOR_MAX;
               local_pin_values.B_PWM = PWM_MOTOR_MIN;
             } else {
+              printf("RIGHT\n");
               local_pin_values.B_PWM = PWM_MOTOR_MAX;
               local_pin_values.A_PWM = PWM_MOTOR_MIN;
             }
@@ -513,6 +515,7 @@ void *ThreadCamera( void * arg  )
             local_pin_values.A_PWM = PWM_MOTOR_MAX;
             local_pin_values.B_PWM = PWM_MOTOR_MAX;
           }
+          break;
         } else {
           local_pin_values.A_PWM = PWM_MOTOR_MAX;
           local_pin_values.B_PWM = PWM_MOTOR_MAX;
@@ -2166,5 +2169,6 @@ void get_offsets(unsigned char * data, unsigned int* cutoff, int* averages, int*
     #undef DEBUG
 
   }
+  printf("\n\n");
 
 }

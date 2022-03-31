@@ -396,7 +396,7 @@ void *ThreadCamera( void * arg  )
   unsigned long                     block_value;
   unsigned int                      cutoff = 90;
   unsigned int                      by, bx, iy, ix;
-  unsigned char                  *  data;
+  struct RGB_pixel               *  data;
   motor_pin_values                  local_pin_values;
   bool                              change = false;
   #define DEBUG
@@ -443,7 +443,7 @@ void *ThreadCamera( void * arg  )
 
       image_size = raspicam_wrapper_getImageTypeSize( Camera, RASPICAM_WRAPPER_FORMAT_RGB );
 
-      data = (unsigned char *)malloc( image_size );
+      data = (struct RGB_pixel *)malloc( image_size );
 
       raspicam_wrapper_retrieve( Camera, data, RASPICAM_WRAPPER_FORMAT_RGB );
 

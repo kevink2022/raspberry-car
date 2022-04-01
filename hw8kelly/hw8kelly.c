@@ -16,9 +16,8 @@
 
 // HW8 CAMERA PARAMS
 #define CLOCK_CAMERA_MULTIPLIER 3
-#define CAMERA_TURN_DELAY 0
+#define CAMERA_TURN_DELAY 2
 #define JUICE 5
-#define CAMERA_TO_MOTOR_DELAY 3
 
 
 #define QUEUE_SIZE 100
@@ -281,7 +280,7 @@ void *ThreadMotor( void * arg  )
       if (mode == MODE_2){
         pthread_mutex_lock(&parameter->camera_signal->lock);
         motor_pin_values = *parameter->camera_signal->camera_set_pins;
-        local_delay_mult = *parameter->camera_signal->delay_mult;
+        local_delay_mult = parameter->camera_signal->delay_mult;
         pthread_mutex_unlock(&parameter->camera_signal->lock);
         usleep(local_delay_mult*1000);
         set_motor_pins(parameter->motor_pins, &motor_pin_values);
@@ -570,7 +569,7 @@ void *ThreadCamera( void * arg  )
       pthread_mutex_lock( &(parameter->camera_signal->lock) );
       // Send data to motor  
       parameter->camera_signal->camera_set_pins = &local_pin_values;
-      parameter->camera_signal->delay_mult = &local_delay_mult;
+      parameter->camera_signal->delay_mult = local_delay_mult;
     }
     pthread_mutex_unlock( &(parameter->camera_signal->lock) );
   
@@ -722,8 +721,7 @@ int main( void )
   motor_pin_values camera_set_pins;
   init_motor_pin_values(&camera_set_pins);
   camera_signal.camera_set_pins = &camera_set_pins;
-  int delay_mult = 0;
-  camera_signal.delay_mult = &delay_mult;
+  camera_signal.delay_mult = 0;
 
   #ifdef DEBUG
   printf("MAIN: created sem: %lx", (unsigned long)&control_thread_sem);

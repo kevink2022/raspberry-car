@@ -57,7 +57,7 @@ typedef struct
   pthread_mutex_t     lock;
   bool                recording;
   motor_pin_values  * camera_set_pins;
-  int               * delay_mult;
+  int                 delay_mult;
 } camera_signal;
 
 struct RGB_pixel

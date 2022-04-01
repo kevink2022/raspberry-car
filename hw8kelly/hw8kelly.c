@@ -180,6 +180,7 @@ void *ThreadMotor( void * arg  )
   char command = '\0', next_command = '\0';
   int mode = MODE_1, hw = 8;
   bool off_course = false; // Used to exit thread if off course and stuck turing in mode 2
+  int local_delay_mult = 0;
 
   motor_pin_values motor_pin_values;
   init_motor_pin_values(&motor_pin_values);
@@ -280,8 +281,9 @@ void *ThreadMotor( void * arg  )
       if (mode == MODE_2){
         pthread_mutex_lock(&parameter->camera_signal->lock);
         motor_pin_values = *parameter->camera_signal->camera_set_pins;
+        local_delay_mult = *parameter->camera_signal->delay_mult;
         pthread_mutex_unlock(&parameter->camera_signal->lock);
-        usleep(CAMERA_TO_MOTOR_DELAY*1000);
+        usleep(local_delay_mult*1000);
         set_motor_pins(parameter->motor_pins, &motor_pin_values);
       }
     }
@@ -419,6 +421,7 @@ void *ThreadCamera( void * arg  )
   unsigned char                  *  data;
   motor_pin_values                  local_pin_values;
   bool                              change = false;
+  int                               local_delay_mult = 0;
   #define DEBUG
 
   #ifdef DEBUG
@@ -530,6 +533,7 @@ void *ThreadCamera( void * arg  )
               local_pin_values.AI2 = 0;
               local_pin_values.BI1 = 0;
               local_pin_values.BI2 = 1;
+              local_delay_mult = CAMERA_TURN_DELAY;
             } else {
               printf("**********RIGHT*********\n offset:   %i\n", offsets[diverge_point]);
               local_pin_values.A_PWM = PWM_MOTOR_MIN + JUICE;// + 2*abs(offsets[diverge_point]);
@@ -538,6 +542,7 @@ void *ThreadCamera( void * arg  )
               local_pin_values.AI2 = 1;
               local_pin_values.BI1 = 1;
               local_pin_values.BI2 = 0;
+              local_delay_mult = CAMERA_TURN_DELAY;
             }
           }
           else if (diverge_point < DIVERGE_CUTOFF){
@@ -548,6 +553,7 @@ void *ThreadCamera( void * arg  )
             local_pin_values.AI2 = 1;
             local_pin_values.BI1 = 0;
             local_pin_values.BI2 = 1;
+            local_delay_mult = 0;
           } else {
             local_pin_values.A_PWM = PWM_MOTOR_MAX;
             local_pin_values.B_PWM = PWM_MOTOR_MAX;
@@ -555,10 +561,12 @@ void *ThreadCamera( void * arg  )
             local_pin_values.AI2 = 1;
             local_pin_values.BI1 = 0;
             local_pin_values.BI2 = 1;
+            local_delay_mult = 0;
           }
       pthread_mutex_lock( &(parameter->camera_signal->lock) );
       // Send data to motor  
       parameter->camera_signal->camera_set_pins = &local_pin_values;
+      parameter->camera_signal->delay_mult = &local_delay_mult;
     }
     pthread_mutex_unlock( &(parameter->camera_signal->lock) );
   
@@ -710,6 +718,8 @@ int main( void )
   motor_pin_values camera_set_pins;
   init_motor_pin_values(&camera_set_pins);
   camera_signal.camera_set_pins = &camera_set_pins;
+  int delay_mult = 0;
+  camera_signal.delay_mult = &delay_mult;
 
   #ifdef DEBUG
   printf("MAIN: created sem: %lx", (unsigned long)&control_thread_sem);

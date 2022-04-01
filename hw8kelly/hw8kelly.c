@@ -421,7 +421,7 @@ void *ThreadCamera( void * arg  )
   motor_pin_values                  local_pin_values;
   bool                              change = false;
   int                               local_delay_mult = 0;
-  #define DEBUG
+  //#define DEBUG
 
   #ifdef DEBUG
   printf("\nCAMERA: Init 2\n");
@@ -488,9 +488,9 @@ void *ThreadCamera( void * arg  )
 
       calibrate_camera(data, &cutoff, averages);
 
-      #ifdef DEBUG
+      //#ifdef DEBUG
       printf("\nCAMERA: Calibrate function\n cutoff: %i\n", cutoff);
-      #endif
+      //#endif
 
       parameter->calibrate->pause = false;
     }
@@ -521,7 +521,7 @@ void *ThreadCamera( void * arg  )
 
       if (diverge_point < 3){
         if(offsets[diverge_point] > 0){
-          printf("**********LEFT**********\n offset:   %i\n", offsets[diverge_point]);
+          //printf("**********LEFT**********\n offset:   %i\n", offsets[diverge_point]);
           local_pin_values.B_PWM = PWM_MOTOR_MIN + JUICE;// + 2*abs(offsets[diverge_point]);
           local_pin_values.A_PWM = PWM_MOTOR_MIN + JUICE;// + 2*abs(offsets[diverge_point]);
           local_pin_values.AI1 = 1;
@@ -530,7 +530,7 @@ void *ThreadCamera( void * arg  )
           local_pin_values.BI2 = 1;
           local_delay_mult = CAMERA_TURN_DELAY;
         } else {
-          printf("**********RIGHT*********\n offset:   %i\n", offsets[diverge_point]);
+          //printf("**********RIGHT*********\n offset:   %i\n", offsets[diverge_point]);
           local_pin_values.A_PWM = PWM_MOTOR_MIN + JUICE;// + 2*abs(offsets[diverge_point]);
           local_pin_values.B_PWM = PWM_MOTOR_MIN + JUICE;// + 2*abs(offsets[diverge_point]);
           local_pin_values.AI1 = 0;
@@ -541,7 +541,7 @@ void *ThreadCamera( void * arg  )
         }
       }
       else if (diverge_point < DIVERGE_CUTOFF){
-        printf("\n**********SLOW**********\n");
+        //printf("\n**********SLOW**********\n");
         local_pin_values.A_PWM = PWM_MOTOR_MIN + diverge_point/4;//+ (diverge_point/2)*10;
         local_pin_values.B_PWM = PWM_MOTOR_MIN + diverge_point/4;//+ (diverge_point/2)*10;
         local_pin_values.AI1 = 0;
@@ -550,7 +550,7 @@ void *ThreadCamera( void * arg  )
         local_pin_values.BI2 = 1;
         local_delay_mult = 0;
       } else {
-        printf("\n**********FAST**********\n");
+        //printf("\n**********FAST**********\n");
         for (bx = 1; bx < DIVERGE_CUTOFF; bx++){
           printf("%i | ", offsets[bx]);
         } printf("\n");

@@ -16,8 +16,9 @@
 
 // HW8 CAMERA PARAMS
 #define CLOCK_CAMERA_MULTIPLIER 3
-#define CAMERA_TURN_DELAY 1
+#define CAMERA_TURN_DELAY 0
 #define JUICE 5
+#define CAMERA_TO_MOTOR_DELAY 3
 
 
 #define QUEUE_SIZE 100
@@ -280,6 +281,7 @@ void *ThreadMotor( void * arg  )
         pthread_mutex_lock(&parameter->camera_signal->lock);
         motor_pin_values = *parameter->camera_signal->camera_set_pins;
         pthread_mutex_unlock(&parameter->camera_signal->lock);
+        usleep(CAMERA_TO_MOTOR_DELAY*1000);
         set_motor_pins(parameter->motor_pins, &motor_pin_values);
       }
     }
@@ -528,7 +530,6 @@ void *ThreadCamera( void * arg  )
               local_pin_values.AI2 = 0;
               local_pin_values.BI1 = 0;
               local_pin_values.BI2 = 1;
-              usleep(CAMERA_TURN_DELAY*1000);
             } else {
               printf("**********RIGHT*********\n offset:   %i\n", offsets[diverge_point]);
               local_pin_values.A_PWM = PWM_MOTOR_MIN + JUICE;// + 2*abs(offsets[diverge_point]);
@@ -537,7 +538,6 @@ void *ThreadCamera( void * arg  )
               local_pin_values.AI2 = 1;
               local_pin_values.BI1 = 1;
               local_pin_values.BI2 = 0;
-              usleep(CAMERA_TURN_DELAY*1000);
             }
           }
           else if (diverge_point < DIVERGE_CUTOFF){

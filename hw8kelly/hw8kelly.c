@@ -2205,6 +2205,7 @@ void get_offsets(unsigned char * data, unsigned int* cutoff, int* averages, int*
     
     // Creates average of where the track is, to calibrate for being slightly off center
     if (track_instances) {offsets[bx] = track_blocks/track_instances - averages[bx];}
+    else if (bx>10) {offsets[bx] = 99;}
 
     //#define DEBUG
     #ifdef DEBUG

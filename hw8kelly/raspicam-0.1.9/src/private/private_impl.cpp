@@ -176,7 +176,7 @@ namespace raspicam {
         void Private_Impl::retrieve ( unsigned char *data,RASPICAM_FORMAT type ) {
             if ( callback_data._buffData.size==0 ) return;
             // if ( type!=RASPICAM_FORMAT_IGNORE ) {
-            //     cerr<<__FILE__<<" "<<__LINE__<<" "<<endl;
+            //     cerr<<__FILE__<<":"<<__LINE__<<" :Private_Impl::retrieve type is not RASPICAM_FORMAT_IGNORE as it should be"<<endl;
             // }
             if(  State.captureFtm ==RASPICAM_FORMAT_YUV420){
                 auto imagePtr=callback_data._buffData.data;

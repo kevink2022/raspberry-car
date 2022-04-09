@@ -470,6 +470,8 @@ void *ThreadCamera( void * arg  )
 
       image_size = raspicam_wrapper_getImageTypeSize( Camera, RASPICAM_WRAPPER_FORMAT_RGB );
 
+      printf("image size: %i", image_size/3);
+
       data = (unsigned char *)malloc( image_size );
 
       raspicam_wrapper_retrieve( Camera, data, RASPICAM_WRAPPER_FORMAT_RGB );
@@ -478,9 +480,19 @@ void *ThreadCamera( void * arg  )
       printf("\nCAMERA: Calibrate retreive \n");
       #endif
 
+      FILE * outFile = fopen( "calibrate0.ppm", "wb" );
+      if (outFile != NULL)
+      {
+        fprintf( outFile, "P6\n" );  // write .ppm file header
+        fprintf( outFile, "%d %d 255\n", raspicam_wrapper_getWidth( Camera ), raspicam_wrapper_getHeight( Camera ) );
+        // write the image data
+        fwrite( data, 1, raspicam_wrapper_getImageTypeSize( Camera, RASPICAM_WRAPPER_FORMAT_RGB ), outFile );
+        fclose( outFile );
+      }
+
       calibrate_camera(data, &cutoff, averages, &local_hw);
 
-      FILE * outFile = fopen( "calibrate.ppm", "wb" );
+      outFile = fopen( "calibrate1.ppm", "wb" );
       if (outFile != NULL)
       {
         fprintf( outFile, "P6\n" );  // write .ppm file header
@@ -2119,7 +2131,7 @@ void calibrate_camera(unsigned char * data, unsigned int* cutoff, int* averages,
   {
     int i;
     unsigned int    pixel_value, pixel_index;
-    unsigned long   pixel_value_total, x_coords, y_coords;
+    unsigned long   pixel_value_total = 0, x_coords, y_coords;
 
     for (pixel_index = 0; pixel_index < 1228800; pixel_index++){
       pixel_value_total += (((unsigned int)(pixel[pixel_index].R)) +
@@ -2127,18 +2139,21 @@ void calibrate_camera(unsigned char * data, unsigned int* cutoff, int* averages,
                             ((unsigned int)(pixel[pixel_index].B))) / 3; 
     }
     // Set cutoff for what is considered the laser
-    *cutoff = 15*(pixel_value_total/1228800);
-    if (*cutoff > 235){
+    *cutoff = 20*(pixel_value_total/1228800);
+    if (*cutoff < 150){
+      *cutoff = 150;
+    }
+    else if (*cutoff > 235){
       *cutoff = 235;
     }
 
     // For printng out a picture of the envoriment
-    for (i = 0; i < 1228800; i++){
-      pixel_value += (((unsigned int)(pixel[pixel_index].R)) +
+    for (pixel_index = 0; pixel_index < 1228800; pixel_index++){
+      pixel_value = (((unsigned int)(pixel[pixel_index].R)) +
                       ((unsigned int)(pixel[pixel_index].G)) +
                       ((unsigned int)(pixel[pixel_index].B))) / 3; 
       
-      if(pixel_value>*cutoff){
+      if(*cutoff < pixel_value){
         (pixel[pixel_index].R) = 255;
         (pixel[pixel_index].G) = 255;
         (pixel[pixel_index].B) = 255;
@@ -2217,40 +2232,40 @@ void get_offsets(unsigned char * data, unsigned int* cutoff, int* averages, int*
   else
   {
     int i;
-    unsigned int    pixel_value, pixel_index, x_count, y_count;
-    unsigned long   pixel_value_total, x_coords, y_coords;
-
-    for (pixel_index = 0; pixel_index < 1228800; pixel_index++){
-      pixel_value_total += (((unsigned int)(pixel[pixel_index].R)) +
-                            ((unsigned int)(pixel[pixel_index].G)) +
-                            ((unsigned int)(pixel[pixel_index].B))) / 3; 
-    }
-    // Set cutoff for what is considered the laser
-    *cutoff = 15*(pixel_value_total/1228800);
-    if (*cutoff > 235){
-      *cutoff = 235;
-    }
+    unsigned int    pixel_value, pixel_index, x_count = 0, y_count = 0;
+    unsigned long   pixel_value_total, x_coords = 0, y_coords = 0;
 
     // For printng out a picture of the envoriment
     for (pixel_index = 0; pixel_index < 1228800; pixel_index++){
-      pixel_value += (((unsigned int)(pixel[pixel_index].R)) +
+      pixel_value =  (((unsigned int)(pixel[pixel_index].R)) +
                       ((unsigned int)(pixel[pixel_index].G)) +
                       ((unsigned int)(pixel[pixel_index].B))) / 3; 
       
-      if(pixel_value>*cutoff){
+      if(*cutoff < pixel_value && pixel_index%1280 < 1278){
         x_coords += pixel_index%1280;
         y_coords += pixel_index/1280;
         x_count++;
         y_count++;
+        //printf(" x: %i | y: %i \n", pixel_index%1280, pixel_index/1280);
       }
     }
 
-    if(x_count) {offsets[0] = x_coords/x_count;}
-    else {offsets[0] = 99999;}
-    if(y_count) {offsets[0] = y_coords/y_count;}
-    else {offsets[1] = 99999;}
+    if(x_count) {
+      offsets[0] = x_coords/x_count;
+      offsets[1] = y_coords/y_count;
+      printf(" %i %i %i\n", x_count, offsets[0], offsets[1]);
+    }
+    else {
+      offsets[0] = 99999;
+      offsets[1] = 99999;
+    }
   }
 }
+
+#define T_JUICE 30
+#define F_JUICE 40
+#define Y_JUICE 120
+#define X_JUICE 80
 
 void calc_pins(motor_pin_values *pin_values, int *delay_value, int* offsets, int *hw){
 
@@ -2311,10 +2326,50 @@ void calc_pins(motor_pin_values *pin_values, int *delay_value, int* offsets, int
   }
   else // hw 9 and 10
   {
-    // if (offsets[1] != 9999 || offsets[1] != 9999){
-
-    // }
-
-    // if (offsets[0] != 9999)
+    if (offsets[1] != 99999)
+    {
+      pin_values->B_PWM = PWM_MOTOR_MIN + T_JUICE;
+      pin_values->A_PWM = PWM_MOTOR_MIN + T_JUICE;
+      if (offsets[1] > 480 + Y_JUICE)
+      {
+        pin_values->AI1 = 1;
+        pin_values->AI2 = 0;
+        pin_values->BI1 = 0;
+        pin_values->BI2 = 1;
+      } 
+      else if (offsets[1] < 480 - Y_JUICE)
+      {
+        pin_values->AI1 = 0;
+        pin_values->AI2 = 1;
+        pin_values->BI1 = 1;
+        pin_values->BI2 = 0;
+      } 
+      else if (offsets[0] != 99999)
+      {
+        pin_values->AI1 = 0;
+        pin_values->AI2 = 1;
+        pin_values->BI1 = 0;
+        pin_values->BI2 = 1;
+        if (offsets[0] > X_JUICE){
+          pin_values->B_PWM = PWM_MOTOR_MIN + F_JUICE;
+          pin_values->A_PWM = PWM_MOTOR_MIN + F_JUICE;
+        } 
+      }
+      else 
+      {
+        pin_values->AI1 = 0;
+        pin_values->AI2 = 0;
+        pin_values->BI1 = 0;
+        pin_values->BI2 = 0;
+        pin_values->B_PWM = PWM_MOTOR_MIN;
+        pin_values->A_PWM = PWM_MOTOR_MIN;
+      }
+    } 
+    else{
+      pin_values->AI1 = 0;
+      pin_values->AI2 = 0;
+      pin_values->BI1 = 0;
+      pin_values->BI2 = 0;
+    }
   }
 }

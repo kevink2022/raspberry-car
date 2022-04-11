@@ -9,22 +9,10 @@
 * By Kevin Kelly and Kyusun Choi
 * 
 ***************************************************/
-#include "hw9kelly.h"
+#include "hw8kelly.h"
 #include "raspicam_wrapper.h"
 
-#define HW_NUM 9
 #define CLOCK_PERIOD 0.01
-
-// HW9 PARAMS
-#define MAX_CUTOFF 235
-#define MIN_CUTOFF 150
-#define AVG_MULT 15
-#define NOISE_CUTOFF 2
-#define T_JUICE 20
-#define F_JUICE 40
-#define Y_SPREAD 80
-#define X_STOP 80
-#define CALIBRATE_PERIOD 100 // calibrate after this many camera thread cycles
 
 // HW8 CAMERA PARAMS
 #define CLOCK_CAMERA_MULTIPLIER 3
@@ -294,7 +282,7 @@ void *ThreadMotor( void * arg  )
         motor_pin_values = *parameter->camera_signal->camera_set_pins;
         local_delay_mult = parameter->camera_signal->delay_mult;
         pthread_mutex_unlock(&parameter->camera_signal->lock);
-        //usleep(local_delay_mult*1000);
+        usleep(local_delay_mult*1000);
         set_motor_pins(parameter->motor_pins, &motor_pin_values);
       }
     }
@@ -433,7 +421,6 @@ void *ThreadCamera( void * arg  )
   motor_pin_values                  local_pin_values;
   bool                              change = false;
   int                               local_delay_mult = 0;
-  int                               local_hw = HW_NUM;
   //#define DEBUG
 
   #ifdef DEBUG
@@ -450,8 +437,8 @@ void *ThreadCamera( void * arg  )
   if (Camera == NULL){
     printf("\nCAMERA: Camera couldn't create\n");
   }
-  if(!raspicam_wrapper_open( Camera )){
-    //printf("\nCAMERA: Camera couldn't open\n");
+  if(raspicam_wrapper_open( Camera )){
+    printf("\nCAMERA: Camera couldn't open\n");
   }
 
   #ifdef DEBUG
@@ -464,8 +451,6 @@ void *ThreadCamera( void * arg  )
     pthread_mutex_unlock( &(parameter->done->lock) );
 
     sem_wait(parameter->camera_thread_sem);
-
-    
   
     // Check for calibration
     pthread_mutex_lock( &(parameter->calibrate->lock) );
@@ -483,8 +468,6 @@ void *ThreadCamera( void * arg  )
 
       image_size = raspicam_wrapper_getImageTypeSize( Camera, RASPICAM_WRAPPER_FORMAT_RGB );
 
-      //printf("image size: %i", image_size/3);
-
       data = (unsigned char *)malloc( image_size );
 
       raspicam_wrapper_retrieve( Camera, data, RASPICAM_WRAPPER_FORMAT_RGB );
@@ -493,8 +476,7 @@ void *ThreadCamera( void * arg  )
       printf("\nCAMERA: Calibrate retreive \n");
       #endif
 
-      #ifdef DEBUG
-      FILE * outFile = fopen( "calibrate0.ppm", "wb" );
+      FILE * outFile = fopen( "calibrate.ppm", "wb" );
       if (outFile != NULL)
       {
         fprintf( outFile, "P6\n" );  // write .ppm file header
@@ -503,25 +485,12 @@ void *ThreadCamera( void * arg  )
         fwrite( data, 1, raspicam_wrapper_getImageTypeSize( Camera, RASPICAM_WRAPPER_FORMAT_RGB ), outFile );
         fclose( outFile );
       }
-      #endif
 
-      calibrate_camera(data, &cutoff, averages, &local_hw);
+      calibrate_camera(data, &cutoff, averages);
 
-      #ifdef DEBUG
-      outFile = fopen( "calibrate1.ppm", "wb" );
-      if (outFile != NULL)
-      {
-        fprintf( outFile, "P6\n" );  // write .ppm file header
-        fprintf( outFile, "%d %d 255\n", raspicam_wrapper_getWidth( Camera ), raspicam_wrapper_getHeight( Camera ) );
-        // write the image data
-        fwrite( data, 1, raspicam_wrapper_getImageTypeSize( Camera, RASPICAM_WRAPPER_FORMAT_RGB ), outFile );
-        fclose( outFile );
-      }
-      #endif
-
-      #ifdef DEBUG
+      //#ifdef DEBUG
       printf("\nCAMERA: Calibrate function\n cutoff: %i\n", cutoff);
-      #endif
+      //#endif
 
       parameter->calibrate->pause = false;
     }
@@ -537,10 +506,62 @@ void *ThreadCamera( void * arg  )
 
       raspicam_wrapper_retrieve( Camera, data, RASPICAM_WRAPPER_FORMAT_RGB );
 
-      get_offsets(data, &cutoff, averages, offsets, &local_hw);
+      get_offsets(data, &cutoff, averages, offsets);
 
-      calc_pins(&local_pin_values, &local_delay_mult, offsets, &local_hw);
+      diverge_point = DIVERGE_CUTOFF + 1;
+      for (bx = 1; bx < DIVERGE_CUTOFF; bx++){
+        if (abs(offsets[bx]) > 5){
+          diverge_point = bx;
+          #ifdef DEBUG
+          printf("\n diverge: %i\n", diverge_point);
+          #endif
+          break;
+        } 
+      }
 
+      if (diverge_point < 3){
+        if(offsets[diverge_point] > 0){
+          //printf("**********LEFT**********\n offset:   %i\n", offsets[diverge_point]);
+          local_pin_values.B_PWM = PWM_MOTOR_MIN + JUICE;// + 2*abs(offsets[diverge_point]);
+          local_pin_values.A_PWM = PWM_MOTOR_MIN + JUICE;// + 2*abs(offsets[diverge_point]);
+          local_pin_values.AI1 = 1;
+          local_pin_values.AI2 = 0;
+          local_pin_values.BI1 = 0;
+          local_pin_values.BI2 = 1;
+          local_delay_mult = CAMERA_TURN_DELAY;
+        } else {
+          //printf("**********RIGHT*********\n offset:   %i\n", offsets[diverge_point]);
+          local_pin_values.A_PWM = PWM_MOTOR_MIN + JUICE;// + 2*abs(offsets[diverge_point]);
+          local_pin_values.B_PWM = PWM_MOTOR_MIN + JUICE;// + 2*abs(offsets[diverge_point]);
+          local_pin_values.AI1 = 0;
+          local_pin_values.AI2 = 1;
+          local_pin_values.BI1 = 1;
+          local_pin_values.BI2 = 0;
+          local_delay_mult = CAMERA_TURN_DELAY;
+        }
+      }
+      else if (diverge_point < DIVERGE_CUTOFF){
+        //printf("\n**********SLOW**********\n");
+        local_pin_values.A_PWM = PWM_MOTOR_MIN + diverge_point/4;//+ (diverge_point/2)*10;
+        local_pin_values.B_PWM = PWM_MOTOR_MIN + diverge_point/4;//+ (diverge_point/2)*10;
+        local_pin_values.AI1 = 0;
+        local_pin_values.AI2 = 1;
+        local_pin_values.BI1 = 0;
+        local_pin_values.BI2 = 1;
+        local_delay_mult = 0;
+      } else {
+        //printf("\n**********FAST**********\n");
+        for (bx = 1; bx < DIVERGE_CUTOFF; bx++){
+          printf("%i | ", offsets[bx]);
+        } printf("\n");
+        local_pin_values.A_PWM = PWM_MOTOR_MAX - 20;
+        local_pin_values.B_PWM = PWM_MOTOR_MAX - 20;
+        local_pin_values.AI1 = 0;
+        local_pin_values.AI2 = 1;
+        local_pin_values.BI1 = 0;
+        local_pin_values.BI2 = 1;
+        local_delay_mult = 0;
+      }
       pthread_mutex_lock( &(parameter->camera_signal->lock) );
       // Send data to motor  
       parameter->camera_signal->camera_set_pins = &local_pin_values;
@@ -551,7 +572,10 @@ void *ThreadCamera( void * arg  )
   }
 
   free(data);
+
+  #ifdef DEBUG
   printf("CAMERA: Exit\n");
+  #endif
 }
 
 
@@ -595,7 +619,7 @@ void *ThreadKey( void * arg )
   bool done = false;
   char mode = '1';
   char input = 's';
-  char hw = '9';
+  char hw = '8';
 
   #ifdef DEBUG
   printf("KEY: init\n");
@@ -611,7 +635,7 @@ void *ThreadKey( void * arg )
     #endif
 
     if(input == 'q'){
-      printf(" q\n\n");
+      printf(" q\n");
       done = true;
       /* indicate that it is time to shut down */
       pthread_mutex_lock( &(thread_key_parameter->done->lock) );
@@ -1109,7 +1133,7 @@ void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, 
         data_signal->m0 = false;
         write_to_file(*mode, data_samples, sample_count); // Need to move, slowing down stops
         pthread_mutex_unlock( &(data_signal->lock) );
-      } else if (*hw >= 8) {
+      } else if (*hw == 8) {
         pthread_mutex_lock( &(camera_signal->lock) );
         camera_signal->recording = false;
         pthread_mutex_unlock( &(camera_signal->lock) );
@@ -1142,7 +1166,7 @@ void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, 
         data_signal->recording = true;
         data_signal->m0 = false;
         pthread_mutex_unlock( &(data_signal->lock) );
-      } else if (*hw >= 8 && *mode == MODE_2) {
+      } else if (*hw == 8 && *mode == MODE_2) {
         pthread_mutex_lock( &(camera_signal->lock) );
         camera_signal->recording = true;
         pthread_mutex_unlock( &(camera_signal->lock) );
@@ -1310,19 +1334,12 @@ void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, 
       #endif
       *hw = 8;
       break;    
-
-    case '9':
-      #ifdef DEBUG
-      printf("\nMOTOR: Recieved Command: MODE 2\n");
-      #endif
-      *hw = 9;
-      break;  
     
     case 'c':
       #ifdef DEBUG
       printf("\nMOTOR: Recieved Command: MODE 2\n");
       #endif
-      //printf("\n Calibrating Camera");
+      printf("\n Calibrating Camera");
       // Calibrate the camera
       pthread_mutex_lock( &calibrate->lock );
       calibrate->pause = true;
@@ -2023,368 +2040,180 @@ void write_to_file(int mode, data_sample * data_samples, unsigned int * sample_c
 
 #undef DEBUG
 
-void calibrate_camera(unsigned char * data, unsigned int* cutoff, int* averages, int* hw){
+void calibrate_camera(unsigned char * data, unsigned int* cutoff, int* averages){
 
+  unsigned int        by, bx, iy, ix;
+  unsigned long       block_value;
   struct RGB_pixel  * pixel = (struct RGB_pixel*)data;
+  unsigned char       brightness_map[CAMERA_HORIZONTAL_READ][60];
+  bool                image_map[CAMERA_HORIZONTAL_READ][60];
+  int                 track_blocks, track_instances, block;
 
-  if(*hw == 8)
-  {
-    unsigned int        by, bx, iy, ix;
-    unsigned char       brightness_map[CAMERA_HORIZONTAL_READ][60];
-    bool                image_map[CAMERA_HORIZONTAL_READ][60];
-    int                 track_blocks, track_instances, block;
-    unsigned long       block_value;
+  #ifdef DEBUG
+  printf("\nCAMERA-CALIBRATE: init \n");
+  #endif
 
-    #ifdef DEBUG
-    printf("\nCAMERA-CALIBRATE: init \n");
-    #endif
-
-    for(bx = 0; bx < CAMERA_HORIZONTAL_READ; bx++){
-      for(by = 0; by < 60; by++){
-        block_value = 0;
-        
-        #ifdef DEBUG
-        printf("bx: %i | by: %i \n", bx, by);
-        #endif
-        // Get the pixel values for a 16x16 block
-        for(iy = 0; iy < 16; iy++){
-          for(ix = 0; ix < 16; ix++){
-            block_value += (((unsigned int)(pixel[ix + 1280*iy + (79-bx)*16 + by*16*1280].R)) +
-                            ((unsigned int)(pixel[ix + 1280*iy + (79-bx)*16 + by*16*1280].G)) +
-                            ((unsigned int)(pixel[ix + 1280*iy + (79-bx)*16 + by*16*1280].B))) / 3; // do not worry about rounding
-          }
-        }
-
-        // Add average brightness value to brightness map
-        brightness_map[bx][by] = block_value/256;
-      }
-      #ifdef DEBUG
-      printf("\nCAMERA-CALIBRATE: Brightness bx: %i \n", bx);
-      #endif
-    }
-
-    #ifdef DEBUG
-    printf("\nCAMERA-CALIBRATE: brightness map \n");
-    #endif
-
-    block_value = 0;    // Being used for brightness average
-    // Calculate average brightness, and use it to calculate the cutoff
-    for(bx = 0; bx < CAMERA_HORIZONTAL_READ; bx++){
-      for(by = 0; by < 60; by++){
-        block_value += brightness_map[bx][by];    
-      }
-    }
-    //printf("\nCAMERA-CALIBRATE: cutoff calc\n block_value:  %lu\n cutoff:       %i\n", block_value, *cutoff);
-    *cutoff = (block_value/(60*CAMERA_HORIZONTAL_READ))/CUTOFF_DIVIDER;
-
-    #ifdef DEBUG
-    printf("\nCAMERA-CALIBRATE: cutoff \n");
-    #endif
-
-    //*cutoff = 90;
-
-    for(bx = 0; bx < CAMERA_HORIZONTAL_READ; bx++){
-      for(by = 0; by < 60; by++){
-        block_value = 0;
-        
-        // Get the pixel values for a 16x16 block
-        for(iy = 0; iy < 16; iy++){
-          for(ix = 0; ix < 16; ix++){
-            block_value += (((unsigned int)(pixel[ix + 1280*iy + (79-bx)*16 + by*16*1280].R)) +
-                            ((unsigned int)(pixel[ix + 1280*iy + (79-bx)*16 + by*16*1280].G)) +
-                            ((unsigned int)(pixel[ix + 1280*iy + (79-bx)*16 + by*16*1280].B))) / 3; // do not worry about rounding
-          }
-        }
-
-        // If brightness is less then the cutoff, it is likely the track, so mark it
-        // printf("| %i, %i, |", block_value , *cutoff);
-        if( (block_value/256 < *cutoff) ) {
-          image_map[bx][by] = 1;
-        } else {
-          image_map[bx][by] = 0;
-        }  
-      }
-
-      averages[bx] = 0;     // average position
-      track_instances = 0;  // track width
-      track_blocks = 0;     // accumilating offset
+  for(bx = 0; bx < CAMERA_HORIZONTAL_READ; bx++){
+    for(by = 0; by < 60; by++){
+      block_value = 0;
       
-      for(block = 10; block < 50; block++){ // 10-50 as edges of picture likely to have noise
+      #ifdef DEBUG
+      printf("bx: %i | by: %i \n", bx, by);
+      #endif
+      // Get the pixel values for a 16x16 block
+      for(iy = 0; iy < 16; iy++){
+        for(ix = 0; ix < 16; ix++){
+          block_value += (((unsigned int)(pixel[ix + 1280*iy + (79-bx)*16 + by*16*1280].R)) +
+                          ((unsigned int)(pixel[ix + 1280*iy + (79-bx)*16 + by*16*1280].G)) +
+                          ((unsigned int)(pixel[ix + 1280*iy + (79-bx)*16 + by*16*1280].B))) / 3; // do not worry about rounding
+        }
+      }
+
+      // Add average brightness value to brightness map
+      brightness_map[bx][by] = block_value/256;
+    }
+    #ifdef DEBUG
+    printf("\nCAMERA-CALIBRATE: Brightness bx: %i \n", bx);
+    #endif
+  }
+
+  #ifdef DEBUG
+  printf("\nCAMERA-CALIBRATE: brightness map \n");
+  #endif
+
+  block_value = 0;    // Being used for brightness average
+  // Calculate average brightness, and use it to calculate the cutoff
+  for(bx = 0; bx < CAMERA_HORIZONTAL_READ; bx++){
+    for(by = 0; by < 60; by++){
+      block_value += brightness_map[bx][by];    
+    }
+  }
+  printf("\nCAMERA-CALIBRATE: cutoff calc\n block_value:  %lu\n cutoff:       %i\n", block_value, *cutoff);
+  *cutoff = (block_value/(60*CAMERA_HORIZONTAL_READ))/CUTOFF_DIVIDER;
+
+  #ifdef DEBUG
+  printf("\nCAMERA-CALIBRATE: cutoff \n");
+  #endif
+
+  //*cutoff = 90;
+
+  for(bx = 0; bx < CAMERA_HORIZONTAL_READ; bx++){
+    for(by = 0; by < 60; by++){
+      block_value = 0;
+      
+      // Get the pixel values for a 16x16 block
+      for(iy = 0; iy < 16; iy++){
+        for(ix = 0; ix < 16; ix++){
+          block_value += (((unsigned int)(pixel[ix + 1280*iy + (79-bx)*16 + by*16*1280].R)) +
+                          ((unsigned int)(pixel[ix + 1280*iy + (79-bx)*16 + by*16*1280].G)) +
+                          ((unsigned int)(pixel[ix + 1280*iy + (79-bx)*16 + by*16*1280].B))) / 3; // do not worry about rounding
+        }
+      }
+
+      // If brightness is less then the cutoff, it is likely the track, so mark it
+      // printf("| %i, %i, |", block_value , *cutoff);
+      if( (block_value/256 < *cutoff) ) {
+        image_map[bx][by] = 1;
+      } else {
+        image_map[bx][by] = 0;
+      }  
+    }
+
+    averages[bx] = 0;     // average position
+    track_instances = 0;  // track width
+    track_blocks = 0;     // accumilating offset
+    
+    for(block = 10; block < 50; block++){ // 10-50 as edges of picture likely to have noise
+      if(image_map[bx][block] == 1){
+        track_blocks += block;
+        track_instances += 1;
+      }
+    }
+
+    // Creates average of where the track is, to calibrate for being slightly off center
+    if (track_instances) {averages[bx] = track_blocks/track_instances;}
+    
+    
+
+    #define DEBUG
+    #ifdef DEBUG
+    printf("%i | ", averages[bx]);
+    #endif
+    #undef DEBUG
+  }
+  
+  #ifdef DEBUG
+  printf("\n");
+  for(bx = 0; bx < CAMERA_HORIZONTAL_READ; bx++){
+    printf("%i | ", averages[bx]);
+  }
+  printf("\n");
+  #endif
+  
+
+  #ifdef DEBUG
+  printf("\nCAMERA-CALIBRATE: exit \n");
+  #endif
+}
+
+void get_offsets(unsigned char * data, unsigned int* cutoff, int* averages, int* offsets){
+
+  unsigned int        by, bx, iy, ix;
+  unsigned long       block_value;
+  struct RGB_pixel  * pixel = (struct RGB_pixel*)data;
+  bool                image_map[CAMERA_HORIZONTAL_READ][60];
+  int                 track_blocks, track_instances, block;
+
+
+  for(bx = 0; bx < CAMERA_HORIZONTAL_READ; bx++){
+    for(by = 0; by < 60; by++){
+      block_value = 0;
+      
+      // Get the pixel values for a 16x16 block
+      for(iy = 0; iy < 16; iy++){
+        for(ix = 0; ix < 16; ix++){
+          block_value += (((unsigned int)(pixel[ix + 1280*iy + (79-bx)*16 + by*16*1280].R)) +
+                          ((unsigned int)(pixel[ix + 1280*iy + (79-bx)*16 + by*16*1280].G)) +
+                          ((unsigned int)(pixel[ix + 1280*iy + (79-bx)*16 + by*16*1280].B))) / 3; // do not worry about rounding
+        }
+      }
+
+      // If brightness is less then the cutoff, it is likely the track, so mark it
+      image_map[bx][by] = (block_value/256 < *cutoff);  
+    }
+    
+    offsets[bx] = 0;      // average position
+    track_instances = 0;  // track width
+    track_blocks = 0;     // accumilating offset
+
+    // If using previous offsets to shift checked area so turns are tracked
+    if (0) {
+      for(block = averages[bx] + offsets[bx - 1] - 10; block < averages[bx] + offsets[bx - 1] + 10; block++){   // Only blocks surrounding average
         if(image_map[bx][block] == 1){
           track_blocks += block;
           track_instances += 1;
         }
       }
-
-      // Creates average of where the track is, to calibrate for being slightly off center
-      if (track_instances) {averages[bx] = track_blocks/track_instances;}
-      
-      
-
-      #define DEBUG
-      #ifdef DEBUG
-      printf("%i | ", averages[bx]);
-      #endif
-      #undef DEBUG
-    }
-
-    #ifdef DEBUG
-    printf("\n");
-    for(bx = 0; bx < CAMERA_HORIZONTAL_READ; bx++){
-      printf("%i | ", averages[bx]);
-    }
-    printf("\n");
-    #endif
-
-
-    #ifdef DEBUG
-    printf("\nCAMERA-CALIBRATE: exit \n");
-    #endif
-  }
-  else
-  {
-    int i;
-    unsigned int    pixel_value, pixel_index;
-    unsigned long   pixel_value_total = 0, x_coords, y_coords;
-
-    for (pixel_index = 0; pixel_index < 1228800; pixel_index++){
-      pixel_value_total += (((unsigned int)(pixel[pixel_index].R)) +
-                            ((unsigned int)(pixel[pixel_index].G)) +
-                            ((unsigned int)(pixel[pixel_index].B))) / 3; 
-    }
-
-
-
-    // Set cutoff for what is considered the laser
-    *cutoff = AVG_MULT*(pixel_value_total/1228800);
-    if (*cutoff < MIN_CUTOFF){
-      *cutoff = MIN_CUTOFF;
-    }
-    else if (*cutoff > MAX_CUTOFF){
-      *cutoff = MAX_CUTOFF;
-    }
-
-    // For printng out a picture of the envoriment
-    for (pixel_index = 0; pixel_index < 1228800; pixel_index++){
-      pixel_value = (((unsigned int)(pixel[pixel_index].R)) +
-                      ((unsigned int)(pixel[pixel_index].G)) +
-                      ((unsigned int)(pixel[pixel_index].B))) / 3; 
-      
-      if(*cutoff < pixel_value){
-        (pixel[pixel_index].R) = 255;
-        (pixel[pixel_index].G) = 255;
-        (pixel[pixel_index].B) = 255;
-      }
-      else {
-        (pixel[pixel_index].R) = 0;
-        (pixel[pixel_index].G) = 0;
-        (pixel[pixel_index].B) = 0;
-      }
-    }
-  }
-}
-
-void get_offsets(unsigned char * data, unsigned int* cutoff, int* averages, int* offsets, int* hw){
-
-  struct RGB_pixel  * pixel = (struct RGB_pixel*)data;
-
-  
-  if(*hw == 8){
-    unsigned int        by, bx, iy, ix;
-    unsigned long       block_value;
-    bool                image_map[CAMERA_HORIZONTAL_READ][60];
-    int                 track_blocks, track_instances, block;
-
-    for(bx = 0; bx < CAMERA_HORIZONTAL_READ; bx++){
-      for(by = 0; by < 60; by++){
-        block_value = 0;
-        
-        // Get the pixel values for a 16x16 block
-        for(iy = 0; iy < 16; iy++){
-          for(ix = 0; ix < 16; ix++){
-            block_value += (((unsigned int)(pixel[ix + 1280*iy + (79-bx)*16 + by*16*1280].R)) +
-                            ((unsigned int)(pixel[ix + 1280*iy + (79-bx)*16 + by*16*1280].G)) +
-                            ((unsigned int)(pixel[ix + 1280*iy + (79-bx)*16 + by*16*1280].B))) / 3; 
-          }
-        }
-
-        // If brightness is less then the cutoff, it is likely the track, so mark it
-        image_map[bx][by] = (block_value/256 < *cutoff);  
-      }
-      
-      offsets[bx] = 0;      // average position
-      track_instances = 0;  // track width
-      track_blocks = 0;     // accumilating offset
-
-      // If using previous offsets to shift checked area so turns are tracked
-      if (0) {
-        for(block = averages[bx] + offsets[bx - 1] - 10; block < averages[bx] + offsets[bx - 1] + 10; block++){   // Only blocks surrounding average
-          if(image_map[bx][block] == 1){
-            track_blocks += block;
-            track_instances += 1;
-          }
-        }
-      } else {
-        for(block = averages[bx] - 20; block < averages[bx] + 20; block++){   // Only blocks surrounding average
-          if(image_map[bx][block] == 1){
-            track_blocks += block;
-            track_instances += 1;
-          }
-        }
-      }
-      
-      // Creates average of where the track is, to calibrate for being slightly off center
-      if (track_instances) {offsets[bx] = track_blocks/track_instances - averages[bx];}
-      else if (bx>10) {offsets[bx] = 99;}
-
-      //#define DEBUG
-      #ifdef DEBUG
-      printf("%i, %i | ", offsets[bx], track_instances ? track_blocks/track_instances : 99);
-      #endif
-      #undef DEBUG
-
-    }
-    //printf("\n\n");
-  }
-  else
-  {
-    int i;
-    unsigned int    pixel_value, pixel_index, pixel_count = 0;
-    unsigned long   pixel_value_total, x_coords = 0, y_coords = 0;
-
-    // For printng out a picture of the envoriment
-    for (pixel_index = 0; pixel_index < 1228800; pixel_index++){
-      pixel_value =  (((unsigned int)(pixel[pixel_index].R)) +
-                      ((unsigned int)(pixel[pixel_index].G)) +
-                      ((unsigned int)(pixel[pixel_index].B))) / 3; 
-      
-      if(*cutoff < pixel_value && pixel_index%1280 < 1278){
-        x_coords += pixel_index%1280;
-        y_coords += pixel_index/1280;
-        pixel_count++;
-        //printf(" x: %i | y: %i \n", pixel_index%1280, pixel_index/1280);
-      }
-    }
-
-    if(pixel_count > NOISE_CUTOFF) {
-      offsets[0] = x_coords/pixel_count;
-      offsets[1] = y_coords/pixel_count;
-      #ifdef DEBUG
-      printf(" %i %i %i\n", pixel_count, offsets[0], offsets[1]);
-      #endif
-    }
-    else {
-      offsets[0] = 99999;
-      offsets[1] = 99999;
-    }
-  }
-}
-
-#undef DEBUG
-
-void calc_pins(motor_pin_values *pin_values, int *delay_value, int* offsets, int *hw){
-
-  int diverge_point, bx;
-
-  if (*hw == 8){
-    diverge_point = DIVERGE_CUTOFF + 1;
-    for (bx = 1; bx < DIVERGE_CUTOFF; bx++){
-      if (abs(offsets[bx]) > 5){
-        diverge_point = bx;
-        #ifdef DEBUG
-        printf("\n diverge: %i\n", diverge_point);
-        #endif
-        break;
-      } 
-    }
-
-    if (diverge_point < 3){
-      pin_values->B_PWM = PWM_MOTOR_MIN + JUICE;// + 2*abs(offsets[diverge_point]);
-      pin_values->A_PWM = PWM_MOTOR_MIN + JUICE;// + 2*abs(offsets[diverge_point]);
-      *delay_value = CAMERA_TURN_DELAY;
-      if(offsets[diverge_point] > 0){
-        //printf("**********LEFT**********\n offset:   %i\n", offsets[diverge_point]);
-        pin_values->AI1 = 1;
-        pin_values->AI2 = 0;
-        pin_values->BI1 = 0;
-        pin_values->BI2 = 1;
-      } else {
-        //printf("**********RIGHT*********\n offset:   %i\n", offsets[diverge_point]);
-        pin_values->AI1 = 0;
-        pin_values->AI2 = 1;
-        pin_values->BI1 = 1;
-        pin_values->BI2 = 0;
-      }
-    }
-    else if (diverge_point < DIVERGE_CUTOFF){
-      //printf("\n**********SLOW**********\n");
-      pin_values->A_PWM = PWM_MOTOR_MIN + diverge_point/4;//+ (diverge_point/2)*10;
-      pin_values->B_PWM = PWM_MOTOR_MIN + diverge_point/4;//+ (diverge_point/2)*10;
-      pin_values->AI1 = 0;
-      pin_values->AI2 = 1;
-      pin_values->BI1 = 0;
-      pin_values->BI2 = 1;
-      *delay_value = 0;
     } else {
-      //printf("\n**********FAST**********\n");
-      // for (bx = 1; bx < DIVERGE_CUTOFF; bx++){
-      //   printf("%i | ", offsets[bx]);
-      // } printf("\n");
-      pin_values->A_PWM = PWM_MOTOR_MAX - 20;
-      pin_values->B_PWM = PWM_MOTOR_MAX - 20;
-      pin_values->AI1 = 0;
-      pin_values->AI2 = 1;
-      pin_values->BI1 = 0;
-      pin_values->BI2 = 1;
-      *delay_value = 0;
-    }
-  }
-  else // hw 9 and 10
-  {
-    if (offsets[1] != 99999)
-    {
-      pin_values->B_PWM = PWM_MOTOR_MIN + T_JUICE;
-      pin_values->A_PWM = PWM_MOTOR_MIN + T_JUICE;
-      if (offsets[1] > 480 + Y_SPREAD)
-      {
-        pin_values->AI1 = 1;
-        pin_values->AI2 = 0;
-        pin_values->BI1 = 0;
-        pin_values->BI2 = 1;
-      } 
-      else if (offsets[1] < 480 - Y_SPREAD)
-      {
-        pin_values->AI1 = 0;
-        pin_values->AI2 = 1;
-        pin_values->BI1 = 1;
-        pin_values->BI2 = 0;
-      } 
-      else if (offsets[0] != 99999)
-      {
-        pin_values->AI1 = 0;
-        pin_values->AI2 = 1;
-        pin_values->BI1 = 0;
-        pin_values->BI2 = 1;
-        if (offsets[0] > X_STOP){
-          pin_values->B_PWM = PWM_MOTOR_MIN + F_JUICE;
-          pin_values->A_PWM = PWM_MOTOR_MIN + F_JUICE;
-        } 
+      for(block = averages[bx] - 20; block < averages[bx] + 20; block++){   // Only blocks surrounding average
+        if(image_map[bx][block] == 1){
+          track_blocks += block;
+          track_instances += 1;
+        }
       }
-      else 
-      {
-        pin_values->AI1 = 0;
-        pin_values->AI2 = 0;
-        pin_values->BI1 = 0;
-        pin_values->BI2 = 0;
-        pin_values->B_PWM = PWM_MOTOR_MIN;
-        pin_values->A_PWM = PWM_MOTOR_MIN;
-      }
-    } 
-    else{
-      pin_values->AI1 = 0;
-      pin_values->AI2 = 0;
-      pin_values->BI1 = 0;
-      pin_values->BI2 = 0;
     }
+    
+    // Creates average of where the track is, to calibrate for being slightly off center
+    if (track_instances) {offsets[bx] = track_blocks/track_instances - averages[bx];}
+    else if (bx>10) {offsets[bx] = 99;}
+
+    //#define DEBUG
+    #ifdef DEBUG
+    printf("%i, %i | ", offsets[bx], track_instances ? track_blocks/track_instances : 99);
+    #endif
+    #undef DEBUG
+
   }
+  //printf("\n\n");
+
 }

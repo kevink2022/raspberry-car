@@ -1311,10 +1311,10 @@ void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, 
       printf("\nMOTOR: Recieved Command: RIGHT\n");
       #endif
       
-      if (motor_pin_values->A_PWM < PWM_MOTOR_MAX) {motor_pin_values->A_PWM += PWM_TURN_STEP;}
-      if(motor_pin_values->B_PWM > PWM_MOTOR_MIN) {motor_pin_values->B_PWM -= PWM_TURN_STEP;}
-      motor_pins->pwm->DAT2 = motor_pin_values->A_PWM;
-      motor_pins->pwm->DAT1 = motor_pin_values->B_PWM;  
+    //   if (motor_pin_values->A_PWM < PWM_MOTOR_MAX) {motor_pin_values->A_PWM += PWM_TURN_STEP;}
+    //   if(motor_pin_values->B_PWM > PWM_MOTOR_MIN) {motor_pin_values->B_PWM -= PWM_TURN_STEP;}
+    //   motor_pins->pwm->DAT2 = motor_pin_values->A_PWM;
+    //   motor_pins->pwm->DAT1 = motor_pin_values->B_PWM;  
 
       turn(motor_pins, motor_pin_values, replay_flag, 'd');
 

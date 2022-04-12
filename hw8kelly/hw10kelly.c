@@ -260,6 +260,8 @@ void *ThreadMotor( void * arg  )
         i++;
       }
       
+      replay_flag.replay = false;
+      replay_flag.count = 0;
     }
 
     #ifdef DEBUG
@@ -1426,7 +1428,7 @@ void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, 
   }
 }
 
-//#define DEBUG
+
 
 /////////////////////// KEY THREAD FUNCTIONS /////////////////////////////
 void add_to_queue(control_queue *control_queue, char command){
@@ -1448,25 +1450,29 @@ void add_to_queue(control_queue *control_queue, char command){
   #endif
 }
 
+#define DEBUG
+
 void add_to_timestamps(motor_pin_values *motor_pin_values, replay_flag *replay_flag, enum command cmd){
   
-  #ifdef DEBUG
-  printf("ADD-TO-QUEUE: Recieved Command: %c\n", command);
-  #endif
 
   if (replay_flag->count < MAX_TIMESTAMP_COUNT) {
     replay_flag->timestamps[replay_flag->count].ticks = clock();    // Record timestamp tick value
     replay_flag->timestamps[replay_flag->count].motor_pin_values = *motor_pin_values;
     replay_flag->timestamps[replay_flag->count].command = cmd;
     replay_flag->count++;
+
+    #ifdef DEBUG
+    printf("TS: %lu, %i\n", (u_long)replay_flag->timestamps[replay_flag->count].ticks, replay_flag->count);
+    #endif
+
   } else {
     printf("REPLAY: Queue full\n");
   }
 
-  #ifdef DEBUG
-  printf("ADD-TO-QUEUE: command added");
-  #endif
+
 }
+
+#undef DEBUG
 
 /////////////////////// DATA FUNCTIONS /////////////////////////////
 void read_MPU6050_registers(                          /* read a register */

@@ -50,7 +50,7 @@
 #define PWM_MODE2_TURN_DELAY 60000
 #define PWM_MODE2_OFF_DELAY 500
 
-#define TURN_SLEEP 500
+#define TURN_SLEEP 300
 
 #define CAMERA_HORIZONTAL_READ 40
 #define DIVERGE_CUTOFF 35
@@ -233,6 +233,7 @@ void *ThreadMotor( void * arg  )
       while (i<replay_flag.count && !(parameter->done->done)) // Don't care abt data race here, cause at worse it'll run 1 extra time
       {
         curr_timestamp = replay_flag.timestamps[i];
+        printf("RTS: %d, %i\n", curr_timestamp.ticks, curr_timestamp.command);
         usleep((curr_timestamp.ticks - prev_timestamp.ticks));
 
         if (curr_timestamp.command == set_pins)
@@ -1462,7 +1463,7 @@ void add_to_timestamps(motor_pin_values *motor_pin_values, replay_flag *replay_f
     replay_flag->count++;
 
     #ifdef DEBUG
-    printf("TS: %lu, %i\n", (u_long)replay_flag->timestamps[replay_flag->count].ticks, replay_flag->count);
+    printf("TS: %d, %i\n", (double)replay_flag->timestamps[replay_flag->count].ticks, replay_flag->count);
     #endif
 
   } else {

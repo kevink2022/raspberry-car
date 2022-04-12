@@ -200,6 +200,7 @@ void update_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_value
 void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, replay_flag *replay_flag, char next_command, char *command, int *mode, int *hw, struct data_signal * data_signal, data_sample * data_samples, unsigned int * sample_count, camera_signal * camera_signal, struct pause_flag * calibrate);
 // Key thread func
 void add_to_queue(control_queue *control_queue, char command);
+void add_to_timestamps(motor_pin_values *motor_pin_values, replay_flag *replay_flag, enum command cmd);
 
 
 

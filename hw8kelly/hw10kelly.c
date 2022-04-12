@@ -16,7 +16,9 @@
 #define CLOCK_PERIOD 0.01
 
 // HW10 PARAMS
-#define MAX_TIMESTAMP_COUNT 1000
+#define MAX_TIMESTAMP_COUNT 100000
+#define TURN_SLEEP 800
+#define REPLAY_DIV 4
 
 // HW9 PARAMS
 #define MAX_CUTOFF 235
@@ -50,7 +52,7 @@
 #define PWM_MODE2_TURN_DELAY 60000
 #define PWM_MODE2_OFF_DELAY 500
 
-#define TURN_SLEEP 300
+
 
 #define CAMERA_HORIZONTAL_READ 40
 #define DIVERGE_CUTOFF 35
@@ -234,7 +236,7 @@ void *ThreadMotor( void * arg  )
       {
         curr_timestamp = replay_flag.timestamps[i];
         printf("RTS: %d, %i\n", curr_timestamp.ticks, curr_timestamp.command);
-        usleep((curr_timestamp.ticks - prev_timestamp.ticks));
+        usleep((curr_timestamp.ticks - prev_timestamp.ticks)/REPLAY_DIV);
 
         if (curr_timestamp.command == set_pins)
         {

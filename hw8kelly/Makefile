@@ -1,9 +1,9 @@
-TARGET=hw9kelly
+TARGET=hw10kelly
 
 SOURCES=raspicam_wrapper.cpp \
 		import_registers.c \
 		enable_pwm_clock.c \
-        hw9kelly.c
+        hw10kelly.c
 
 OBJECTS=$(patsubst %.cpp,%.o,$(patsubst %.c,%.o,$(SOURCES)))
 

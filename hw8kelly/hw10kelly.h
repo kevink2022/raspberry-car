@@ -91,6 +91,24 @@ typedef struct {
   int                             BIR_pin;
 } motor_pins;
 
+typedef struct {
+    clock_t             ticks;
+    motor_pin_values    motor_pin_values;
+    enum command {
+            update_pins,
+            update_pwm,
+            set_pins,
+            turn_left,
+            turn_right
+    }                   command;
+} timestamp;
+
+typedef struct {
+    timestamp   * timestamps;
+    int           count;
+    bool          replay;
+} replay_flag;
+
 
 typedef struct {
   char              * control_queue;
@@ -175,11 +193,11 @@ void *ThreadKey( void * arg );
 /////////////////////////// Motor thread functions ///////////////////////////
 void init_motor_pin_values(motor_pin_values *motor_pin_values);
 void smooth_speed_change(motor_pins *motor_pins, motor_pin_values *motor_pin_values, int initial_speed, int final_speed, int step);
-void turn(motor_pins *motor_pins, motor_pin_values *motor_pin_values, char dir);
-void set_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_values);
-void update_motor_pwm(motor_pins *motor_pins, motor_pin_values *motor_pin_values);
-void update_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_values);
-void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, char next_command, char *command, int *mode, int *hw, struct data_signal * data_signal, data_sample * data_samples, unsigned int * sample_count, camera_signal * camera_signal, struct pause_flag * calibrate);
+void turn(motor_pins *motor_pins, motor_pin_values *motor_pin_values, replay_flag *replay_flag, char dir);
+void set_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_values, replay_flag *replay_flag);
+void update_motor_pwm(motor_pins *motor_pins, motor_pin_values *motor_pin_values, replay_flag *replay_flag);
+void update_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_values, replay_flag *replay_flag);
+void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, replay_flag *replay_flag, char next_command, char *command, int *mode, int *hw, struct data_signal * data_signal, data_sample * data_samples, unsigned int * sample_count, camera_signal * camera_signal, struct pause_flag * calibrate);
 // Key thread func
 void add_to_queue(control_queue *control_queue, char command);
 

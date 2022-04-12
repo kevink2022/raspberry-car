@@ -9,11 +9,14 @@
 * By Kevin Kelly and Kyusun Choi
 * 
 ***************************************************/
-#include "hw9kelly.h"
+#include "hw10kelly.h"
 #include "raspicam_wrapper.h"
 
 #define HW_NUM 9
 #define CLOCK_PERIOD 0.01
+
+// HW10 PARAMS
+#define MAX_TIMESTAMP_COUNT 1000
 
 // HW9 PARAMS
 #define MAX_CUTOFF 235
@@ -192,9 +195,19 @@ void *ThreadMotor( void * arg  )
   int mode = MODE_1, hw = 8;
   bool off_course = false; // Used to exit thread if off course and stuck turing in mode 2
   int local_delay_mult = 0;
+  replay_flag replay_flag;
+  int i;
+  timestamp curr_timestamp, prev_timestamp;
 
   motor_pin_values motor_pin_values;
   init_motor_pin_values(&motor_pin_values);
+
+  replay_flag.timestamps = malloc(MAX_TIMESTAMP_COUNT*sizeof(timestamp));
+  if (replay_flag.timestamps == NULL){
+    printf("MOTOR: couldn't init timestamps\n");
+  }
+  replay_flag.count = 0;
+  replay_flag.replay = false;
 
   #ifdef DEBUG
   printf("MOTOR: init\n");
@@ -207,8 +220,46 @@ void *ThreadMotor( void * arg  )
     
     // Update command
     if (command != next_command) {
-      update_command( parameter->motor_pins, &motor_pin_values, next_command, &command, &mode, &hw, parameter->data_signal, parameter->data_samples, parameter->sample_count, parameter->camera_signal, parameter->calibrate);
+      update_command( parameter->motor_pins, &motor_pin_values, &replay_flag, next_command, &command, &mode, &hw, parameter->data_signal, parameter->data_samples, parameter->sample_count, parameter->camera_signal, parameter->calibrate);
       next_command = command;
+    }
+
+    if(replay_flag.replay && replay_flag.count)
+    { 
+      prev_timestamp = replay_flag.timestamps[0];   // Time replay started
+      set_motor_pins(parameter->motor_pins, &prev_timestamp.motor_pin_values, &replay_flag);
+      i = 1;
+
+      while (i<replay_flag.count && !(parameter->done->done)) // Don't care abt data race here, cause at worse it'll run 1 extra time
+      {
+        curr_timestamp = replay_flag.timestamps[i];
+        usleep((curr_timestamp.ticks - prev_timestamp.ticks));
+
+        if (curr_timestamp.command == set_pins)
+        {
+          set_motor_pins(parameter->motor_pins, &curr_timestamp.motor_pin_values, &replay_flag);
+        } 
+        else if (curr_timestamp.command == update_pins)
+        {
+          update_motor_pins(parameter->motor_pins, &curr_timestamp.motor_pin_values, &replay_flag);
+        } 
+        else if (curr_timestamp.command == update_pwm)
+        {
+          update_motor_pwm(parameter->motor_pins, &curr_timestamp.motor_pin_values, &replay_flag);
+        } 
+        else if (curr_timestamp.command == turn_left)
+        {
+          turn(parameter->motor_pins, &curr_timestamp.motor_pin_values, &replay_flag, 'a');
+        } 
+        else if (curr_timestamp.command == turn_right)
+        {
+          turn(parameter->motor_pins, &curr_timestamp.motor_pin_values, &replay_flag, 'd');
+        }
+
+        prev_timestamp = curr_timestamp;
+        i++;
+      }
+      
     }
 
     #ifdef DEBUG
@@ -245,7 +296,7 @@ void *ThreadMotor( void * arg  )
           printf("MOTOR: Auto A done\n");
           #endif
 
-          set_motor_pins(parameter->motor_pins, &motor_pin_values);
+          set_motor_pins(parameter->motor_pins, &motor_pin_values, &replay_flag);
 
           #ifdef DEBUG
           printf("MOTOR: Auto A set pins\n");
@@ -279,7 +330,7 @@ void *ThreadMotor( void * arg  )
           printf("MOTOR: Auto B done\n");
           #endif
 
-          set_motor_pins(parameter->motor_pins, &motor_pin_values);
+          set_motor_pins(parameter->motor_pins, &motor_pin_values, &replay_flag);
 
           #ifdef DEBUG
           printf("MOTOR: Auto B set pins\n");
@@ -295,7 +346,7 @@ void *ThreadMotor( void * arg  )
         local_delay_mult = parameter->camera_signal->delay_mult;
         pthread_mutex_unlock(&parameter->camera_signal->lock);
         //usleep(local_delay_mult*1000);
-        set_motor_pins(parameter->motor_pins, &motor_pin_values);
+        set_motor_pins(parameter->motor_pins, &motor_pin_values, &replay_flag);
       }
     }
     #undef DEBUG
@@ -985,7 +1036,16 @@ void smooth_speed_change(motor_pins *motor_pins, motor_pin_values *motor_pin_val
   }
 }
 
-void turn(motor_pins *motor_pins, motor_pin_values *motor_pin_values, char dir){
+void turn(motor_pins *motor_pins, motor_pin_values *motor_pin_values, replay_flag *replay_flag, char dir){
+
+  if (!replay_flag->replay){    // If not replay, then recording
+    if(dir == 'a'){
+      add_to_timestamps(motor_pin_values, replay_flag, turn_left);
+    }else {
+      add_to_timestamps(motor_pin_values, replay_flag, turn_right);
+    }
+    
+  }
 
   if (dir == 'a'){
     motor_pins->A_PWM_pin = PWM_MOTOR_MIN;
@@ -1002,7 +1062,7 @@ void turn(motor_pins *motor_pins, motor_pin_values *motor_pin_values, char dir){
   motor_pins->B_PWM_pin = motor_pin_values->B_PWM;
 }
 
-void set_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_values){
+void set_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_values, replay_flag *replay_flag){
   
   //#define DEBUG
 
@@ -1015,6 +1075,9 @@ void set_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_values){
 
   //#undef DEBUG
   
+  if (!replay_flag->replay){    // If not replay, then recording
+    add_to_timestamps(motor_pin_values, replay_flag, set_pins);
+  }
   
   // Set PWM to original values
   motor_pins->pwm->DAT2 = motor_pin_values->A_PWM;
@@ -1048,7 +1111,11 @@ void set_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_values){
 #define DEBUG
 #undef DEBUG
 
-void update_motor_pwm(motor_pins *motor_pins, motor_pin_values *motor_pin_values) {
+void update_motor_pwm(motor_pins *motor_pins, motor_pin_values *motor_pin_values, replay_flag *replay_flag) {
+
+  if (!replay_flag->replay){    // If not replay, then recording
+    add_to_timestamps(motor_pin_values, replay_flag, update_pwm);
+  }
 
   // Set new values
   motor_pins->pwm->DAT2 = motor_pin_values->A_PWM;
@@ -1058,8 +1125,12 @@ void update_motor_pwm(motor_pins *motor_pins, motor_pin_values *motor_pin_values
 //#undef DEBUG
 //#define DEBUG
 
-void update_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_values) {
+void update_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_values, replay_flag *replay_flag) {
     
+  if (!replay_flag->replay){    // If not replay, then recording
+    add_to_timestamps(motor_pin_values, replay_flag, update_pins);
+  }
+  
   int hold_PWM = motor_pin_values->A_PWM;
   
   // Slow stop
@@ -1098,7 +1169,7 @@ void update_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_value
 //#define DEBUG
 
 
-void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, char next_command, char *command, int *mode, int *hw, struct data_signal * data_signal, data_sample * data_samples, unsigned int * sample_count, camera_signal * camera_signal, struct pause_flag * calibrate){
+void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, replay_flag *replay_flag, char next_command, char *command, int *mode, int *hw, struct data_signal * data_signal, data_sample * data_samples, unsigned int * sample_count, camera_signal * camera_signal, struct pause_flag * calibrate){
   // Update params
   switch (next_command)
   {
@@ -1111,7 +1182,7 @@ void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, 
       motor_pin_values->AI2 = 0;
       motor_pin_values->BI1 = 0;
       motor_pin_values->BI2 = 0;
-      update_motor_pins(motor_pins, motor_pin_values);
+      update_motor_pins(motor_pins, motor_pin_values, replay_flag);
 
       *command = 's';
       
@@ -1145,7 +1216,7 @@ void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, 
         motor_pin_values->BI2 = 1;
       }
       
-      update_motor_pins(motor_pins, motor_pin_values);
+      update_motor_pins(motor_pins, motor_pin_values, replay_flag);
 
       *command = 'w';
       
@@ -1178,7 +1249,7 @@ void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, 
         motor_pin_values->BI1 = 1;
         motor_pin_values->BI2 = 0;
       }
-      update_motor_pins(motor_pins, motor_pin_values);
+      update_motor_pins(motor_pins, motor_pin_values, replay_flag);
 
       *command = 'x';
       break;
@@ -1219,10 +1290,12 @@ void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, 
       printf("\nMOTOR: Recieved Command: LEFT\n");
       #endif
       
-      if(motor_pin_values->A_PWM > PWM_MOTOR_MIN){motor_pin_values->A_PWM -= PWM_TURN_STEP;}
-      if (motor_pin_values->B_PWM < PWM_MOTOR_MAX) {motor_pin_values->B_PWM += PWM_TURN_STEP;}
-      motor_pins->pwm->DAT2 = motor_pin_values->A_PWM;
-      motor_pins->pwm->DAT1 = motor_pin_values->B_PWM;
+    //   if(motor_pin_values->A_PWM > PWM_MOTOR_MIN){motor_pin_values->A_PWM -= PWM_TURN_STEP;}
+    //   if (motor_pin_values->B_PWM < PWM_MOTOR_MAX) {motor_pin_values->B_PWM += PWM_TURN_STEP;}
+    //   motor_pins->pwm->DAT2 = motor_pin_values->A_PWM;
+    //   motor_pins->pwm->DAT1 = motor_pin_values->B_PWM;
+
+      turn(motor_pins, motor_pin_values, replay_flag, 'a');
 
       #ifdef DEBUG
       printf("\nMOTOR: A_PWM = %i\n", motor_pin_values->A_PWM_next);
@@ -1240,6 +1313,7 @@ void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, 
       motor_pins->pwm->DAT2 = motor_pin_values->A_PWM;
       motor_pins->pwm->DAT1 = motor_pin_values->B_PWM;  
 
+      turn(motor_pins, motor_pin_values, replay_flag, 'd');
 
       #ifdef DEBUG
       printf("\nMOTOR: A_PWM = %i\n", motor_pin_values->A_PWM_next);
@@ -1333,13 +1407,18 @@ void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, 
     
     case 'c':
       #ifdef DEBUG
-      printf("\nMOTOR: Recieved Command: MODE 2\n");
+      printf("\nMOTOR: Recieved Command: CALIBRATE\n");
       #endif
-      //printf("\n Calibrating Camera");
-      // Calibrate the camera
       pthread_mutex_lock( &calibrate->lock );
       calibrate->pause = true;
       pthread_mutex_unlock( &calibrate->lock );
+      break;   
+
+    case 'r':
+      #ifdef DEBUG
+      printf("\nMOTOR: Recieved Command: REPLAY\n");
+      #endif
+      replay_flag->replay = true;
       break;   
 
     default:
@@ -1363,6 +1442,26 @@ void add_to_queue(control_queue *control_queue, char command){
     *(unsigned int*)control_queue->control_queue_length += 1;
   }
   pthread_mutex_unlock( control_queue->control_queue_lock );
+
+  #ifdef DEBUG
+  printf("ADD-TO-QUEUE: command added");
+  #endif
+}
+
+void add_to_timestamps(motor_pin_values *motor_pin_values, replay_flag *replay_flag, enum command cmd){
+  
+  #ifdef DEBUG
+  printf("ADD-TO-QUEUE: Recieved Command: %c\n", command);
+  #endif
+
+  if (replay_flag->count < MAX_TIMESTAMP_COUNT) {
+    replay_flag->timestamps[replay_flag->count].ticks = clock();    // Record timestamp tick value
+    replay_flag->timestamps[replay_flag->count].motor_pin_values = *motor_pin_values;
+    replay_flag->timestamps[replay_flag->count].command = cmd;
+    replay_flag->count++;
+  } else {
+    printf("REPLAY: Queue full\n");
+  }
 
   #ifdef DEBUG
   printf("ADD-TO-QUEUE: command added");

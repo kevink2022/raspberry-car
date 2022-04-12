@@ -1053,15 +1053,17 @@ void turn(motor_pins *motor_pins, motor_pin_values *motor_pin_values, replay_fla
   }
 
   if (dir == 'a'){
-    motor_pins->A_PWM_pin = PWM_MOTOR_MIN;
+    motor_pins->A_PWM_pin = PWM_MOTOR_MIN - 20;
     motor_pins->B_PWM_pin = PWM_MOTOR_MAX;
   } 
   else {
     motor_pins->A_PWM_pin = PWM_MOTOR_MAX;
-    motor_pins->B_PWM_pin = PWM_MOTOR_MIN;
+    motor_pins->B_PWM_pin = PWM_MOTOR_MIN - 20;
   }
 
+  printf("Turn pre sleep... ");
   usleep(TURN_SLEEP*1000);
+  printf("Turn post sleep\n");
 
   motor_pins->A_PWM_pin = motor_pin_values->A_PWM;
   motor_pins->B_PWM_pin = motor_pin_values->B_PWM;

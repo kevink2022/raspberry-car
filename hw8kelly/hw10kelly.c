@@ -12,22 +12,23 @@
 #include "hw10kelly.h"
 #include "raspicam_wrapper.h"
 
-#define HW_NUM 9
+#define HW_NUM 10
 #define CLOCK_PERIOD 0.01
 
 // HW10 PARAMS
 #define MAX_TIMESTAMP_COUNT 100000
-#define TURN_SLEEP 1000
-#define REPLAY_DIV 4
+#define TURN_SLEEP 0.5
+#define REPLAY_DIV 3
+#define DATA_CAMERA_MULTIPLIER 10
 
 // HW9 PARAMS
 #define MAX_CUTOFF 235
 #define MIN_CUTOFF 150
 #define AVG_MULT 15
 #define NOISE_CUTOFF 2
-#define T_JUICE 20
+#define T_JUICE 15
 #define F_JUICE 40
-#define Y_SPREAD 80
+#define Y_SPREAD 120
 #define X_STOP 80
 #define CALIBRATE_PERIOD 100 // calibrate after this many camera thread cycles
 
@@ -71,7 +72,7 @@ void *ThreadClock( void * arg  )
   printf("CLOCK: thread started\n"); 
   #endif
   struct clock_thread_parameter * parameter = (struct clock_thread_parameter *)arg;
-  int i = 0;
+  int i = 0, j = 0;
 
   pthread_mutex_lock( &(parameter->done->lock) );
   while (!(parameter->done->done))
@@ -91,8 +92,7 @@ void *ThreadClock( void * arg  )
     // Wake the control thread to process the queue
     sem_post(parameter->control_thread_sem);
 
-    // Wake the data aquisition thread 
-    sem_post(parameter->data_thread_sem);
+    
 
     // Wake the camera thread
     if(i == CLOCK_CAMERA_MULTIPLIER - 1){
@@ -100,6 +100,14 @@ void *ThreadClock( void * arg  )
       i = 0;
     } else {
       i++;
+    }
+    
+    // Wake the data aquisition thread 
+    if(j == DATA_CAMERA_MULTIPLIER - 1){
+      sem_post(parameter->data_thread_sem);
+      j = 0;
+    } else {
+      j++;
     }
 
   }
@@ -194,22 +202,23 @@ void *ThreadMotor( void * arg  )
 {
   struct motor_thread_parameter * parameter = (struct motor_thread_parameter *)arg;
   char command = '\0', next_command = '\0';
-  int mode = MODE_1, hw = 8;
+  int mode = MODE_1, hw = 10;
   bool off_course = false; // Used to exit thread if off course and stuck turing in mode 2
   int local_delay_mult = 0;
   replay_flag replay_flag;
   int i;
   timestamp curr_timestamp, prev_timestamp;
-
-  motor_pin_values motor_pin_values;
+  
+  motor_pin_values motor_pin_values, new_pin_values;
   init_motor_pin_values(&motor_pin_values);
+  init_motor_pin_values(&new_pin_values);
 
   replay_flag.timestamps = malloc(MAX_TIMESTAMP_COUNT*sizeof(timestamp));
   if (replay_flag.timestamps == NULL){
     printf("MOTOR: couldn't init timestamps\n");
   }
   replay_flag.count = 0;
-  replay_flag.replay = false;
+  replay_flag.replay = true;
 
   #ifdef DEBUG
   printf("MOTOR: init\n");
@@ -235,7 +244,7 @@ void *ThreadMotor( void * arg  )
       while (i<replay_flag.count && !(parameter->done->done)) // Don't care abt data race here, cause at worse it'll run 1 extra time
       {
         curr_timestamp = replay_flag.timestamps[i];
-        printf("RTS: %d, %i\n", curr_timestamp.ticks, curr_timestamp.command);
+        //printf("RTS: %d, %i\n", curr_timestamp.ticks, curr_timestamp.command);
         usleep((curr_timestamp.ticks - prev_timestamp.ticks)/REPLAY_DIV);
 
         if (curr_timestamp.command == set_pins)
@@ -271,7 +280,7 @@ void *ThreadMotor( void * arg  )
     printf("MOTOR: Updated PWM\n");
     #endif
 
-    if(hw != 8){
+    if(hw < 8){
       // If going forward in mode 2, check IR sensors
       if ( (motor_pin_values.AI1 && motor_pin_values.BI1) && (mode == MODE_2)) {
 
@@ -347,11 +356,14 @@ void *ThreadMotor( void * arg  )
       // Grab pin values calculated in camera thread
       if (mode == MODE_2){
         pthread_mutex_lock(&parameter->camera_signal->lock);
-        motor_pin_values = *parameter->camera_signal->camera_set_pins;
+        new_pin_values = *parameter->camera_signal->camera_set_pins;
         local_delay_mult = parameter->camera_signal->delay_mult;
         pthread_mutex_unlock(&parameter->camera_signal->lock);
         //usleep(local_delay_mult*1000);
-        set_motor_pins(parameter->motor_pins, &motor_pin_values, &replay_flag);
+        if(new_pin_values.AI1 != motor_pin_values.AI1 || new_pin_values.AI2 != motor_pin_values.AI2 || new_pin_values.A_PWM != motor_pin_values.A_PWM){
+          motor_pin_values = new_pin_values;
+          set_motor_pins(parameter->motor_pins, &motor_pin_values, &replay_flag);
+        }
       }
     }
     #undef DEBUG
@@ -408,14 +420,14 @@ void *ThreadData( void * arg  )
     pthread_mutex_unlock( &(parameter->done->lock) );
 
     #ifdef DEBUG
-    printf("DATA: loop\n");
+    //printf("DATA: loop\n");
     #endif
   
     // Wait for clock signal
     sem_wait(parameter->data_thread_sem);
 
     #ifdef DEBUG
-    printf("DATA: sem_wait\n");
+    //printf("DATA: sem_wait\n");
     #endif
 
     pthread_mutex_lock( &(parameter->data_signal->lock) );
@@ -437,7 +449,6 @@ void *ThreadData( void * arg  )
         #ifdef DEBUG
         printf("DATA: m0 sample\n");
         #endif
-
         sample_count--;
         if(sample_count == 0){
           sample_count = 500;
@@ -449,13 +460,15 @@ void *ThreadData( void * arg  )
           write_to_file(0, parameter->data_samples, parameter->sample_count);
           //average_sample(parameter->data_samples,  parameter->sample_count);
           
-          *(parameter->sample_count) = 0;
-          printf("MODE 0: Sampling complete");
+          printf("\nMODE 0: Sampling complete");
           printf("\n");
         }
       } 
       else 
       {
+        #ifdef DEBUG
+        printf("DATA: m1/2 sample\n");
+        #endif
         ////// SAMPLE ///////
         read_accelerometer_gyroscope( parameter->calibration_accelerometer, parameter->calibration_gyroscope, parameter->bsc, parameter->data_samples, parameter->sample_count );
         ////// SAMPLE ///////
@@ -1053,20 +1066,18 @@ void turn(motor_pins *motor_pins, motor_pin_values *motor_pin_values, replay_fla
   }
 
   if (dir == 'a'){
-    motor_pins->A_PWM_pin = PWM_MOTOR_MIN - 20;
-    motor_pins->B_PWM_pin = PWM_MOTOR_MAX;
+    motor_pins->pwm->DAT2 = PWM_MOTOR_MIN - 20;
+    motor_pins->pwm->DAT1 = PWM_MOTOR_MAX;
   } 
   else {
-    motor_pins->A_PWM_pin = PWM_MOTOR_MAX;
-    motor_pins->B_PWM_pin = PWM_MOTOR_MIN - 20;
+    motor_pins->pwm->DAT2 = PWM_MOTOR_MAX;
+    motor_pins->pwm->DAT1 = PWM_MOTOR_MIN - 20;
   }
 
-  printf("Turn pre sleep... ");
-  usleep(TURN_SLEEP*1000);
-  printf("Turn post sleep\n");
+  usleep(TURN_SLEEP*1000000);
 
-  motor_pins->A_PWM_pin = motor_pin_values->A_PWM;
-  motor_pins->B_PWM_pin = motor_pin_values->B_PWM;
+  motor_pins->pwm->DAT2 = motor_pin_values->A_PWM;
+  motor_pins->pwm->DAT1 = motor_pin_values->B_PWM;
 }
 
 void set_motor_pins(motor_pins *motor_pins, motor_pin_values *motor_pin_values, replay_flag *replay_flag){
@@ -1194,13 +1205,14 @@ void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, 
       *command = 's';
       
       // Signal Data thread to start recording
-      if (*hw == 7 && *mode != MODE_0){
+      if ((*hw == 7 || *hw == 10) && *mode != MODE_0){
         pthread_mutex_lock( &(data_signal->lock) );
         data_signal->recording = false;
         data_signal->m0 = false;
         write_to_file(*mode, data_samples, sample_count); // Need to move, slowing down stops
         pthread_mutex_unlock( &(data_signal->lock) );
-      } else if (*hw >= 8) {
+      } 
+      if (*hw >= 8) {
         pthread_mutex_lock( &(camera_signal->lock) );
         camera_signal->recording = false;
         pthread_mutex_unlock( &(camera_signal->lock) );
@@ -1228,15 +1240,21 @@ void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, 
       *command = 'w';
       
       // Signal Data thread to start recording
-      if (*hw == 7 && *mode != MODE_0){
+      if ( (*hw == 7 || *hw == 10) && *mode != MODE_0){
         pthread_mutex_lock( &(data_signal->lock) );
         data_signal->recording = true;
         data_signal->m0 = false;
         pthread_mutex_unlock( &(data_signal->lock) );
-      } else if (*hw >= 8 && *mode == MODE_2) {
-        pthread_mutex_lock( &(camera_signal->lock) );
-        camera_signal->recording = true;
-        pthread_mutex_unlock( &(camera_signal->lock) );
+      }
+      if (*hw >= 8) {
+        if(replay_flag->replay){
+          replay_flag->replay = false;
+        }
+        if(*mode == MODE_2){
+          pthread_mutex_lock( &(camera_signal->lock) );
+          camera_signal->recording = true;
+          pthread_mutex_unlock( &(camera_signal->lock) );
+        }
       }
       break;
 
@@ -1267,8 +1285,7 @@ void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, 
       #endif
       if (motor_pin_values->A_PWM < PWM_MOTOR_MAX) {motor_pin_values->A_PWM += PWM_SPEED_STEP;}
       if (motor_pin_values->B_PWM < PWM_MOTOR_MAX) {motor_pin_values->B_PWM += PWM_SPEED_STEP;}
-      motor_pins->pwm->DAT2 = motor_pin_values->A_PWM;
-      motor_pins->pwm->DAT1 = motor_pin_values->B_PWM;
+      update_motor_pwm(motor_pins, motor_pin_values, replay_flag);
       
       #ifdef DEBUG
       printf("\nMOTOR: A_PWM = %i\n", motor_pin_values->A_PWM_next);
@@ -1282,8 +1299,7 @@ void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, 
       #endif
       if (motor_pin_values->A_PWM > PWM_MOTOR_MIN) {motor_pin_values->A_PWM -= PWM_SPEED_STEP;}
       if (motor_pin_values->B_PWM > PWM_MOTOR_MIN) {motor_pin_values->B_PWM -= PWM_SPEED_STEP;}
-      motor_pins->pwm->DAT2 = motor_pin_values->A_PWM;
-      motor_pins->pwm->DAT1 = motor_pin_values->B_PWM;
+      update_motor_pwm(motor_pins, motor_pin_values, replay_flag);
 
 
       #ifdef DEBUG
@@ -1301,8 +1317,13 @@ void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, 
     //   if (motor_pin_values->B_PWM < PWM_MOTOR_MAX) {motor_pin_values->B_PWM += PWM_TURN_STEP;}
     //   motor_pins->pwm->DAT2 = motor_pin_values->A_PWM;
     //   motor_pins->pwm->DAT1 = motor_pin_values->B_PWM;
+      if(*hw < 8){
+        turn(motor_pins, motor_pin_values, replay_flag, 'a');
+      } else {
+        turn(motor_pins, motor_pin_values, replay_flag, 'd');
+      }
 
-      turn(motor_pins, motor_pin_values, replay_flag, 'a');
+      
 
       #ifdef DEBUG
       printf("\nMOTOR: A_PWM = %i\n", motor_pin_values->A_PWM_next);
@@ -1320,7 +1341,11 @@ void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, 
     //   motor_pins->pwm->DAT2 = motor_pin_values->A_PWM;
     //   motor_pins->pwm->DAT1 = motor_pin_values->B_PWM;  
 
-      turn(motor_pins, motor_pin_values, replay_flag, 'd');
+      if(*hw < 8){
+        turn(motor_pins, motor_pin_values, replay_flag, 'd');
+      } else {
+        turn(motor_pins, motor_pin_values, replay_flag, 'a');
+      }
 
       #ifdef DEBUG
       printf("\nMOTOR: A_PWM = %i\n", motor_pin_values->A_PWM_next);
@@ -1335,7 +1360,7 @@ void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, 
       *mode = MODE_0;
 
       // Start m0 data sampling
-      if (*hw == 7){
+      if (*hw == 7 || *hw == 10){
         pthread_mutex_lock( &(data_signal->lock) );
         data_signal->recording = true;
         data_signal->m0 = true;
@@ -1377,7 +1402,7 @@ void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, 
       #ifdef DEBUG
       printf("\nMOTOR: Recieved Command: MODE 2\n");
       #endif
-      if(sample_count){
+      if(*sample_count){
         print_samples(data_samples, sample_count);
       } else {
         printf("No samples to print.");
@@ -1455,7 +1480,7 @@ void add_to_queue(control_queue *control_queue, char command){
   #endif
 }
 
-#define DEBUG
+//#define DEBUG
 
 void add_to_timestamps(motor_pin_values *motor_pin_values, replay_flag *replay_flag, enum command cmd){
   
@@ -2032,77 +2057,75 @@ void print_samples(data_sample * data_samples, unsigned int * sample_count){
       max.gyro_yout = data_samples[i].gyro_yout;
     }
 
-    if (data_samples[i].gyro_xout < min.gyro_xout) {
-      min.gyro_xout = data_samples[i].gyro_xout;
-    } else if (data_samples[i].gyro_xout > max.gyro_xout) {
-      max.gyro_xout = data_samples[i].gyro_xout;
+    if (data_samples[i].gyro_zout < min.gyro_zout) {
+      min.gyro_zout = data_samples[i].gyro_zout;
+    } else if (data_samples[i].gyro_zout > max.gyro_zout) {
+      max.gyro_zout = data_samples[i].gyro_zout;
     }
   }
 
-  printf( "\nMax:\n");
-    
-  printf( "Gyro X: %.2f deg\ty=%.2f deg\tz=%.2f deg\n",
-    max.gyro_xout,
-    max.gyro_yout,
-    max.gyro_zout
-  );
-    
-  printf( "Accel X: %.2f m/s^2\ty=%.2f m/s^2\tz=%.2f m/s^2\n",
-    max.accel_xout,
-    max.accel_yout,
-    max.accel_zout 
-  );
 
-  printf( "\nMin:\n");
-    
-  printf( "Gyro X: %.2f deg\ty=%.2f deg\tz=%.2f deg\n",
-    min.gyro_xout,
-    min.gyro_yout,
-    min.gyro_zout
-  );
-    
-  printf( "Accel X: %.2f m/s^2\ty=%.2f m/s^2\tz=%.2f m/s^2\n",
-    min.accel_xout,
-    min.accel_yout,
-    min.accel_zout 
-  );
-
-  printf( "\nRange:\n");
-    
-  printf( "Gyro X: %.2f deg\ty=%.2f deg\tz=%.2f deg\n",
-    max.gyro_xout - min.gyro_xout,
-    max.gyro_yout - min.gyro_yout,
-    max.gyro_zout - min.gyro_zout
-  );
-    
-  printf( "Accel X: %.2f m/s^2\ty=%.2f m/s^2\tz=%.2f m/s^2\n",
-    max.accel_xout - min.accel_xout,
-    max.accel_yout - min.accel_yout,
-    max.accel_zout - min.accel_zout 
-  );
-
-  tenth.accel_xout = (max.accel_xout - min.accel_xout)/10;
-  tenth.accel_yout = (max.accel_yout - min.accel_yout)/10;
-  tenth.accel_zout = (max.accel_zout - min.accel_zout)/10;
-  tenth.gyro_xout = (max.gyro_xout - min.gyro_xout)/10;
-  tenth.gyro_yout = (max.gyro_yout - min.gyro_yout)/10;
-  tenth.gyro_zout = (max.gyro_zout - min.gyro_zout)/10;
+  tenth.accel_xout = (max.accel_xout - min.accel_xout)/8 + 1;
+  tenth.accel_yout = (max.accel_yout - min.accel_yout)/8 + 1;
+  tenth.accel_zout = (max.accel_zout - min.accel_zout)/8 + 1;
+  tenth.gyro_xout = (max.gyro_xout - min.gyro_xout)/8 + 1;
+  tenth.gyro_yout = (max.gyro_yout - min.gyro_yout)/8 + 1;
+  tenth.gyro_zout = (max.gyro_zout - min.gyro_zout)/8 + 1;
 
   printf( "\nGY |AC\n");
   
   for(i = 0; i < samples; i++){
-    printf( "%i%i%i|",
-      (long)(data_samples[i].gyro_xout / tenth.gyro_xout),
-      (long)(data_samples[i].gyro_yout / tenth.gyro_yout),
-      (long)(data_samples[i].gyro_zout / tenth.gyro_zout)
+    printf( "%.2f %.2f %.2f | %.2f %.2f %.2f\n",
+      ((data_samples[i].gyro_xout  )),
+      ((data_samples[i].gyro_yout  )),
+      ((data_samples[i].gyro_zout  )),
+      ((data_samples[i].accel_xout )),
+      ((data_samples[i].accel_yout )),
+      ((data_samples[i].accel_zout ))
     );
-      
-    printf( "%i%i%i\n",
-      (long)(data_samples[i].accel_xout / tenth.accel_xout),
-      (long)(data_samples[i].accel_yout / tenth.accel_yout),
-      (long)(data_samples[i].accel_zout / tenth.accel_zout)
-    );   
+    // printf( "%f %f %f | %f %f %f\n",
+    //   (int)((data_samples[i].gyro_xout  - min.gyro_xout ) / tenth.gyro_xout  ),
+    //   (int)((data_samples[i].gyro_yout  - min.gyro_yout ) / tenth.gyro_yout  ),
+    //   (int)((data_samples[i].gyro_zout  - min.gyro_zout ) / tenth.gyro_zout  ),
+    //   (int)((data_samples[i].accel_xout - min.accel_xout) / tenth.accel_xout ),
+    //   (int)((data_samples[i].accel_yout - min.accel_yout) / tenth.accel_yout ),
+    //   (int)((data_samples[i].accel_zout - min.accel_zout) / tenth.accel_zout )
+    // );
   }
+  printf("\n\n");
+  printf( "%i %i %i | %i %i %i\n",
+    (int)((max.gyro_xout  )),
+    (int)((max.gyro_yout  )),
+    (int)((max.gyro_zout  )),
+    (int)((max.accel_xout )),
+    (int)((max.accel_yout )),
+    (int)((max.accel_zout ))
+  );
+  printf( "%i %i %i | %i %i %i\n",
+    (int)((min.gyro_xout  )),
+    (int)((min.gyro_yout  )),
+    (int)((min.gyro_zout  )),
+    (int)((min.accel_xout )),
+    (int)((min.accel_yout )),
+    (int)((min.accel_zout ))
+  );
+}
+
+void calc_dist_velo(data_sample * data_samples, unsigned int * sample_count){
+  
+  unsigned int i, samples = *sample_count;
+  data_sample max = data_samples[0], min = data_samples[0];
+
+  for(i = 1; i < samples; i++){
+
+    if (data_samples[i].gyro_yout < min.gyro_yout) {
+      min.gyro_yout = data_samples[i].gyro_yout;
+    } else if (data_samples[i].gyro_yout > max.gyro_yout) {
+      max.gyro_yout = data_samples[i].gyro_yout;
+    }
+  }
+
+  
 }
 
 void write_to_file(int mode, data_sample * data_samples, unsigned int * sample_count){
@@ -2113,13 +2136,13 @@ void write_to_file(int mode, data_sample * data_samples, unsigned int * sample_c
   switch (mode)
   {
     case 0:
-      file = fopen("./hw7m0data.txt", "w");
+      file = fopen("./hw10m0data.txt", "w");
       break;
     case 1:
-      file = fopen("./hw7m1data.txt", "w");
+      file = fopen("./hw10m1data.txt", "w");
       break;
     case 2:
-      file = fopen("./hw7m2data.txt", "w");
+      file = fopen("./hw10m2data.txt", "w");
       break;    
     default:
       break;
@@ -2307,6 +2330,8 @@ void calibrate_camera(unsigned char * data, unsigned int* cutoff, int* averages,
   }
 }
 
+
+
 void get_offsets(unsigned char * data, unsigned int* cutoff, int* averages, int* offsets, int* hw){
 
   struct RGB_pixel  * pixel = (struct RGB_pixel*)data;
@@ -2470,21 +2495,21 @@ void calc_pins(motor_pin_values *pin_values, int *delay_value, int* offsets, int
       pin_values->A_PWM = PWM_MOTOR_MIN + T_JUICE;
       if (offsets[1] > 480 + Y_SPREAD)
       {
-        pin_values->AI1 = 1;
+        pin_values->AI1 = 1;  // left
         pin_values->AI2 = 0;
         pin_values->BI1 = 0;
         pin_values->BI2 = 1;
       } 
       else if (offsets[1] < 480 - Y_SPREAD)
       {
-        pin_values->AI1 = 0;
+        pin_values->AI1 = 0;  // right
         pin_values->AI2 = 1;
         pin_values->BI1 = 1;
         pin_values->BI2 = 0;
       } 
       else if (offsets[0] != 99999)
       {
-        pin_values->AI1 = 0;
+        pin_values->AI1 = 0;  // forward
         pin_values->AI2 = 1;
         pin_values->BI1 = 0;
         pin_values->BI2 = 1;
@@ -2495,7 +2520,7 @@ void calc_pins(motor_pin_values *pin_values, int *delay_value, int* offsets, int
       }
       else 
       {
-        pin_values->AI1 = 0;
+        pin_values->AI1 = 0;  // stop
         pin_values->AI2 = 0;
         pin_values->BI1 = 0;
         pin_values->BI2 = 0;
@@ -2508,6 +2533,8 @@ void calc_pins(motor_pin_values *pin_values, int *delay_value, int* offsets, int
       pin_values->AI2 = 0;
       pin_values->BI1 = 0;
       pin_values->BI2 = 0;
+      pin_values->B_PWM = PWM_MOTOR_MIN;
+      pin_values->A_PWM = PWM_MOTOR_MIN;
     }
   }
 }

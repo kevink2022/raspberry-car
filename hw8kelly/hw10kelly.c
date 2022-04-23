@@ -13,13 +13,16 @@
 #include "raspicam_wrapper.h"
 
 #define HW_NUM 10
-#define CLOCK_PERIOD 0.01
+#define CLOCK_PERIOD 0.001
 
 // HW10 PARAMS
 #define MAX_TIMESTAMP_COUNT 100000
 #define TURN_SLEEP 0.5
-#define REPLAY_DIV 3
 #define DATA_CAMERA_MULTIPLIER 10
+
+#define REPLAY_DIV 2
+#define TURN_REPLAY_MULT 1.2
+#define REPLAY_SPEED_DIV 40
 
 // HW9 PARAMS
 #define MAX_CUTOFF 235
@@ -112,7 +115,13 @@ void *ThreadClock( void * arg  )
 
   }
 
-  // One last post to ensure everything is exits
+  // Three! last posts to ensure everything is exits
+  sem_post(parameter->control_thread_sem);
+  sem_post(parameter->data_thread_sem);
+  sem_post(parameter->camera_thread_sem);
+  sem_post(parameter->control_thread_sem);
+  sem_post(parameter->data_thread_sem);
+  sem_post(parameter->camera_thread_sem);
   sem_post(parameter->control_thread_sem);
   sem_post(parameter->data_thread_sem);
   sem_post(parameter->camera_thread_sem);
@@ -245,7 +254,7 @@ void *ThreadMotor( void * arg  )
       {
         curr_timestamp = replay_flag.timestamps[i];
         //printf("RTS: %d, %i\n", curr_timestamp.ticks, curr_timestamp.command);
-        usleep((curr_timestamp.ticks - prev_timestamp.ticks)/REPLAY_DIV);
+        usleep((curr_timestamp.ticks - prev_timestamp.ticks)/(REPLAY_DIV*(curr_timestamp.motor_pin_values.A_PWM/REPLAY_SPEED_DIV)));
 
         if (curr_timestamp.command == set_pins)
         {
@@ -439,7 +448,7 @@ void *ThreadData( void * arg  )
         //pthread_mutex_unlock( &(parameter->data_signal->lock) );
 
         #ifdef DEBUG
-        printf("DATA: m0 loop\n");
+        printf("DATA: m0 loop: %i\n", sample_count);
         #endif
        
         ////// SAMPLE ///////
@@ -664,7 +673,7 @@ void *ThreadKey( void * arg )
   bool done = false;
   char mode = '1';
   char input = 's';
-  char hw = '9';
+  char hw = '0';
 
   #ifdef DEBUG
   printf("KEY: init\n");
@@ -672,7 +681,11 @@ void *ThreadKey( void * arg )
 
   do
   {
-    printf("\nHw%cm%c> ", hw, mode);
+    if (hw == '0'){
+      printf("\nHw10m%c> ", mode);
+    } else {
+      printf("\nHw%cm%c> ", hw, mode);
+    }
     input = get_pressed_key();
 
     #ifdef DEBUG
@@ -1074,7 +1087,11 @@ void turn(motor_pins *motor_pins, motor_pin_values *motor_pin_values, replay_fla
     motor_pins->pwm->DAT1 = PWM_MOTOR_MIN - 20;
   }
 
-  usleep(TURN_SLEEP*1000000);
+  if (replay_flag->replay){    // If not replay, then recording
+    usleep(TURN_REPLAY_MULT*TURN_SLEEP*1000000);
+  } else {
+    usleep(TURN_SLEEP*1000000);
+  }
 
   motor_pins->pwm->DAT2 = motor_pin_values->A_PWM;
   motor_pins->pwm->DAT1 = motor_pin_values->B_PWM;
@@ -1209,7 +1226,7 @@ void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, 
         pthread_mutex_lock( &(data_signal->lock) );
         data_signal->recording = false;
         data_signal->m0 = false;
-        write_to_file(*mode, data_samples, sample_count); // Need to move, slowing down stops
+        //write_to_file(*mode, data_samples, sample_count); // Need to move, slowing down stops
         pthread_mutex_unlock( &(data_signal->lock) );
       } 
       if (*hw >= 8) {
@@ -1392,10 +1409,14 @@ void update_command(motor_pins *motor_pins, motor_pin_values *motor_pin_values, 
       break;  
 
     case 'n':
-      #ifdef DEBUG
-      printf("\nMOTOR: Recieved Command: MODE 2\n");
-      #endif
-      printf("This feature will be available at a later date.");
+      //#ifdef DEBUG
+      printf("\nMOTOR: Recieved Command: N\n");
+      //#endif
+      if(*sample_count){
+        calc_dist_velo(data_samples, sample_count);
+      } else {
+        printf("No samples to print.");
+      }
       break;  
 
     case 'p':
@@ -2075,57 +2096,75 @@ void print_samples(data_sample * data_samples, unsigned int * sample_count){
   printf( "\nGY |AC\n");
   
   for(i = 0; i < samples; i++){
-    printf( "%.2f %.2f %.2f | %.2f %.2f %.2f\n",
-      ((data_samples[i].gyro_xout  )),
-      ((data_samples[i].gyro_yout  )),
-      ((data_samples[i].gyro_zout  )),
-      ((data_samples[i].accel_xout )),
-      ((data_samples[i].accel_yout )),
-      ((data_samples[i].accel_zout ))
-    );
-    // printf( "%f %f %f | %f %f %f\n",
-    //   (int)((data_samples[i].gyro_xout  - min.gyro_xout ) / tenth.gyro_xout  ),
-    //   (int)((data_samples[i].gyro_yout  - min.gyro_yout ) / tenth.gyro_yout  ),
-    //   (int)((data_samples[i].gyro_zout  - min.gyro_zout ) / tenth.gyro_zout  ),
-    //   (int)((data_samples[i].accel_xout - min.accel_xout) / tenth.accel_xout ),
-    //   (int)((data_samples[i].accel_yout - min.accel_yout) / tenth.accel_yout ),
-    //   (int)((data_samples[i].accel_zout - min.accel_zout) / tenth.accel_zout )
+    // printf( "%.2f %.2f %.2f | %.2f %.2f %.2f\n",
+    //   ((data_samples[i].gyro_xout  )),
+    //   ((data_samples[i].gyro_yout  )),
+    //   ((data_samples[i].gyro_zout  )),
+    //   ((data_samples[i].accel_xout )),
+    //   ((data_samples[i].accel_yout )),
+    //   ((data_samples[i].accel_zout ))
     // );
+    printf( "%i %i %i | %i %i %i\n",
+      (int)((data_samples[i].gyro_xout  - min.gyro_xout ) / tenth.gyro_xout  ),
+      (int)((data_samples[i].gyro_yout  - min.gyro_yout ) / tenth.gyro_yout  ),
+      (int)((data_samples[i].gyro_zout  - min.gyro_zout ) / tenth.gyro_zout  ),
+      (int)((data_samples[i].accel_xout - min.accel_xout) / tenth.accel_xout ),
+      (int)((data_samples[i].accel_yout - min.accel_yout) / tenth.accel_yout ),
+      (int)((data_samples[i].accel_zout - min.accel_zout) / tenth.accel_zout )
+    );
   }
-  printf("\n\n");
-  printf( "%i %i %i | %i %i %i\n",
-    (int)((max.gyro_xout  )),
-    (int)((max.gyro_yout  )),
-    (int)((max.gyro_zout  )),
-    (int)((max.accel_xout )),
-    (int)((max.accel_yout )),
-    (int)((max.accel_zout ))
-  );
-  printf( "%i %i %i | %i %i %i\n",
-    (int)((min.gyro_xout  )),
-    (int)((min.gyro_yout  )),
-    (int)((min.gyro_zout  )),
-    (int)((min.accel_xout )),
-    (int)((min.accel_yout )),
-    (int)((min.accel_zout ))
-  );
+  // printf("\n\n");
+  // printf( "%i %i %i | %i %i %i\n",
+  //   (int)((max.gyro_xout  )),
+  //   (int)((max.gyro_yout  )),
+  //   (int)((max.gyro_zout  )),
+  //   (int)((max.accel_xout )),
+  //   (int)((max.accel_yout )),
+  //   (int)((max.accel_zout ))
+  // );
+  // printf( "%i %i %i | %i %i %i\n",
+  //   (int)((min.gyro_xout  )),
+  //   (int)((min.gyro_yout  )),
+  //   (int)((min.gyro_zout  )),
+  //   (int)((min.accel_xout )),
+  //   (int)((min.accel_yout )),
+  //   (int)((min.accel_zout ))
+  // );
 }
+
+#undef DEBUG
 
 void calc_dist_velo(data_sample * data_samples, unsigned int * sample_count){
   
   unsigned int i, samples = *sample_count;
-  data_sample max = data_samples[0], min = data_samples[0];
+  double x_velo = 0, y_velo = 0, z_velo = 0, x_avg = 0, y_avg = 0, z_avg = 0, x_dist = 0, y_dist = 0, z_dist = 0, distance = 0, avg_velo = 0;
 
-  for(i = 1; i < samples; i++){
+  // Doing seperatly so only need to square root once at end
+  for(i = 0; i < samples; i++){
+    x_velo = x_velo + data_samples[i].accel_xout*CLOCK_PERIOD;
+    x_dist = x_dist + x_velo*CLOCK_PERIOD;
+    x_avg = (x_velo + x_avg)/(i+1);
 
-    if (data_samples[i].gyro_yout < min.gyro_yout) {
-      min.gyro_yout = data_samples[i].gyro_yout;
-    } else if (data_samples[i].gyro_yout > max.gyro_yout) {
-      max.gyro_yout = data_samples[i].gyro_yout;
-    }
+    y_velo = y_velo + data_samples[i].accel_yout*CLOCK_PERIOD;
+    y_dist = y_dist + y_velo*CLOCK_PERIOD;
+    y_avg = (y_velo + y_avg)/(i+1);
+
+    z_velo = z_velo + data_samples[i].accel_zout*CLOCK_PERIOD;
+    z_dist = z_dist + z_velo*CLOCK_PERIOD;
+    z_avg = (z_velo + z_avg)/(i+1);
   }
 
+  avg_velo = sqrt( x_avg*x_avg  +  y_avg*y_avg);//  +  z_avg*z_avg );
+  distance = sqrt(x_dist*x_dist + y_dist*y_dist);// + z_dist*z_dist); 
+
+  #ifdef DEBUG
+  printf("\nTotal Distance Traveled (X): %f\nAverage Velocity (X): %f\n", x_dist, x_avg);
+  printf("\nTotal Distance Traveled (Y): %f\nAverage Velocity (Y): %f\n", y_dist, y_avg);
+  printf("\nTotal Distance Traveled (Z): %f\nAverage Velocity (Z): %f\n", z_dist, z_avg);
+  printf("Sample Count: %i", samples);
+  #endif
   
+  printf("\nTotal Distance Traveled: %f m\nAverage Velocity: %f m/s\n", distance, avg_velo);
 }
 
 void write_to_file(int mode, data_sample * data_samples, unsigned int * sample_count){

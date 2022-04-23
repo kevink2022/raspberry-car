@@ -9,6 +9,7 @@
 #include <string.h>
 #include <semaphore.h>
 #include <time.h>
+#include <math.h>
 #include "import_registers.h"
 #include "cm.h"
 #include "gpio.h"
@@ -125,7 +126,7 @@ enum mode {
 struct clock_thread_parameter
 {
   struct done_flag  * done;
-  int                 period;
+  float               period;
   sem_t             * control_thread_sem;
   sem_t             * data_thread_sem;
   sem_t             * camera_thread_sem;
@@ -267,6 +268,8 @@ void read_accelerometer_gyroscope(
 data_sample average_sample(data_sample * data_samples, unsigned int * sample_count);
 
 void print_samples(data_sample * data_samples, unsigned int * sample_count);
+
+void calc_dist_velo(data_sample * data_samples, unsigned int * sample_count);
 
 void write_to_file(int mode, data_sample * data_samples, unsigned int * sample_count);
 

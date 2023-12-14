@@ -32,7 +32,7 @@ To achieve autonomous driving, two sensors were placed on the front of the car, 
 
 Due to the tertiary nature of the signal (straight, left, or right), the degree of the turn could not be accounted for, and the worst had to be assumed. All degrees of turns were accounted for by adding a delay when a turn was triggered. This had to be tuned so the car would never overturn and go completely off the track, but still turn enough to not speed through tight corners.
 
-![Image of Electrical Tape Track on Posterboard](portfolio_resources/track.png)
+![Image of Electrical Tape Track on Posterboard](portfolio_resources/track_small.png)
 
 #### Motion Data Capture
 The car was outfitted with an MPU-9250 chip, an Inertial measurement unit (IMU) that contains an accelerometer, gyroscope, and magnetometer. Users could record for either a five-second interval, or until the car was stopped. The data would then be saved for later analysis.

@@ -2,7 +2,7 @@
 
 This project spanned the majority of the Microcontrollers Class I took during the Spring 2023 semester. This was a follow-up to the class I took in the Fall 2022 semester where we programmed highly time-accurate code in the CPU12 Assembly language, this class was much different as it was entirely in C. After some preliminary projects learning how to operate the I/O pins in the Pi with PWM, we dove into constructing and programming our RC cars.
 
-A few things to note. First, this class was fairly unorganized, with no planned lectures, and wildly inconsistent workloads from week to week. Best practices and tips and tricks were rarely discussed. This leads directly to the second point, the massive amount of commits. Having very little prior experience with SSH, and not knowing VSCode could edit code via SSH, I developed on my computer and used GitHub as the world's slowest SSH. Pretty embarrassing, but hey we all make mistakes. 
+One thing to note, there are a massive amount of commits on this project. Having very little prior experience with SSH, and not knowing VSCode could edit code via SSH, I developed on my computer and used GitHub as the world's slowest SSH. Pretty embarrassing, but hey we all make mistakes. 
 
 ## What I Learned
 #### Technical Skills

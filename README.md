@@ -1,6 +1,6 @@
 # raspberry-car
 
-This project spanned the majority of the Microcontrollers Class I took during the Spring 2023 semester. This was a follow-up to the class I took in the Fall 2022 semester where we programmed highly time-accurate code in the CPU12 Assembly language, this class was much different as it was entirely in C. After some preliminary projects learning how to operate the I/O pins in the Pi with PWM, we dove into constructing and programming our RC cars.
+This project spanned the majority of the Microcontrollers Class I took during the Spring 2022 semester. This was a follow-up to the class I took in the Fall 2021 semester where we programmed highly time-accurate code in the CPU12 Assembly language, this class was much different as it was entirely in C. After some preliminary projects learning how to operate the I/O pins in the Pi with PWM, we dove into constructing and programming our RC cars.
 
 One thing to note, there are a massive amount of commits on this project. Having very little prior experience with SSH, and not knowing VSCode could edit code via SSH, I developed on my computer and used GitHub as the world's slowest SSH. Pretty embarrassing, but hey we all make mistakes. 
 
